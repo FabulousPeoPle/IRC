@@ -5,6 +5,7 @@ IRCServer::IRCServer(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME)
     std::cout << "Default IRCServer constructor called." << std::endl;
     this->m_servinfo = NULL;
     this->m_sockfd = -1;
+    memset(&(this->socketInfo), 0, sizeof(this->socketInfo));
     memset(&(this->m_hints), 0, sizeof(this->m_hints));
     memset(&(this->m_addr_in), 0, sizeof(this->m_addr_in));
     memset(&(this->m_addr_in6), 0, sizeof(this->m_addr_in6));
@@ -20,6 +21,7 @@ IRCServer::IRCServer(std::string port, std::string hostname) : m_port(port), m_h
     std::cout << "Port/Hostname constructor called." << std::endl;
     this->m_servinfo = NULL;
     this->m_sockfd = -1;
+    memset(&(this->socketInfo), 0, sizeof(this->socketInfo));
     memset(&(this->m_hints), 0, sizeof(this->m_hints));
     memset(&(this->m_addr_in), 0, sizeof(this->m_addr_in));
     memset(&(this->m_addr_in6), 0, sizeof(this->m_addr_in6));
@@ -33,6 +35,7 @@ IRCServer::IRCServer(const IRCServer& serverRef)
 
 IRCServer&      IRCServer::operator=(const IRCServer& serverRef)
 {
+    // TODO: NEED TO ADD ALL MEMBER VARIABLES
     this->m_port = serverRef.getPort();
     this->m_hostname = serverRef.getHostname();
     this->m_hints = serverRef.getHints();
@@ -99,11 +102,11 @@ int         IRCServer::setServerInfo(void)
 }
 
 
-int             IRCServer::m_setSocket(t_addrinfo* p)
+int             IRCServer::m_setSocket(t_m_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen)
 {
     int yes = 1;
 
-    if ((this->m_sockfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) == -1)
+    if ((this->m_sockfd = socket(socketInfo.family, socketInfo.socktype, socketInfo.protocol)) == -1)
     {
         perror("socket:");
         return (-1);
@@ -116,7 +119,7 @@ int             IRCServer::m_setSocket(t_addrinfo* p)
         freeaddrinfo(this->m_servinfo);
         exit(1);
     }
-    if ((bind(this->m_sockfd, p->ai_addr, p->ai_addrlen)))
+    if ((bind(this->m_sockfd, addr, addrlen)))
     {
         perror("bind:");
         return (-2);
@@ -126,15 +129,18 @@ int             IRCServer::m_setSocket(t_addrinfo* p)
 
 int             IRCServer::setSockfd(int family)
 {
-    t_addrinfo* p;
-    int         ret;
+    t_addrinfo*     p;
+    int             ret;
 
     for (p = this->m_servinfo; p != NULL; p = p->ai_next)
     {
         if ((p->ai_family && family) || family == AF_UNSPEC) // to check
         {
-            if ((ret = this->m_setSocket(p)))
+            if ((ret = this->m_setSocket((t_m_socketInfo){p->ai_family, p->ai_socktype, p->ai_protocol},
+                            p->ai_addr, p->ai_addrlen)))
+            {
                 continue ;
+            }
         }
         break ;
     }
@@ -151,5 +157,38 @@ int             IRCServer::setSockfd(int family)
 
 int             IRCServer::setSockfd_in(void)
 {
-    
+    std::stringstream   port_value(this->m_port);
+    short               port_value_store;
+    int                 ret;
+
+    port_value >> port_value_store;
+    this->socketInfo.family = this->m_addr_in.sin_family= AF_INET;
+    this->m_addr_in.sin_addr.s_addr = INADDR_ANY;
+    this->m_addr_in.sin_port = htons(port_value_store);
+    this->socketInfo.socktype = SOCK_STREAM;
+    this->socketInfo.protocol = 0;
+    if ((ret = this->m_setSocket(this->socketInfo, (t_sockaddr*)&this->m_addr_in6,
+        sizeof(this->m_addr_in6))))
+        return (-1);
+    return (0);
+}
+
+
+//TODO: CHECK IF THIS STUFF IS ALREADY FILLED
+int             IRCServer::setSockfd_in6(void)
+{
+    std::stringstream   port_value(this->m_port);
+    short               port_value_store;
+    int                 ret;
+
+    port_value >> port_value_store;
+    this->socketInfo.family = this->m_addr_in6.sin6_family = AF_INET6;
+    this->m_addr_in6.sin6_addr = in6addr_any;
+    this->m_addr_in6.sin6_port = htons(port_value_store);
+    this->socketInfo.socktype = SOCK_STREAM;
+    this->socketInfo.protocol = 0;
+    if ((ret = this->m_setSocket(this->socketInfo, (t_sockaddr*)&this->m_addr_in6,
+        sizeof(this->m_addr_in6))))
+        return (-1);
+    return (0);
 }
