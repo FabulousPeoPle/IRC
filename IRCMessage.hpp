@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2021/12/10 18:30:20 by azouiten         ###   ########.fr       */
+/*   Updated: 2021/12/10 19:01:39 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,5 @@ public:
 
     IRCMessage & operator=(IRCMessage const & rhs);
     void parse(void);
-    void relay(void);
     int  checkCommand(char *token);
 };

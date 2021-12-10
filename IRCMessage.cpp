@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2021/12/10 18:28:53 by azouiten         ###   ########.fr       */
+/*   Updated: 2021/12/10 19:01:38 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,13 +70,6 @@ void IRCMessage::parse(void)
             std::cout << "argument : " << token << std::endl;
         }
     }
-}
-
-void IRCMessage::relay(void)
-{
-    //simple relay function relaying each comman with the apropriat function
-    // if (command == USER_COMMAND){}
-    // else if ()
 }
 
 IRCMessage::~IRCMessage(void){}
