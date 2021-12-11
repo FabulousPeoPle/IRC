@@ -5,7 +5,8 @@ IRCServer::IRCServer(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME)
     std::cout << "Default IRCServer constructor called." << std::endl;
     this->m_servinfo = NULL;
     this->m_sockfd = -1;
-    memset(&(this->socketInfo), 0, sizeof(this->socketInfo));
+    this->m_poll_count = 0;
+    memset(&(this->m_socketInfo), 0, sizeof(this->m_socketInfo));
     memset(&(this->m_hints), 0, sizeof(this->m_hints));
     memset(&(this->m_addr_in), 0, sizeof(this->m_addr_in));
     memset(&(this->m_addr_in6), 0, sizeof(this->m_addr_in6));
@@ -21,7 +22,8 @@ IRCServer::IRCServer(std::string port, std::string hostname) : m_port(port), m_h
     std::cout << "Port/Hostname constructor called." << std::endl;
     this->m_servinfo = NULL;
     this->m_sockfd = -1;
-    memset(&(this->socketInfo), 0, sizeof(this->socketInfo));
+    this->m_poll_count = 0;
+    memset(&(this->m_socketInfo), 0, sizeof(this->m_socketInfo));
     memset(&(this->m_hints), 0, sizeof(this->m_hints));
     memset(&(this->m_addr_in), 0, sizeof(this->m_addr_in));
     memset(&(this->m_addr_in6), 0, sizeof(this->m_addr_in6));
@@ -101,8 +103,7 @@ int         IRCServer::setServerInfo(void)
     return (0);
 }
 
-
-int             IRCServer::m_setSocket(t_m_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen)
+int             IRCServer::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen)
 {
     int yes = 1;
 
@@ -111,6 +112,8 @@ int             IRCServer::m_setSocket(t_m_socketInfo socketInfo, t_sockaddr* ad
         perror("socket:");
         return (-1);
     }
+    // making the socket NON_BLOCKING in preparation for poll()
+    fcntl(this->m_sockfd, F_SETFL, O_NONBLOCK);
     // allowing a port to be reused, unless there is a socket already listening to the port
     if (setsockopt(this->m_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
     {
@@ -127,6 +130,7 @@ int             IRCServer::m_setSocket(t_m_socketInfo socketInfo, t_sockaddr* ad
     return (0);
 }
 
+// Should check if this has already been done
 int             IRCServer::setSockfd(int family)
 {
     t_addrinfo*     p;
@@ -136,11 +140,12 @@ int             IRCServer::setSockfd(int family)
     {
         if ((p->ai_family && family) || family == AF_UNSPEC) // to check
         {
-            if ((ret = this->m_setSocket((t_m_socketInfo){p->ai_family, p->ai_socktype, p->ai_protocol},
+            this->m_socketInfo.family = p->ai_family;
+            this->m_socketInfo.socktype = p->ai_socktype;
+            this->m_socketInfo.protocol = p->ai_protocol;
+            if ((ret = this->m_setSocket(this->m_socketInfo,
                             p->ai_addr, p->ai_addrlen)))
-            {
                 continue ;
-            }
         }
         break ;
     }
@@ -151,10 +156,10 @@ int             IRCServer::setSockfd(int family)
         std::cerr << "Couldn't find a socket." << std::endl;
         return (-1);
     }
-
     return (0);
 }
 
+// Should check if this has already been done
 int             IRCServer::setSockfd_in(void)
 {
     std::stringstream   port_value(this->m_port);
@@ -162,19 +167,19 @@ int             IRCServer::setSockfd_in(void)
     int                 ret;
 
     port_value >> port_value_store;
-    this->socketInfo.family = this->m_addr_in.sin_family= AF_INET;
+    this->m_socketInfo.family = this->m_addr_in.sin_family= AF_INET;
     this->m_addr_in.sin_addr.s_addr = INADDR_ANY;
     this->m_addr_in.sin_port = htons(port_value_store);
-    this->socketInfo.socktype = SOCK_STREAM;
-    this->socketInfo.protocol = 0;
-    if ((ret = this->m_setSocket(this->socketInfo, (t_sockaddr*)&this->m_addr_in6,
+    this->m_socketInfo.socktype = SOCK_STREAM;
+    this->m_socketInfo.protocol = 0;
+    if ((ret = this->m_setSocket(this->m_socketInfo, (t_sockaddr*)&this->m_addr_in6,
         sizeof(this->m_addr_in6))))
         return (-1);
     return (0);
 }
 
 
-//TODO: CHECK IF THIS STUFF IS ALREADY FILLED
+// Should check if this has already been done
 int             IRCServer::setSockfd_in6(void)
 {
     std::stringstream   port_value(this->m_port);
@@ -182,13 +187,85 @@ int             IRCServer::setSockfd_in6(void)
     int                 ret;
 
     port_value >> port_value_store;
-    this->socketInfo.family = this->m_addr_in6.sin6_family = AF_INET6;
+    this->m_socketInfo.family = this->m_addr_in6.sin6_family = AF_INET6;
     this->m_addr_in6.sin6_addr = in6addr_any;
     this->m_addr_in6.sin6_port = htons(port_value_store);
-    this->socketInfo.socktype = SOCK_STREAM;
-    this->socketInfo.protocol = 0;
-    if ((ret = this->m_setSocket(this->socketInfo, (t_sockaddr*)&this->m_addr_in6,
+    this->m_socketInfo.socktype = SOCK_STREAM;
+    this->m_socketInfo.protocol = 0;
+    if ((ret = this->m_setSocket(this->m_socketInfo, (t_sockaddr*)&this->m_addr_in6,
         sizeof(this->m_addr_in6))))
         return (-1);
     return (0);
+}
+
+int             IRCServer::listen(void)
+{
+    if (::listen(this->m_sockfd, LISTEN_QUEUE))
+    {
+        perror("listen: ");
+        exit(1);
+    }
+    this->m_pfds.push_back((t_pollfd){this->m_sockfd, POLLIN});
+    return (0);
+}
+
+void            IRCServer::m_poll(void)
+{
+    this->m_poll_count = poll(this->m_pfds.data(), this->m_pfds.size(), -1);
+    if (this->m_poll_count == -1)
+    {
+        perror("poll: ");
+        exit(1);
+    }
+}
+
+void*           IRCServer::m_getInAddr(t_sockaddr* addr) const
+{
+    if (addr->sa_family == AF_INET)
+        return (&(((t_sockaddr_in*)addr)->sin_addr));
+    return (&(((t_sockaddr_in6*)addr)->sin6_addr));
+}
+
+int             IRCServer::startServer(void)
+{
+    while (1)
+    {
+        this->m_poll();
+        int i = 0;
+        while (i < this->m_pfds.size() && this->m_poll_count)
+        {
+            // WE GOT A CONNECTION
+            if (this->m_pfds[i].revents & POLLIN)
+            {
+                // IT'S OUR SERVER
+                if (this->m_pfds[i].fd == this->m_sockfd)
+                {
+                    t_sockaddr_storage  remoteAddr;
+                    socklen_t           addrlen = sizeof(t_sockaddr_storage);
+                    int                 newFd = accept(this->m_sockfd, (t_sockaddr*)&remoteAddr,
+                                                        &addrlen);
+                    if (newFd == -1)
+                        perror("accept: ");
+                    else
+                    {
+                        this->m_pfds.push_back((t_pollfd){newFd, POLLIN});
+                        // Should also work with IPv6 in the future
+                        printf("Got a new connection from: [%s], on socketFd: [%d].\n",
+                                inet_ntoa(((t_sockaddr_in*)&remoteAddr)->sin_addr), this->m_sockfd);
+                    }
+
+                }
+                else // A CLIENT SENT SOMTHING?
+                {
+
+                }
+            }
+        }
+        //poll
+        //loop on pollcount
+            //check if event occured
+                //check if the even occured on listener socket
+                    //if yes: accept new connection(client)
+                    //if no: recv msg from client
+    }
 }
