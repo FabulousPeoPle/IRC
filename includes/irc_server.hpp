@@ -19,7 +19,9 @@
 #define DEFAULT_PORT "6667"
 #define DEFAULT_HOSTNAME "127.0.0.1"
 
-#define LISTEN_QUEUE 10
+#define MAX_CONNECTIONS 10
+
+#define BUFFER_SIZE 512
 
 typedef struct addrinfo         t_addrinfo;
 typedef struct sockaddr         t_sockaddr;

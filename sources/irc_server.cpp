@@ -200,10 +200,10 @@ int             IRCServer::setSockfd_in6(void)
 
 int             IRCServer::listen(void)
 {
-    if (::listen(this->m_sockfd, LISTEN_QUEUE))
+    if (::listen(this->m_sockfd, MAX_CONNECTIONS))
     {
         perror("listen: ");
-        exit(1);
+        exit(-1);
     }
     this->m_pfds.push_back((t_pollfd){this->m_sockfd, POLLIN});
     return (0);
@@ -215,7 +215,7 @@ void            IRCServer::m_poll(void)
     if (this->m_poll_count == -1)
     {
         perror("poll: ");
-        exit(1);
+        exit(-1);
     }
 }
 
@@ -253,11 +253,11 @@ int             IRCServer::startServer(void)
                         printf("Got a new connection from: [%s], on socketFd: [%d].\n",
                                 inet_ntoa(((t_sockaddr_in*)&remoteAddr)->sin_addr), this->m_sockfd);
                     }
-
                 }
-                else // A CLIENT SENT SOMTHING?
+                else
                 {
-
+                    char    buffer[BUFFER_SIZE];
+                    int     bytesRead = recv(this->m_pfds[i].fd, buffer, BUFFER_SIZE, 0);
                 }
             }
         }
