@@ -1,8 +1,8 @@
 #include "irc_server.hpp"
 
-IRCServer::IRCServer(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME)
+Server::Server(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME)
 {
-    std::cout << "Default IRCServer constructor called." << std::endl;
+    std::cout << "Default Server constructor called." << std::endl;
     this->m_servinfo = NULL;
     this->m_sockfd = -1;
     this->m_poll_count = 0;
@@ -12,12 +12,12 @@ IRCServer::IRCServer(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME)
     memset(&(this->m_addr_in6), 0, sizeof(this->m_addr_in6));
 }
 
-IRCServer::~IRCServer(void)
+Server::~Server(void)
 {
-    std::cout << "Default IRCServer destructor called." << std::endl;
+    std::cout << "Default Server destructor called." << std::endl;
 }
 
-IRCServer::IRCServer(std::string port, std::string hostname) : m_port(port), m_hostname(hostname)
+Server::Server(std::string port, std::string hostname) : m_port(port), m_hostname(hostname)
 {
     std::cout << "Port/Hostname constructor called." << std::endl;
     this->m_servinfo = NULL;
@@ -29,13 +29,13 @@ IRCServer::IRCServer(std::string port, std::string hostname) : m_port(port), m_h
     memset(&(this->m_addr_in6), 0, sizeof(this->m_addr_in6));
 }
 
-IRCServer::IRCServer(const IRCServer& serverRef)
+Server::Server(const Server& serverRef)
 {
     std::cout << "Copy constructor called." << std::endl;
     *this = serverRef;
 }
 
-IRCServer&      IRCServer::operator=(const IRCServer& serverRef)
+Server&      Server::operator=(const Server& serverRef)
 {
     // TODO: NEED TO ADD ALL MEMBER VARIABLES
     this->m_port = serverRef.getPort();
@@ -49,49 +49,49 @@ IRCServer&      IRCServer::operator=(const IRCServer& serverRef)
     return (*this);
 }
 
-t_sockaddr_in   IRCServer::getAddr_in(void) const
+t_sockaddr_in   Server::getAddr_in(void) const
 {
     return (this->m_addr_in);
 }
 
-t_sockaddr_in6  IRCServer::getAddr_in6(void) const
+t_sockaddr_in6  Server::getAddr_in6(void) const
 {
     return (this->m_addr_in6);
 }
 
-int             IRCServer::getSockfd(void) const
+int             Server::getSockfd(void) const
 {
     return (this->m_sockfd);
 }
 
-std::string     IRCServer::getPort(void)  const
+std::string     Server::getPort(void)  const
 {
     return (this->m_port);
 }
 
-std::string     IRCServer::getHostname(void) const
+std::string     Server::getHostname(void) const
 {
     return (this->m_hostname);
 }
 
-t_addrinfo      IRCServer::getHints(void) const
+t_addrinfo      Server::getHints(void) const
 {
     return (this->m_hints);
 }
 
-t_addrinfo      IRCServer::getServInfo(void) const
+t_addrinfo      Server::getServInfo(void) const
 {
     return (*(this->m_servinfo));
 }
 
-void            IRCServer::setServerHints(int family, int sockType, int flags)
+void            Server::setServerHints(int family, int sockType, int flags)
 {
     this->m_hints.ai_family = family;
     this->m_hints.ai_socktype = sockType;
     this->m_hints.ai_flags = flags;
 }
 
-int         IRCServer::setServerInfo(void)
+int         Server::setServerInfo(void)
 {
     int ret;
 
@@ -103,7 +103,7 @@ int         IRCServer::setServerInfo(void)
     return (0);
 }
 
-int             IRCServer::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen)
+int             Server::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen)
 {
     int yes = 1;
 
@@ -131,7 +131,7 @@ int             IRCServer::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr
 }
 
 // Should check if this has already been done
-int             IRCServer::setSockfd(int family)
+int             Server::setSockfd(int family)
 {
     t_addrinfo*     p;
     int             ret;
@@ -160,7 +160,7 @@ int             IRCServer::setSockfd(int family)
 }
 
 // Should check if this has already been done
-int             IRCServer::setSockfd_in(void)
+int             Server::setSockfd_in(void)
 {
     std::stringstream   port_value(this->m_port);
     short               port_value_store;
@@ -180,7 +180,7 @@ int             IRCServer::setSockfd_in(void)
 
 
 // Should check if this has already been done
-int             IRCServer::setSockfd_in6(void)
+int             Server::setSockfd_in6(void)
 {
     std::stringstream   port_value(this->m_port);
     short               port_value_store;
@@ -198,7 +198,7 @@ int             IRCServer::setSockfd_in6(void)
     return (0);
 }
 
-int             IRCServer::listen(void)
+int             Server::listen(void)
 {
     if (::listen(this->m_sockfd, MAX_CONNECTIONS))
     {
@@ -209,7 +209,7 @@ int             IRCServer::listen(void)
     return (0);
 }
 
-void            IRCServer::m_poll(void)
+void            Server::m_poll(void)
 {
     this->m_poll_count = poll(this->m_pfds.data(), this->m_pfds.size(), -1);
     if (this->m_poll_count == -1)
@@ -219,14 +219,14 @@ void            IRCServer::m_poll(void)
     }
 }
 
-void*           IRCServer::m_getInAddr(t_sockaddr* addr) const
+void*           Server::m_getInAddr(t_sockaddr* addr) const
 {
     if (addr->sa_family == AF_INET)
         return (&(((t_sockaddr_in*)addr)->sin_addr));
     return (&(((t_sockaddr_in6*)addr)->sin6_addr));
 }
 
-int             IRCServer::startServer(void)
+int             Server::startServer(void)
 {
     while (1)
     {
@@ -258,6 +258,23 @@ int             IRCServer::startServer(void)
                 {
                     char    buffer[BUFFER_SIZE];
                     int     bytesRead = recv(this->m_pfds[i].fd, buffer, BUFFER_SIZE, 0);
+
+                    if (bytesRead <= 0)
+                    {
+                        if (bytesRead == 0)
+                            printf("Client disconnected.\n");
+                        else
+                            perror("recv: ");
+                        this->m_pfds.erase(this->m_pfds.begin() + i);
+                        close(this->m_pfds[i].fd);
+                    }
+                    else
+                    {
+                        buffer[bytesRead] = '\0';
+                        printf("Received: [%s]\n", buffer);
+                        
+                    }
+
                 }
             }
         }

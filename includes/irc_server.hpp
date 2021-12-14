@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iostream>
 #include <string>
+#include <unistd.h>
 
 #include <vector>
 
@@ -30,6 +31,7 @@ typedef struct sockaddr_in      t_sockaddr_in;
 typedef struct sockaddr_in6     t_sockaddr_in6;
 typedef struct pollfd           t_pollfd;  
 
+class Client;
 
 typedef struct      s_m_socketInfo
 {
@@ -43,14 +45,14 @@ typedef struct      s_m_socketInfo
 // TODO: ADD EXCEPTIONS
 // TODO: THROW EXCEPTIONS INSTEAD OF EXITING?
 // TODO: change inet_ntoa in startServer(), only converts from IPv4, we need to be able to convert from IPv6
-class IRCServer {
+class Server {
     public:
                                 // constructors are probably going to be usless
-                                IRCServer(void);
-                                IRCServer(std::string hostname, std::string port);
-                                IRCServer(const IRCServer& serverRef);
-                                ~IRCServer();
-        IRCServer&              operator=(const IRCServer& serverRef);
+                                Server(void);
+                                Server(std::string hostname, std::string port);
+                                Server(const Server& serverRef);
+                                ~Server();
+        Server&              operator=(const Server& serverRef);
 
         std::string             getPort(void) const;
         std::string             getHostname(void) const;
@@ -83,6 +85,7 @@ class IRCServer {
         void                    m_poll(void);
         void*                   m_getInAddr(t_sockaddr* addr) const;
         //void                    m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
+        void                    m_parse(std::string& str);
 
 
 
@@ -101,6 +104,7 @@ class IRCServer {
 
         int                     m_poll_count;
         std::vector<t_pollfd>   m_pfds;
+        std::vector<Client>     m_clients;
 };
 
 #endif
