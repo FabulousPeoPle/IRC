@@ -17,7 +17,7 @@ Server::~Server(void)
     std::cout << "Default Server destructor called." << std::endl;
 }
 
-Server::Server(std::string port, std::string hostname) : m_port(port), m_hostname(hostname)
+Server::Server(char* port, char* hostname) : m_port(port), m_hostname(hostname)
 {
     std::cout << "Port/Hostname constructor called." << std::endl;
     this->m_servinfo = NULL;
@@ -64,12 +64,13 @@ int             Server::getSockfd(void) const
     return (this->m_sockfd);
 }
 
-std::string     Server::getPort(void)  const
+char*           Server::getPort(void)  const
 {
-    return (this->m_port);
+    // wtf
+    return (const_cast<char*>(this->m_port));
 }
 
-std::string     Server::getHostname(void) const
+char*           Server::getHostname(void) const
 {
     return (this->m_hostname);
 }
@@ -95,7 +96,7 @@ int         Server::setServerInfo(void)
 {
     int ret;
 
-    if ((ret = getaddrinfo(this->m_hostname.c_str(), this->m_port.c_str(), &this->m_hints, &this->m_servinfo)))
+    if ((ret = getaddrinfo(this->m_hostname, this->m_port, &this->m_hints, &this->m_servinfo)))
     {
         std::cerr << "getaddrinfo error: " << gai_strerror(ret) << std::endl;
         return (-2);
@@ -136,8 +137,10 @@ int             Server::setSockfd(int family)
 
     for (p = this->m_servinfo; p != NULL; p = p->ai_next)
     {
-        if ((p->ai_family && family) || family == AF_UNSPEC) // to check
+        std::cout << "family printing: " << p->ai_family << std::endl;
+        if (p->ai_family == family) // to check
         {
+            printf("family is %d\n", p->ai_family);
             this->m_socketInfo.family = p->ai_family;
             this->m_socketInfo.socktype = p->ai_socktype;
             this->m_socketInfo.protocol = p->ai_protocol;
@@ -209,7 +212,7 @@ int             Server::listen(void)
 
 void            Server::m_poll(void)
 {
-    this->m_poll_count = poll(this->m_pfds.data(), this->m_pfds.size(), 5000);
+    this->m_poll_count = poll(this->m_pfds.data(), this->m_pfds.size(), -1);
     if (this->m_poll_count == -1)
     {
         perror("poll: ");
@@ -233,8 +236,8 @@ int             Server::startServer(void)
         unsigned long i = 0;
         while (i < this->m_pfds.size() && this->m_poll_count)
         {
+            std::cout << "go to poll" << std::endl;
             // WE GOT A CONNECTION
-            std::cout << "listening" << std::endl;
             if (this->m_pfds[i].revents & POLLIN)
             {
                 // IT'S OUR SERVER
@@ -283,12 +286,13 @@ int             Server::startServer(void)
                     else
                     {
                         buffer[bytesRead] = '\0';
-                        printf("Received: [%s]\n", buffer);
+                        printf("Received: [%s] in fd: %d\n", buffer, this->m_pfds[i].fd);
                         // add to client buffer, until carriage return and new line
                     }
                 }
+                this->m_poll_count--;
             }
-            this->m_poll_count--;
+            i++;
         }
         //poll
         //loop on pollcount

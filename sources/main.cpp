@@ -1,6 +1,6 @@
 #include "irc_server.hpp"
 #include <iostream>
-
+ 
 int main(void)
 {
     Server myServer;
