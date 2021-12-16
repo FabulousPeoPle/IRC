@@ -103,7 +103,7 @@ int         Server::setServerInfo(void)
     return (0);
 }
 
-int             Server::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen)
+int             Server::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen) // tested
 {
     int yes = 1;
 
@@ -112,8 +112,6 @@ int             Server::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, s
         perror("socket:");
         return (-1);
     }
-    // making the socket NON_BLOCKING in preparation for poll()
-    fcntl(this->m_sockfd, F_SETFL, O_NONBLOCK);
     // allowing a port to be reused, unless there is a socket already listening to the port
     if (setsockopt(this->m_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
     {
@@ -124,7 +122,7 @@ int             Server::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, s
     }
     if ((bind(this->m_sockfd, addr, addrlen)))
     {
-        perror("bind:");
+        perror("bind");
         return (-2);
     }
     return (0);
@@ -205,13 +203,13 @@ int             Server::listen(void)
         perror("listen: ");
         exit(-1);
     }
-    this->m_pfds.push_back((t_pollfd){this->m_sockfd, POLLIN});
+    this->m_pfds.push_back((t_pollfd){this->m_sockfd, POLLIN, 0});
     return (0);
 }
 
 void            Server::m_poll(void)
 {
-    this->m_poll_count = poll(this->m_pfds.data(), this->m_pfds.size(), -1);
+    this->m_poll_count = poll(this->m_pfds.data(), this->m_pfds.size(), 5000);
     if (this->m_poll_count == -1)
     {
         perror("poll: ");
@@ -231,31 +229,45 @@ int             Server::startServer(void)
     while (1)
     {
         this->m_poll();
-        int i = 0;
+        // std::cout << "listening" << std::endl;
+        unsigned long i = 0;
         while (i < this->m_pfds.size() && this->m_poll_count)
         {
             // WE GOT A CONNECTION
+            std::cout << "listening" << std::endl;
             if (this->m_pfds[i].revents & POLLIN)
             {
                 // IT'S OUR SERVER
+                std::cout << "we got something in fd " << this->m_pfds[i].fd << std::endl;
                 if (this->m_pfds[i].fd == this->m_sockfd)
                 {
+                    std::cout << "new connection" << std::endl;
                     t_sockaddr_storage  remoteAddr;
                     socklen_t           addrlen = sizeof(t_sockaddr_storage);
                     int                 newFd = accept(this->m_sockfd, (t_sockaddr*)&remoteAddr,
                                                         &addrlen);
+                    // this might be usless
+                    // find a way to check if the connection is from a client we already have
                     if (newFd == -1)
-                        perror("accept: ");
-                    else
                     {
-                        this->m_pfds.push_back((t_pollfd){newFd, POLLIN});
-                        // Should also work with IPv6 in the future
-                        printf("Got a new connection from: [%s], on socketFd: [%d].\n",
-                                inet_ntoa(((t_sockaddr_in*)&remoteAddr)->sin_addr), this->m_sockfd);
+                        perror("accept: ");
+                        continue ;
                     }
+                    this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
+                    // can push a pointer instead of a copy
+                    // this->m_clients.push_back(Client(newFd, remoteAddr, addrlen));
+                    /* for now let's assume that a newFd is a new client
+                     * we shall later check if a client connected multiple times
+                     * should check for protocol, port, family, address??
+                     */
+                    // this->m_addToClientList(newFd, remoteAddr, addrlen);
+                    // might be usless, since we won't be accepting unless poll() says we can
+                    // fcntl(newFd, F_SETFL, O_NONBLOCK);
                 }
                 else
                 {
+                    // IT'S A CLIENT
+                    std::cout << "receiving\n";
                     char    buffer[BUFFER_SIZE];
                     int     bytesRead = recv(this->m_pfds[i].fd, buffer, BUFFER_SIZE, 0);
 
@@ -272,11 +284,11 @@ int             Server::startServer(void)
                     {
                         buffer[bytesRead] = '\0';
                         printf("Received: [%s]\n", buffer);
-                        
+                        // add to client buffer, until carriage return and new line
                     }
-
                 }
             }
+            this->m_poll_count--;
         }
         //poll
         //loop on pollcount

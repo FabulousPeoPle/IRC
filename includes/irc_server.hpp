@@ -31,7 +31,23 @@ typedef struct sockaddr_in      t_sockaddr_in;
 typedef struct sockaddr_in6     t_sockaddr_in6;
 typedef struct pollfd           t_pollfd;  
 
-class Client;
+class Client {
+    public:
+        Client(void);
+        Client(int fd, t_sockaddr_storage addr, socklen_t addrlen)
+        {
+            this->m_fd = fd;
+            this->m_addr = addr;
+            this->m_addrlen = addrlen;
+        };
+        t_sockaddr_storage  addr;
+    private:
+        int                 m_fd;
+        char                *m_buffer;
+        t_sockaddr_storage  m_addr;
+        socklen_t           m_addrlen;     
+        bool                m_setRecvData(char *, int);
+};
 
 typedef struct      s_m_socketInfo
 {
@@ -86,6 +102,9 @@ class Server {
         void*                   m_getInAddr(t_sockaddr* addr) const;
         //void                    m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
         void                    m_parse(std::string& str);
+        void                    m_addToClientList(int fd, t_sockaddr_storage& remoteAddr,
+                                        socklen_t addrlen);
+        // void                    m_addrCompare(struct in_addr& addr, struct in_addr& addr2) const;
 
 
 
@@ -105,6 +124,8 @@ class Server {
         int                     m_poll_count;
         std::vector<t_pollfd>   m_pfds;
         std::vector<Client>     m_clients;
+
+
 };
 
 #endif

@@ -6,7 +6,7 @@
 #    By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2021/10/05 12:47:22 by ohachim           #+#    #+#              #
-#    Updated: 2021/12/03 00:03:12 by ohachim          ###   ########.fr        #
+#    Updated: 2021/12/16 11:42:58 by ohachim          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@ CC = clang++
 
 SRC_PATH = sources
 
-SRC_NAME = main.cpp
+SRC_NAME = main.cpp irc_server.cpp
 
 OBJ_PATH = obj
 
