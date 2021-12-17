@@ -251,12 +251,19 @@ int             Server::startServer(void)
                                                         &addrlen);
                     // this might be usless
                     // find a way to check if the connection is from a client we already have
+
+                    m_clients.push_back(Client())
+                    /*  create  a new client
+                    *   create a new message using client  
+                    */
+                   /* create new client */
                     if (newFd == -1)
                     {
                         perror("accept: ");
                         continue ;
                     }
                     this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
+
                     // can push a pointer instead of a copy
                     // this->m_clients.push_back(Client(newFd, remoteAddr, addrlen));
                     /* for now let's assume that a newFd is a new client
@@ -273,6 +280,13 @@ int             Server::startServer(void)
                     std::cout << "receiving\n";
                     char    buffer[BUFFER_SIZE];
                     int     bytesRead = recv(this->m_pfds[i].fd, buffer, BUFFER_SIZE, 0);
+
+                    // command option
+                    // fd = 3
+                    // add characters to Message()
+                    // if messageIscompleted()
+                        // set message completed TODO: CLEAN
+                        // relay() // check authentification
 
                     if (bytesRead <= 0)
                     {

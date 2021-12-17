@@ -32,6 +32,7 @@ typedef struct sockaddr_in6     t_sockaddr_in6;
 typedef struct pollfd           t_pollfd;  
 
 class Client;
+class Message;
 typedef struct      s_m_socketInfo
 {
 
@@ -92,7 +93,7 @@ class Server {
 
 
         const char*                   m_port;
-        //  Maybe this is usless since we are always going to connect to the same thing
+        // Maybe this is usless since we are always going to connect to the same thing
         char*                   m_hostname;
         t_addrinfo*             m_servinfo;
         t_addrinfo              m_hints;
@@ -106,7 +107,9 @@ class Server {
 
         int                     m_poll_count;
         std::vector<t_pollfd>   m_pfds;
-        // std::vector<Client>     m_clients;
+
+        std::vector<Client>     m_clients;
+
 
 
 };
