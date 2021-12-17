@@ -1,32 +1,33 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   IRCMessage.cpp                                     :+:      :+:    :+:   */
+/*   Message.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2021/12/10 19:01:38 by azouiten         ###   ########.fr       */
+/*   Updated: 2021/12/17 13:28:38 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "IRCMessage.hpp"
+#include "Message.hpp"
 
-IRCMessage::IRCMessage(void){}
+Message::Message(void)
+{}
 
-IRCMessage::IRCMessage(IRCMessage const & src)
+Message::Message(Message const & src)
 {
     if (&src != this)
         *this = src;
 }
 
-IRCMessage::IRCMessage(std::string message)
+Message::Message(std::string message, Client & client) : _client(&client)
 {
     _message = (char *)message.c_str();
     // should i call the parse function in here? is that a good thing to do?
 }
 
-IRCMessage & IRCMessage::operator=(IRCMessage const & rhs)
+Message & Message::operator=(Message const & rhs)
 {
     _message = rhs._message; //allocate new string?
     command = rhs.command;
@@ -34,7 +35,7 @@ IRCMessage & IRCMessage::operator=(IRCMessage const & rhs)
     return (*this);
 }
 
-int  IRCMessage::checkCommand(char *token)
+int  Message::checkCommand(char *token)
 {
     int index = 0;
     
@@ -47,7 +48,7 @@ int  IRCMessage::checkCommand(char *token)
     return (1);
 }
 
-void IRCMessage::parse(void)
+void Message::parse(void)
 {
     char *token = NULL;
 
@@ -72,4 +73,4 @@ void IRCMessage::parse(void)
     }
 }
 
-IRCMessage::~IRCMessage(void){}
+Message::~Message(void){}
