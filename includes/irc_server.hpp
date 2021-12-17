@@ -2,7 +2,6 @@
 # define IRC_SERVER_HPP
 
 #include <sstream>
-#include <iostream>
 #include <string>
 #include <unistd.h>
 
@@ -10,6 +9,8 @@
 
 #include <poll.h>
 
+
+#include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -109,9 +110,6 @@ class Server {
         std::vector<t_pollfd>   m_pfds;
 
         std::vector<Client>     m_clients;
-
-
-
 };
 
 #endif
