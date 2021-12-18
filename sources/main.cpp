@@ -1,4 +1,4 @@
-#include "irc_server.hpp"
+#include "Server.hpp"
 #include <iostream>
 
 char* strdup(const char *s)

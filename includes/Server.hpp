@@ -1,5 +1,5 @@
-#ifndef IRC_SERVER_HPP
-# define IRC_SERVER_HPP
+#ifndef _SERVER_HPP_
+# define _SERVER_HPP_
 
 #include <sstream>
 #include <string>
