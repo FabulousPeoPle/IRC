@@ -1,5 +1,8 @@
 #include "irc_server.hpp"
 
+char* strdup(const char *s);
+
+
 Server::Server(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME)
 {
     std::cout << "Default Server constructor called." << std::endl;
@@ -17,7 +20,7 @@ Server::~Server(void)
     std::cout << "Default Server destructor called." << std::endl;
 }
 
-Server::Server(char* port, char* hostname) : m_port(port), m_hostname(hostname)
+Server::Server(std::string port, std::string hostname, std::string name) : m_serverName(name), m_port(port), m_hostname(hostname)
 {
     std::cout << "Port/Hostname constructor called." << std::endl;
     this->m_servinfo = NULL;
@@ -37,17 +40,17 @@ Server::Server(const Server& serverRef)
 
 Server&      Server::operator=(const Server& serverRef)
 {
-    // TODO: NEED TO ADD ALL MEMBER VARIABLES
-    this->m_port = serverRef.getPort();
-    this->m_hostname = serverRef.getHostname();
-    this->m_hints = serverRef.getHints();
+    // TODO: what should I copy
     // should it be a deep copy?
-    *(this->m_servinfo) = serverRef.getServInfo();
-    this->m_sockfd = serverRef.getSockfd();
-    this->m_addr_in6 = serverRef.getAddr_in6();
-    this->m_addr_in = serverRef.getAddr_in();
+    (void)serverRef;
     return (*this);
 }
+
+std::string     Server::getServName(void) const
+{
+    return (this->m_serverName);
+}
+
 
 t_sockaddr_in   Server::getAddr_in(void) const
 {
@@ -64,13 +67,13 @@ int             Server::getSockfd(void) const
     return (this->m_sockfd);
 }
 
-char*           Server::getPort(void)  const
+std::string          Server::getPort(void)  const
 {
     // wtf
-    return (const_cast<char*>(this->m_port));
+    return ((this->m_port));
 }
 
-char*           Server::getHostname(void) const
+std::string           Server::getHostname(void) const
 {
     return (this->m_hostname);
 }
@@ -95,12 +98,19 @@ void            Server::setServerHints(int family, int sockType, int flags)
 int         Server::setServerInfo(void)
 {
     int ret;
+    char* hostname;
 
-    if ((ret = getaddrinfo(this->m_hostname, this->m_port, &this->m_hints, &this->m_servinfo)))
+    if (this->m_hostname.empty())
+        hostname = NULL;
+    else
+        hostname = strdup(this->m_hostname.c_str());
+    if ((ret = getaddrinfo(hostname, this->m_port.c_str(), &this->m_hints, &this->m_servinfo)))
     {
         std::cerr << "getaddrinfo error: " << gai_strerror(ret) << std::endl;
-        return (-2);
+        free(hostname);
+        return (-1);
     }
+    free(hostname);
     return (0);
 }
 
@@ -284,22 +294,15 @@ void            Server::m_managePoll(void)
 
     while (i < this->m_pfds.size() && this->m_poll_count)
     {
-        // WE GOT A CONNECTION
-        // managePoll
         if (this->m_pfds[i].revents & POLLIN)
         {
-            // IT'S OUR SERVER
             if (this->m_pfds[i].fd == this->m_sockfd)
             {
                 if (this->m_manageServerEvent())
                     continue ;
             }
             else
-            {
-                this->m_manageClientEvent(i);
-                // IT'S A CLIENT
-                
-            }
+                this->m_manageClientEvent(i); 
             this->m_poll_count--;
         }
         i++;

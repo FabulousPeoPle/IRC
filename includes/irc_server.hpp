@@ -37,9 +37,9 @@ typedef struct pollfd           t_pollfd;
 
 class Client;
 class Message;
-typedef struct      s_m_socketInfo
+// Add this one to client class.
+typedef struct      s_m_socketInfo 
 {
-
     int family;
     int socktype;
     int protocol;
@@ -53,13 +53,13 @@ class Server {
     public:
                                 // constructors are probably going to be usless
                                 Server(void);
-                                Server(char* hostname, char* port);
+                                Server(std::string port, std::string hostname, std::string serverName);
                                 Server(const Server& serverRef);
                                 ~Server();
         Server&              operator=(const Server& serverRef);
 
-        char*                   getPort(void) const;
-        char*                   getHostname(void) const;
+        std::string             getPort(void) const;
+        std::string             getHostname(void) const;
         t_addrinfo              getHints(void) const;
         t_addrinfo              getServInfo(void) const;
         int                     getSockfd(void) const;
@@ -68,6 +68,7 @@ class Server {
 
         //  Might wanna set protection for multiple IP adresses
 
+        std::string             getServName(void) const;
         int                     setServerInfo(void);
         void                    setServerHints(int family, int sockType, int flags);
 
@@ -81,7 +82,6 @@ class Server {
         int                     listen(void);
 
         int                     startServer(void);
-
 
     private:
 
@@ -105,23 +105,24 @@ class Server {
 
 
 
-        const char*             m_port;
+        const std::string               m_serverName;
+        const std::string               m_port;
         // Maybe this is usless since we are always going to connect to the same thing
-        char*                   m_hostname;
-        t_addrinfo*             m_servinfo;
-        t_addrinfo              m_hints;
+        const std::string               m_hostname;
+        t_addrinfo*                     m_servinfo;
+        t_addrinfo                      m_hints;
         // in case we wanted to do it manually
-        t_sockaddr_in           m_addr_in;
-        t_sockaddr_in6          m_addr_in6;
+        t_sockaddr_in                   m_addr_in;
+        t_sockaddr_in6                  m_addr_in6;
         
-        int                     m_sockfd;
-        // this might be totally usless
-        t_socketInfo            m_socketInfo;
+        int                             m_sockfd;
+        // this might be totally         usless
+        t_socketInfo                    m_socketInfo;
 
-        int                     m_poll_count;
-        std::vector<t_pollfd>   m_pfds;
+        int                             m_poll_count;
+        std::vector<t_pollfd>           m_pfds;
 
-        std::map<int, Client>    m_clients;
+        std::map<int, Client>           m_clients;
 };
 
 #endif
