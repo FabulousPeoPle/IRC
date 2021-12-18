@@ -137,10 +137,8 @@ int             Server::setSockfd(int family)
 
     for (p = this->m_servinfo; p != NULL; p = p->ai_next)
     {
-        std::cout << "family printing: " << p->ai_family << std::endl;
-        if (p->ai_family == family) // to check
+        if (p->ai_family == family || family == AF_UNSPEC) // to check
         {
-            printf("family is %d\n", p->ai_family);
             this->m_socketInfo.family = p->ai_family;
             this->m_socketInfo.socktype = p->ai_socktype;
             this->m_socketInfo.protocol = p->ai_protocol;
@@ -232,61 +230,33 @@ int             Server::startServer(void)
     while (1)
     {
         this->m_poll();
-        // std::cout << "listening" << std::endl;
         unsigned long i = 0;
         while (i < this->m_pfds.size() && this->m_poll_count)
         {
-            std::cout << "go to poll" << std::endl;
             // WE GOT A CONNECTION
             if (this->m_pfds[i].revents & POLLIN)
             {
                 // IT'S OUR SERVER
-                std::cout << "we got something in fd " << this->m_pfds[i].fd << std::endl;
                 if (this->m_pfds[i].fd == this->m_sockfd)
                 {
-                    std::cout << "new connection" << std::endl;
                     t_sockaddr_storage  remoteAddr;
                     socklen_t           addrlen = sizeof(t_sockaddr_storage);
                     int                 newFd = accept(this->m_sockfd, (t_sockaddr*)&remoteAddr,
                                                         &addrlen);
-                    // this might be usless
-                    // find a way to check if the connection is from a client we already have
 
-                    m_clients.push_back(Client())
-                    /*  create  a new client
-                    *   create a new message using client  
-                    */
-                   /* create new client */
                     if (newFd == -1)
                     {
                         perror("accept: ");
                         continue ;
                     }
+                    this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
                     this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
-
-                    // can push a pointer instead of a copy
-                    // this->m_clients.push_back(Client(newFd, remoteAddr, addrlen));
-                    /* for now let's assume that a newFd is a new client
-                     * we shall later check if a client connected multiple times
-                     * should check for protocol, port, family, address??
-                     */
-                    // this->m_addToClientList(newFd, remoteAddr, addrlen);
-                    // might be usless, since we won't be accepting unless poll() says we can
-                    // fcntl(newFd, F_SETFL, O_NONBLOCK);
                 }
                 else
                 {
                     // IT'S A CLIENT
-                    std::cout << "receiving\n";
                     char    buffer[BUFFER_SIZE];
                     int     bytesRead = recv(this->m_pfds[i].fd, buffer, BUFFER_SIZE, 0);
-
-                    // command option
-                    // fd = 3
-                    // add characters to Message()
-                    // if messageIscompleted()
-                        // set message completed TODO: CLEAN
-                        // relay() // check authentification
 
                     if (bytesRead <= 0)
                     {
@@ -295,24 +265,34 @@ int             Server::startServer(void)
                         else
                             perror("recv: ");
                         this->m_pfds.erase(this->m_pfds.begin() + i);
+                        m_clients.erase(this->m_pfds[i].fd);
                         close(this->m_pfds[i].fd);
                     }
                     else
                     {
                         buffer[bytesRead] = '\0';
-                        printf("Received: [%s] in fd: %d\n", buffer, this->m_pfds[i].fd);
-                        // add to client buffer, until carriage return and new line
+                        if (this->m_manageRecv(buffer, this->m_pfds[i].fd))
+                        {
+                            // Should authenticate first
+                            this->m_relay(this->m_pfds[i].fd);
+                            this->m_reply(this->m_pfds[i].fd);
+                            this->m_clients[this->m_pfds[i].fd].msg._message = "";
+                        }
                     }
                 }
                 this->m_poll_count--;
             }
             i++;
         }
-        //poll
-        //loop on pollcount
-            //check if event occured
-                //check if the even occured on listener socket
-                    //if yes: accept new connection(client)
-                    //if no: recv msg from client
     }
+}
+
+int	Server::m_manageRecv(std::string message, int clientFd)
+{
+    // maybe setters and getters for this one
+    this->m_clients[clientFd].msg._message += message;
+    std::cout << "current message: " << this->m_clients[clientFd].msg._message << std::endl;
+    if (message.find("\r\n") != std::string::npos)
+        return (1);
+    return (0);   
 }

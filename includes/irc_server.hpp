@@ -6,8 +6,11 @@
 #include <unistd.h>
 
 #include <vector>
+#include <map>
 
 #include <poll.h>
+
+#include <Client.hpp>
 
 
 #include <iostream>
@@ -87,13 +90,16 @@ class Server {
         void*                   m_getInAddr(t_sockaddr* addr) const;
         //void                    m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
         void                    m_parse(std::string& str);
-        void                    m_addToClientList(int fd, t_sockaddr_storage& remoteAddr,
-                                        socklen_t addrlen);
+        int                     m_manageRecv(std::string message, int clientFd);
+        void                    m_relay(int clientFd){(void)clientFd;};
+        void                    m_reply(int clientFd){(void)clientFd; std::cout << "Will be ralyed\n";};
+        
+
         // void                    m_addrCompare(struct in_addr& addr, struct in_addr& addr2) const;
 
 
 
-        const char*                   m_port;
+        const char*             m_port;
         // Maybe this is usless since we are always going to connect to the same thing
         char*                   m_hostname;
         t_addrinfo*             m_servinfo;
@@ -109,7 +115,7 @@ class Server {
         int                     m_poll_count;
         std::vector<t_pollfd>   m_pfds;
 
-        std::vector<Client>     m_clients;
+        std::map<int, Client>    m_clients;
 };
 
 #endif
