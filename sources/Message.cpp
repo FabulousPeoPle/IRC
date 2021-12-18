@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2021/12/17 13:37:33 by azouiten         ###   ########.fr       */
+/*   Updated: 2021/12/18 14:45:48 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,27 +50,27 @@ int  Message::checkCommand(char *token)
 
 void Message::parse(void)
 {
-    char *token = NULL;
+    // char *token = NULL;
 
-    // fetch the command while skipping if the prefix if present
-    char * msg = strdup(_message);
-    token = strtok(msg, " ");
-    while (token && !checkCommand(token))
-        token = strtok(NULL, " ");
-    command = token;
+    // // fetch the command while skipping if the prefix if present
+    // char * msg = strdup(_message);
+    // token = strtok(msg, " ");
+    // while (token && !checkCommand(token))
+    //     token = strtok(NULL, " ");
+    // command = token;
     
-    std::cout << "command : " << command << std::endl;
+    // std::cout << "command : " << command << std::endl;
 
-    // take the following arguments
-    while (token)
-    {
-        token = strtok(NULL, " ");
-        if (token)
-        {
-            arguments.push_back(token);
-            std::cout << "argument : " << token << std::endl;
-        }
-    }
+    // // take the following arguments
+    // while (token)
+    // {
+    //     token = strtok(NULL, " ");
+    //     if (token)
+    //     {
+    //         arguments.push_back(token);
+    //         std::cout << "argument : " << token << std::endl;
+    //     }
+    // }
 }
 
 Message::~Message(void){}

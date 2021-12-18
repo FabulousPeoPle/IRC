@@ -3,16 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2021/12/16 15:55:09 by azouiten         ###   ########.fr       */
+/*   Updated: 2021/12/18 11:42:57 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 
-Client::Client(void) : _authenticated(false)
+Client::Client(void) : _authenticated(false) 
 {}
 
 Client::Client(Client const & src)
@@ -36,5 +36,6 @@ Client & Client::operator=(Client const & rhs)
 	_nickname = rhs._nickname;
 	_username = rhs._username;
 	_ip_address = rhs._ip_address;
-	_authenticated = _authenticated;
+	_authenticated = rhs._authenticated;
+	return (*this);
 }
