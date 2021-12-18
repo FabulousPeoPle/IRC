@@ -84,6 +84,12 @@ class Server {
 
 
     private:
+
+        bool                    m_isAuthenticated(int clientFd);
+
+        void                    m_managePoll(void);
+        int                     m_manageServerEvent(void);
+        void                    m_manageClientEvent(int pollIndex);
         //  Maybe this is usless since we are always going to connect to the same thing
         int                     m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen);
         void                    m_poll(void);
@@ -93,7 +99,7 @@ class Server {
         int                     m_manageRecv(std::string message, int clientFd);
         void                    m_relay(int clientFd){(void)clientFd;};
         void                    m_reply(int clientFd){(void)clientFd; std::cout << "Will be ralyed\n";};
-        
+
 
         // void                    m_addrCompare(struct in_addr& addr, struct in_addr& addr2) const;
 

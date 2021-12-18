@@ -225,65 +225,93 @@ void*           Server::m_getInAddr(t_sockaddr* addr) const
     return (&(((t_sockaddr_in6*)addr)->sin6_addr));
 }
 
+int            Server::m_manageServerEvent(void)
+{
+    t_sockaddr_storage  remoteAddr;
+    socklen_t           addrlen = sizeof(t_sockaddr_storage);
+    int                 newFd = accept(this->m_sockfd, (t_sockaddr*)&remoteAddr,
+                                        &addrlen);
+    if (newFd == -1)
+    {
+        perror("accept: ");
+        return (-1);
+    }
+    this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
+    this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
+    return (0);
+}
+
+bool            Server::m_isAuthenticated(int clientFd)
+{
+    return (this->m_clients[clientFd]._authenticated);
+}
+
+void             Server::m_manageClientEvent(int pollIndex)
+{
+    char    buffer[BUFFER_SIZE];
+    int     bytesRead = recv(this->m_pfds[pollIndex].fd, buffer, BUFFER_SIZE, 0);
+
+    if (bytesRead <= 0)
+    {
+        if (bytesRead == 0)
+            printf("Client disconnected.\n");
+        else
+            perror("recv: ");
+        this->m_pfds.erase(this->m_pfds.begin() + pollIndex);
+        m_clients.erase(this->m_pfds[pollIndex].fd);
+        close(this->m_pfds[pollIndex].fd);
+    }
+    else
+    {
+        buffer[bytesRead] = '\0';
+        if (this->m_manageRecv(buffer, this->m_pfds[pollIndex].fd))
+        {
+            if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
+            {             
+                this->m_relay(this->m_pfds[pollIndex].fd);
+                this->m_reply(this->m_pfds[pollIndex].fd);
+                this->m_clients[this->m_pfds[pollIndex].fd].msg._message = "";
+            }
+            else
+                std::cout << "client not authenticated" << std::endl;
+        }
+    }
+}
+
+void            Server::m_managePoll(void)
+{
+    unsigned long i = 0;
+
+    while (i < this->m_pfds.size() && this->m_poll_count)
+    {
+        // WE GOT A CONNECTION
+        // managePoll
+        if (this->m_pfds[i].revents & POLLIN)
+        {
+            // IT'S OUR SERVER
+            if (this->m_pfds[i].fd == this->m_sockfd)
+            {
+                if (this->m_manageServerEvent())
+                    continue ;
+            }
+            else
+            {
+                this->m_manageClientEvent(i);
+                // IT'S A CLIENT
+                
+            }
+            this->m_poll_count--;
+        }
+        i++;
+    }
+}
+
 int             Server::startServer(void)
 {
     while (1)
     {
         this->m_poll();
-        unsigned long i = 0;
-        while (i < this->m_pfds.size() && this->m_poll_count)
-        {
-            // WE GOT A CONNECTION
-            if (this->m_pfds[i].revents & POLLIN)
-            {
-                // IT'S OUR SERVER
-                if (this->m_pfds[i].fd == this->m_sockfd)
-                {
-                    t_sockaddr_storage  remoteAddr;
-                    socklen_t           addrlen = sizeof(t_sockaddr_storage);
-                    int                 newFd = accept(this->m_sockfd, (t_sockaddr*)&remoteAddr,
-                                                        &addrlen);
-
-                    if (newFd == -1)
-                    {
-                        perror("accept: ");
-                        continue ;
-                    }
-                    this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
-                    this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
-                }
-                else
-                {
-                    // IT'S A CLIENT
-                    char    buffer[BUFFER_SIZE];
-                    int     bytesRead = recv(this->m_pfds[i].fd, buffer, BUFFER_SIZE, 0);
-
-                    if (bytesRead <= 0)
-                    {
-                        if (bytesRead == 0)
-                            printf("Client disconnected.\n");
-                        else
-                            perror("recv: ");
-                        this->m_pfds.erase(this->m_pfds.begin() + i);
-                        m_clients.erase(this->m_pfds[i].fd);
-                        close(this->m_pfds[i].fd);
-                    }
-                    else
-                    {
-                        buffer[bytesRead] = '\0';
-                        if (this->m_manageRecv(buffer, this->m_pfds[i].fd))
-                        {
-                            // Should authenticate first
-                            this->m_relay(this->m_pfds[i].fd);
-                            this->m_reply(this->m_pfds[i].fd);
-                            this->m_clients[this->m_pfds[i].fd].msg._message = "";
-                        }
-                    }
-                }
-                this->m_poll_count--;
-            }
-            i++;
-        }
+        this->m_managePoll();
     }
 }
 
