@@ -15,8 +15,7 @@ int main(void)
     
     Server myServer("6667", "", "My Server");
 
-
-
+    std::cout << "Server name: " << myServer.getServName() << std::endl;
     myServer.setServerHints(AF_INET6, SOCK_STREAM, AI_PASSIVE);
     myServer.setServerInfo();
     myServer.setSockfd(AF_INET6);

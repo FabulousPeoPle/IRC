@@ -3,7 +3,10 @@
 
 #include <sstream>
 #include <string>
+#include <iostream>
+
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <vector>
 #include <map>
@@ -12,14 +15,11 @@
 
 #include <Client.hpp>
 
-
-#include <iostream>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include <fcntl.h>
 
 #define DEFAULT_HOSTNAME NULL
 #define DEFAULT_PORT "6667"
@@ -34,6 +34,8 @@ typedef struct sockaddr_storage t_sockaddr_storage;
 typedef struct sockaddr_in      t_sockaddr_in;
 typedef struct sockaddr_in6     t_sockaddr_in6;
 typedef struct pollfd           t_pollfd;  
+
+std::string strToken(std::string str);
 
 class Client;
 class Message;
@@ -97,13 +99,14 @@ class Server {
         //void                    m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
         void                    m_parse(std::string& str);
         int                     m_manageRecv(std::string message, int clientFd);
+        bool                    m_tryAuthentificate(Client& client);
         void                    m_relay(int clientFd){(void)clientFd;};
         void                    m_reply(int clientFd){(void)clientFd; std::cout << "Will be ralyed\n";};
 
+        void                    m_pushBackMessage(int clientFd);
+
 
         // void                    m_addrCompare(struct in_addr& addr, struct in_addr& addr2) const;
-
-
 
         const std::string               m_serverName;
         const std::string               m_port;

@@ -6,7 +6,6 @@ std::string     Server::getServName(void) const
     return (this->m_serverName);
 }
 
-
 t_sockaddr_in   Server::getAddr_in(void) const
 {
     return (this->m_addr_in);

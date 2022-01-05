@@ -38,7 +38,7 @@ Server::Server(const Server& serverRef)
     *this = serverRef;
 }
 
-Server&      Server::operator=(const Server& serverRef)
+Server&         Server::operator=(const Server& serverRef)
 {
     // TODO: what should I copy
     // should it be a deep copy?
@@ -53,7 +53,7 @@ void            Server::setServerHints(int family, int sockType, int flags)
     this->m_hints.ai_flags = flags;
 }
 
-int         Server::setServerInfo(void)
+int             Server::setServerInfo(void)
 {
     int ret;
     char* hostname;
@@ -195,6 +195,7 @@ void*           Server::m_getInAddr(t_sockaddr* addr) const
 
 int            Server::m_manageServerEvent(void)
 {
+    printf("something happening\n");
     t_sockaddr_storage  remoteAddr;
     socklen_t           addrlen = sizeof(t_sockaddr_storage);
     int                 newFd = accept(this->m_sockfd, (t_sockaddr*)&remoteAddr,
@@ -216,6 +217,7 @@ bool            Server::m_isAuthenticated(int clientFd)
 
 void             Server::m_manageClientEvent(int pollIndex)
 {
+    // I have to error management message size
     char    buffer[BUFFER_SIZE];
     int     bytesRead = recv(this->m_pfds[pollIndex].fd, buffer, BUFFER_SIZE, 0);
 
@@ -238,10 +240,13 @@ void             Server::m_manageClientEvent(int pollIndex)
             {             
                 this->m_relay(this->m_pfds[pollIndex].fd);
                 this->m_reply(this->m_pfds[pollIndex].fd);
-                this->m_clients[this->m_pfds[pollIndex].fd].msg._message = "";
+                this->m_clients[this->m_pfds[pollIndex].fd].msg._messageQueue.pop_front();
             }
             else
+            {
                 std::cout << "client not authenticated" << std::endl;
+                // this->m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
+            }
         }
     }
 }
@@ -250,9 +255,9 @@ void            Server::m_managePoll(void)
 {
     unsigned long i = 0;
 
+    // event happend on current pfds
     while (i < this->m_pfds.size() && this->m_poll_count)
     {
-        // event happend on current pfds
         if (this->m_pfds[i].revents & POLLIN)
         {
             // if server socket
@@ -278,12 +283,40 @@ int             Server::startServer(void)
     }
 }
 
+void    printQueue(std::deque<std::string> q)
+{
+    std::deque<std::string>::iterator ib = q.begin();
+    std::deque<std::string>::iterator ie = q.end();
+
+    std::cout << "Printing queue\n";
+    for (std::deque<std::string>::iterator i = ib; i != ie; i++)
+    {
+        std::cout << "[";
+        std::cout << *i;
+        std::cout << "]";
+    }
+    std::cout << '\n';
+}
+
 int	Server::m_manageRecv(std::string message, int clientFd)
 {
-    // maybe setters and getters for this one
-    this->m_clients[clientFd].msg._message += message;
-    std::cout << "current message: " << this->m_clients[clientFd].msg._message << std::endl;
-    if (message.find("\r\n") != std::string::npos)
+    t_strDQeue& clientQueue = this->m_clients[clientFd].msg._messageQueue;
+    std::string token = strToken(message);
+    
+    if (!token.size())
+        return (0);
+    while (token.size())
+    {
+        if (!clientQueue.size() || clientQueue.back().find("\r\n")
+                                            != std::string::npos)
+        {
+            clientQueue.push_back(token);
+        }
+        else if (clientQueue.back().find("\r\n") == std::string::npos)
+            clientQueue.back() += token;
+        token = strToken("");
+    }
+    if (clientQueue.front().find("\r\n") != std::string::npos)
         return (1);
-    return (0);   
+    return (0);
 }

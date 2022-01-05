@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/05 15:26:00 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/05 15:25:51 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,7 +53,7 @@ void Message::parse(void)
     // char *token = NULL;
 
     // // fetch the command while skipping if the prefix if present
-    // char * msg = strdup(_message);
+    // char * msg = strdup(_messageQueue);
     // token = strtok(msg, " ");
     // while (token && !checkCommand(token))
     //     token = strtok(NULL, " ");

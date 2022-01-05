@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2021/12/18 10:58:19 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/05 16:14:07 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,15 @@
 #define MESSAGE_HPP
 
 #include <iostream>
+
+#include <deque>
 #include <vector>
 
 class Client;
+
+std::string strToken(std::string str);
+
+typedef std::deque<std::string> t_strDQeue;
 
 #define USER_COMMAND "USER"
 #define NICK_COMMAND "NICK"
@@ -25,7 +31,7 @@ class Client;
 class Message
 {
 public:
-    std::string _message;
+    t_strDQeue  _messageQueue;
     Client      *_client;
     // bool        _completed;
     std::string command;
