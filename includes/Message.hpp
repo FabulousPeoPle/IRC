@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Message.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/05 16:14:07 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/07 18:33:28 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,11 +30,15 @@ typedef std::deque<std::string> t_strDQeue;
 
 class Message
 {
+private:
+    std::string _message;
+
 public:
     t_strDQeue  _messageQueue;
     Client      *_client;
     // bool        _completed;
     std::string command;
+    std::string _literalMsg;
     std::vector<std::string> arguments;
     // client class is still under construction
     

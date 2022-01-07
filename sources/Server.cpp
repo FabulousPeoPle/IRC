@@ -247,9 +247,27 @@ void             Server::m_manageClientEvent(int pollIndex)
             else
             {
                 std::cout << "client not authenticated" << std::endl;
-                // this->m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
+                this->m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
             }
         }
+    }
+}
+
+bool    Server::m_tryAuthentificate(Client& client)
+{
+    std::string mode;
+    client.msg.parse();
+    if (client.msg.command == NICK_COMMAND)
+    {
+        // a fuction that check the availability of the nickname        
+    }
+    // pop the first message
+    client.msg.parse();
+    if (client.msg.command == USER_COMMAND)
+    {
+        client._username = client.msg.arguments[0];
+        mode = client.msg.arguments[1];
+        client._realname = client.msg._literalMsg;
     }
 }
 

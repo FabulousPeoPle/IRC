@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2021/12/20 16:02:24 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/07 19:19:37 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@ class Client
         socklen_t                _addr_size;
         std::string              _nickname;
         std::string              _username;
+        std::string              _realname;
         std::string              _ip_address;
         Message                  msg;
         bool                     _authenticated;
