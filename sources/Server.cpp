@@ -235,6 +235,7 @@ void             Server::m_manageClientEvent(int pollIndex)
     {
         buffer[bytesRead] = '\0';
         std::cout << "this is the buffer |" << buffer << "|\n";
+        // send(this->m_pfds[pollIndex].fd, ":555 001 ohachim :welcome\r\n", 86, 0);
         if (this->m_manageRecv(buffer, this->m_pfds[pollIndex].fd))
         {
             if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
@@ -308,17 +309,17 @@ int	Server::m_manageRecv(std::string message, int clientFd)
         return (0);
     while (token.size())
     {
-        if (!clientQueue.size() || clientQueue.back().find("\n")
+        if (!clientQueue.size() || clientQueue.back().find("\r\n")
                                             != std::string::npos)
         {
             clientQueue.push_back(token);
         }
-        else if (clientQueue.back().find("\n") == std::string::npos)
+        else if (clientQueue.back().find("\r\n") == std::string::npos)
             clientQueue.back() += token;
         token = strToken("");
     }
     printQueue(clientQueue);
-    if (clientQueue.front().find("\n") != std::string::npos)
+    if (clientQueue.front().find("\r\n") != std::string::npos)
         return (1);
     return (0);
 }

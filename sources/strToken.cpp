@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/05 15:30:49 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/05 18:03:40 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/06 18:47:44 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ std::string strToken(std::string str)
     if (!strDup.size())
         return "";
 
-    int found = strDup.find("\n");
+    int found = strDup.find("\r\n");
 
     if (static_cast<unsigned long>(found) == std::string::npos)
     {
@@ -34,8 +34,8 @@ std::string strToken(std::string str)
         return (toReturn);
     }
 
-    std::string toReturn = strDup.substr(0, found + 1);
+    std::string toReturn = strDup.substr(0, found + 2);
     
-    strDup = strDup.substr(found + 1, std::string::npos);
+    strDup = strDup.substr(found + 2, std::string::npos);
     return (toReturn);
 }
