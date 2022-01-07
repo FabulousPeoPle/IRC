@@ -28,6 +28,8 @@
 
 #define BUFFER_SIZE 512
 
+#define END_STRING "\r\n"
+
 typedef struct addrinfo         t_addrinfo;
 typedef struct sockaddr         t_sockaddr;
 typedef struct sockaddr_storage t_sockaddr_storage;
@@ -103,7 +105,9 @@ class Server {
         void                    m_relay(int clientFd){(void)clientFd;};
         void                    m_reply(int clientFd){(void)clientFd; std::cout << "Will be ralyed\n";};
 
-        void                    m_pushBackMessage(int clientFd);
+        int                     m_send(int toFd, std::string message);
+
+        // void                    m_pushBackMessage(int clientFd);
 
 
         // void                    m_addrCompare(struct in_addr& addr, struct in_addr& addr2) const;

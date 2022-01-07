@@ -62,7 +62,7 @@ int             Server::setServerInfo(void)
         hostname = NULL;
     else
         hostname = strdup(this->m_hostname.c_str());
-    if ((ret = getaddrinfo(hostname, this->m_port.c_str(), &this->m_hints, &this->m_servinfo)))
+    if ((ret = getaddrinfo(NULL, this->m_port.c_str(), &this->m_hints, &this->m_servinfo)))
     {
         std::cerr << "getaddrinfo error: " << gai_strerror(ret) << std::endl;
         free(hostname);
@@ -139,8 +139,8 @@ int             Server::setSockfd_in(void)
     this->m_addr_in.sin_port = htons(port_value_store);
     this->m_socketInfo.socktype = SOCK_STREAM;
     this->m_socketInfo.protocol = 0;
-    if ((ret = this->m_setSocket(this->m_socketInfo, (t_sockaddr*)&this->m_addr_in6,
-        sizeof(this->m_addr_in6))))
+    if ((ret = this->m_setSocket(this->m_socketInfo, (t_sockaddr*)&this->m_addr_in,
+        sizeof(this->m_addr_in))))
         return (-1);
     return (0);
 }
@@ -300,6 +300,22 @@ void    printQueue(std::deque<std::string> q)
     std::cout << '\n';
 }
 
+int Server::m_send(int toFd, std::string message)
+{
+    int bytesSent = 0;
+    message += END_STRING;
+    int size = message.size();
+
+    while (size)
+    {
+        bytesSent = send(toFd, message.data() + bytesSent, size, 0);
+        if (bytesSent == -1)
+            return (-1);
+        size -= bytesSent;
+    }
+    return (0);
+}
+
 int	Server::m_manageRecv(std::string message, int clientFd)
 {
     t_strDQeue& clientQueue = this->m_clients[clientFd].msg._messageQueue;
@@ -309,17 +325,17 @@ int	Server::m_manageRecv(std::string message, int clientFd)
         return (0);
     while (token.size())
     {
-        if (!clientQueue.size() || clientQueue.back().find("\r\n")
+        if (!clientQueue.size() || clientQueue.back().find(END_STRING)
                                             != std::string::npos)
         {
             clientQueue.push_back(token);
         }
-        else if (clientQueue.back().find("\r\n") == std::string::npos)
+        else if (clientQueue.back().find(END_STRING) == std::string::npos)
             clientQueue.back() += token;
         token = strToken("");
     }
     printQueue(clientQueue);
-    if (clientQueue.front().find("\r\n") != std::string::npos)
+    if (clientQueue.front().find(END_STRING) != std::string::npos)
         return (1);
     return (0);
 }
