@@ -30,6 +30,14 @@
 
 #define END_STRING "\r\n"
 
+namespace Replies
+{
+    enum
+    {
+        RPL_WELCOME,
+    };
+};
+
 typedef struct addrinfo         t_addrinfo;
 typedef struct sockaddr         t_sockaddr;
 typedef struct sockaddr_storage t_sockaddr_storage;
@@ -101,6 +109,7 @@ class Server {
         //void                    m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
         void                    m_parse(std::string& str);
         int                     m_manageRecv(std::string message, int clientFd);
+        int                     m_manageRecv2(std::string message, int clientFd);
         bool                    m_tryAuthentificate(Client& client);
         void                    m_relay(int clientFd){(void)clientFd;};
         void                    m_reply(int clientFd){(void)clientFd; std::cout << "Will be ralyed\n";};

@@ -6,14 +6,16 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/05 15:25:51 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/07 18:11:14 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Message.hpp"
 
 Message::Message(void)
-{}
+{
+    this->message = "";
+}
 
 Message::Message(Message const & src)
 {

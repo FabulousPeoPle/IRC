@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/05 15:26:00 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/07 18:48:04 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ Message::Message(std::string message, Client & client) : _client(&client)
 
 Message & Message::operator=(Message const & rhs)
 {
-    _messageQueue = rhs._messageQueue; //allocate new string?
+    message = rhs.message;
     command = rhs.command;
     arguments = rhs.arguments;
     return (*this);

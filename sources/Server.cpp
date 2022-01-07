@@ -236,7 +236,7 @@ void             Server::m_manageClientEvent(int pollIndex)
         buffer[bytesRead] = '\0';
         std::cout << "this is the buffer |" << buffer << "|\n";
         // send(this->m_pfds[pollIndex].fd, ":555 001 ohachim :welcome\r\n", 86, 0);
-        if (this->m_manageRecv(buffer, this->m_pfds[pollIndex].fd))
+        if (this->m_manageRecv2(buffer, this->m_pfds[pollIndex].fd))
         {
             if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
             {             
@@ -327,15 +327,50 @@ int	Server::m_manageRecv(std::string message, int clientFd)
     {
         if (!clientQueue.size() || clientQueue.back().find(END_STRING)
                                             != std::string::npos)
-        {
             clientQueue.push_back(token);
-        }
         else if (clientQueue.back().find(END_STRING) == std::string::npos)
             clientQueue.back() += token;
         token = strToken("");
     }
     printQueue(clientQueue);
     if (clientQueue.front().find(END_STRING) != std::string::npos)
+        return (1);
+    return (0);
+}
+
+void    printQueue2(std::deque<Message> q)
+{
+    std::deque<Message>::iterator ib = q.begin();
+    std::deque<Message>::iterator ie = q.end();
+
+    std::cout << "Printing queue\n";
+    for (std::deque<Message>::iterator i = ib; i != ie; i++)
+    {
+        std::cout << "[";
+        std::cout << i->message;
+        std::cout << "]";
+    }
+    std::cout << '\n';
+}
+
+
+int	Server::m_manageRecv2(std::string message, int clientFd)
+{
+    t_messageDQeue& messageQueue = this->m_clients[clientFd].messages;
+    std::string token = strToken(message);
+
+    std::cout << "Queue size == " << messageQueue.size() << std::endl;
+    while (token.size())
+    {
+        if (!messageQueue.size() || messageQueue.back().message.find(END_STRING)
+                                                        != std::string::npos)
+            messageQueue.push_back(Message(message));
+        else if (messageQueue.back().message.find(END_STRING) == std::string::npos)
+            messageQueue.back().message += token;
+        token = strToken("");
+    }
+    printQueue2(messageQueue);
+    if (messageQueue.back().message.find(END_STRING) != std::string::npos)
         return (1);
     return (0);
 }
