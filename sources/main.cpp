@@ -22,4 +22,5 @@ int main(void)
     myServer.setSockfd(AF_INET6);
     myServer.listen();
     myServer.startServer();
+
 }

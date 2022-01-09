@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/07 18:06:55 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/09 16:42:06 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,7 @@ class Client
         std::string                 _ip_address;
         Message                     msg;
         t_messageDQeue              messages;
+        std::string                 _realname;
         bool                        _authenticated;
 
         Client(void);
