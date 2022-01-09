@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/07 19:40:56 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/09 16:56:19 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,9 @@ Message::Message(std::string message, Client & client) : _client(&client), _lite
 
 Message & Message::operator=(Message const & rhs)
 {
+    // discuss norm to remove one of these
     _message = rhs._message;
+    message = rhs.message;
     command = rhs.command;
     arguments = rhs.arguments;
     return (*this);

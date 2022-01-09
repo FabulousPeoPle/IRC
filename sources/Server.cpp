@@ -236,18 +236,18 @@ void             Server::m_manageClientEvent(int pollIndex)
         buffer[bytesRead] = '\0';
         std::cout << "this is the buffer |" << buffer << "|\n";
         // send(this->m_pfds[pollIndex].fd, ":555 001 ohachim :welcome\r\n", 86, 0);
-        if (this->m_manageRecv2(buffer, this->m_pfds[pollIndex].fd))
+        if (this->m_manageRecv(buffer, this->m_pfds[pollIndex].fd))
         {
             if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
             {             
-                this->m_relay(this->m_pfds[pollIndex].fd);
-                this->m_reply(this->m_pfds[pollIndex].fd);
-                this->m_clients[this->m_pfds[pollIndex].fd].msg._messageQueue.pop_front();
+                // this->m_relay(this->m_pfds[pollIndex].fd);
+                // this->m_reply(this->m_pfds[pollIndex].fd);
+                // this->m_clients[this->m_pfds[pollIndex].fd].msg._messageQueue.pop_front();
             }
             else
             {
                 std::cout << "client not authenticated" << std::endl;
-                this->m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
+                this->m_debugAuthentificate(this->m_pfds[pollIndex].fd);
             }
         }
     }
@@ -294,6 +294,12 @@ void            Server::m_managePoll(void)
         i++;
     }
 }
+void    Server::m_debugAuthentificate(int clientFd)
+{
+    this->m_send(clientFd, ":" + this->m_serverName + " 001 ohachim :Welcome\r\n");
+    this->m_clients[clientFd]._authenticated = true;
+    this->m_clients[clientFd].messages.pop_front();
+}
 
 int             Server::startServer(void)
 {
@@ -302,21 +308,6 @@ int             Server::startServer(void)
         this->m_poll();
         this->m_managePoll();
     }
-}
-
-void    printQueue(std::deque<std::string> q)
-{
-    std::deque<std::string>::iterator ib = q.begin();
-    std::deque<std::string>::iterator ie = q.end();
-
-    std::cout << "Printing queue\n";
-    for (std::deque<std::string>::iterator i = ib; i != ie; i++)
-    {
-        std::cout << "[";
-        std::cout << *i;
-        std::cout << "]";
-    }
-    std::cout << '\n';
 }
 
 int Server::m_send(int toFd, std::string message)
@@ -334,30 +325,8 @@ int Server::m_send(int toFd, std::string message)
     }
     return (0);
 }
-
-int	Server::m_manageRecv(std::string message, int clientFd)
-{
-    t_strDQeue& clientQueue = this->m_clients[clientFd].msg._messageQueue;
-    std::string token = strToken(message);
-
-    if (!token.size())
-        return (0);
-    while (token.size())
-    {
-        if (!clientQueue.size() || clientQueue.back().find(END_STRING)
-                                            != std::string::npos)
-            clientQueue.push_back(token);
-        else if (clientQueue.back().find(END_STRING) == std::string::npos)
-            clientQueue.back() += token;
-        token = strToken("");
-    }
-    printQueue(clientQueue);
-    if (clientQueue.front().find(END_STRING) != std::string::npos)
-        return (1);
-    return (0);
-}
-
-void    printQueue2(std::deque<Message> q)
+// TODO: FOR DEBEGGUING WILL BE REMOVED
+void    printQueue(std::deque<Message> q)
 {
     std::deque<Message>::iterator ib = q.begin();
     std::deque<Message>::iterator ie = q.end();
@@ -372,8 +341,7 @@ void    printQueue2(std::deque<Message> q)
     std::cout << '\n';
 }
 
-
-int	Server::m_manageRecv2(std::string message, int clientFd)
+int	Server::m_manageRecv(std::string message, int clientFd)
 {
     t_messageDQeue& messageQueue = this->m_clients[clientFd].messages;
     std::string token = strToken(message);
@@ -381,15 +349,60 @@ int	Server::m_manageRecv2(std::string message, int clientFd)
     std::cout << "Queue size == " << messageQueue.size() << std::endl;
     while (token.size())
     {
+        std::cout << "this is a token: " << token << std::endl;
         if (!messageQueue.size() || messageQueue.back().message.find(END_STRING)
                                                         != std::string::npos)
-            messageQueue.push_back(Message(message));
+            messageQueue.push_back(Message(token));
         else if (messageQueue.back().message.find(END_STRING) == std::string::npos)
             messageQueue.back().message += token;
         token = strToken("");
     }
-    printQueue2(messageQueue);
+    printQueue(messageQueue);
     if (messageQueue.back().message.find(END_STRING) != std::string::npos)
         return (1);
     return (0);
 }
+
+void    Server::m_eraseClientPolls(int clientFd)
+{
+    std::vector<t_pollfd>::iterator ib = this->m_pfds.begin();
+    std::vector<t_pollfd>::iterator ie = this->m_pfds.end();
+
+    for (std::vector<t_pollfd>::iterator i = ib; i != ie; i++)
+    {
+        if ((*i).fd == clientFd)
+        {
+            this->m_pfds.erase(i);
+            break ;
+        }
+    }
+};
+
+
+
+/********************************************************
+ *                                                      *
+ *                                                      *
+ *         THIS SECTION IS MADE FOR THE COMMANDS        *
+ *                                                      *
+ * *****************************************************/
+
+// not tested/ not working
+void                    Server::m_quit(int clientFd, std::string quitMessage)
+{
+    Client& client = this->m_clients[clientFd];
+
+    std::string messageToSend = ":" + client._nickname + "!" + client.hostname
+                                 + " " + client.messages.front().message;
+
+    std::map<int, Client>::iterator ib = this->m_clients.begin();
+    std::map<int, Client>::iterator ie = this->m_clients.end();
+            
+    for (std::map<int, Client>::iterator i = ib; i != ie; i++)
+        this->m_send((*i).first, messageToSend);
+    // should I cut the connection
+    // stop listening to incoming events
+    this->m_eraseClientPolls(clientFd);
+    // removing it from client list
+    this->m_clients.erase(clientFd);
+};

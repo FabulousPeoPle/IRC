@@ -11,6 +11,8 @@
 #include <vector>
 #include <map>
 
+#include <algorithm>
+
 #include <poll.h>
 
 #include <Client.hpp>
@@ -109,17 +111,19 @@ class Server {
         //void                    m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
         void                    m_parse(std::string& str);
         int                     m_manageRecv(std::string message, int clientFd);
-        int                     m_manageRecv2(std::string message, int clientFd);
         bool                    m_tryAuthentificate(Client& client);
         void                    m_relay(int clientFd){(void)clientFd;};
         void                    m_reply(int clientFd){(void)clientFd; std::cout << "Will be ralyed\n";};
-
+        void                    m_debugAuthentificate(int clientFd);
         int                     m_send(int toFd, std::string message);
 
-        // void                    m_pushBackMessage(int clientFd);
+        void                    m_eraseClientPolls(int clientFd);
+
+        void                    m_quit(int clientFd, std::string quitMessage);
+        // Need to know more about channel class
+        void                    m_join(int channelNum);
 
 
-        // void                    m_addrCompare(struct in_addr& addr, struct in_addr& addr2) const;
 
         const std::string               m_serverName;
         const std::string               m_port;

@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/09 16:42:06 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/09 19:32:47 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 #include <iostream>
 #include  <vector>
+#include <map>
 #include <sys/socket.h>
 #include <deque>
 #include "Message.hpp"
@@ -22,7 +23,6 @@
 class Message;
 
 typedef std::deque<Message> t_messageDQeue;
-
 class Client
 {
 
@@ -40,6 +40,7 @@ class Client
         socklen_t                   _addr_size;
         std::string                 _nickname;
         std::string                 _username;
+        std::string                 hostname;
         std::string                 _ip_address;
         Message                     msg;
         t_messageDQeue              messages;
