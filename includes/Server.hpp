@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Server.hpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2022/01/10 15:04:52 by azouiten          #+#    #+#             */
+/*   Updated: 2022/01/10 17:56:00 by azouiten         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
 
@@ -32,11 +44,14 @@
 
 #define END_STRING "\r\n"
 
+// #define BIG_NUMBER 2000000000
+
 namespace Replies
 {
     enum
     {
-        RPL_WELCOME,
+        RPL_WELCOME = 1,
+        ERR_NICKNAMEINUSE = 433,
     };
 };
 
@@ -70,7 +85,7 @@ class Server {
                                 Server(std::string port, std::string hostname, std::string serverName);
                                 Server(const Server& serverRef);
                                 ~Server();
-        Server&              operator=(const Server& serverRef);
+        Server&                 operator=(const Server& serverRef);
 
         std::string             getPort(void) const;
         std::string             getHostname(void) const;
@@ -113,9 +128,11 @@ class Server {
         int                     m_manageRecv(std::string message, int clientFd);
         bool                    m_tryAuthentificate(Client& client);
         void                    m_relay(int clientFd){(void)clientFd;};
-        void                    m_reply(int clientFd){(void)clientFd; std::cout << "Will be ralyed\n";};
+        void                    m_reply(int clientFd, int replyCode);
         void                    m_debugAuthentificate(int clientFd);
         int                     m_send(int toFd, std::string message);
+        // long long               m_hash(char *str);
+        bool                    m_checkNickSyntax(Message& message);
 
         void                    m_eraseClientPolls(int clientFd);
 
@@ -136,13 +153,15 @@ class Server {
         t_sockaddr_in6                  m_addr_in6;
         
         int                             m_sockfd;
-        // this might be totally         usless
+        // this might be totally         useless
         t_socketInfo                    m_socketInfo;
 
         int                             m_poll_count;
         std::vector<t_pollfd>           m_pfds;
 
         std::map<int, Client>           m_clients;
+        
+        std::map<std::string, int>      m_nicknames;
 };
 
 #endif

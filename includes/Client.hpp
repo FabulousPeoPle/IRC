@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/09 19:32:47 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/10 17:34:18 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,10 +41,12 @@ class Client
         std::string                 _nickname;
         std::string                 _username;
         std::string                 hostname;
-        std::string                 _ip_address;
+        std::string                  _ip_address;
         Message                     msg;
         t_messageDQeue              messages;
         std::string                 _realname;
+        bool                        _nickAuth;
+        bool                        _userAuth;
         bool                        _authenticated;
 
         Client(void);

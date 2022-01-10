@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Server.cpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2022/01/10 15:03:13 by azouiten          #+#    #+#             */
+/*   Updated: 2022/01/10 22:15:11 by azouiten         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Server.hpp"
 
 char* strdup(const char *s);
@@ -239,7 +251,7 @@ void             Server::m_manageClientEvent(int pollIndex)
         if (this->m_manageRecv(buffer, this->m_pfds[pollIndex].fd))
         {
             if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
-            {             
+            {
                 // this->m_relay(this->m_pfds[pollIndex].fd);
                 // this->m_reply(this->m_pfds[pollIndex].fd);
                 // this->m_clients[this->m_pfds[pollIndex].fd].msg._messageQueue.pop_front();
@@ -247,29 +259,73 @@ void             Server::m_manageClientEvent(int pollIndex)
             else
             {
                 std::cout << "client not authenticated" << std::endl;
-                this->m_debugAuthentificate(this->m_pfds[pollIndex].fd);
+                // this->m_debugAuthentificate(this->m_pfds[pollIndex].fd);
+                m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
             }
         }
     }
 }
 
+bool    Server::m_checkNickSyntax(Message& message)
+{
+    std::string & nick = message.arguments.front();
+    int len = nick.length();
+    
+    // pending research on the restrictions demanded
+    if (len > 9 || len < 1)
+        return (false);
+    return (true);
+}
+
 bool    Server::m_tryAuthentificate(Client& client)
 {
     std::string mode;
-    client.msg.parse();
-    if (client.msg.command == NICK_COMMAND)
+    Message& msg = client.messages.front();
+    
+    msg.parse();
+    std::cout << client.messages.front().command << std::endl;
+    if (msg.command == NICK_COMMAND && !client._nickAuth)
     {
-        // a fuction that check the availability of the nickname        
+        m_checkNickSyntax(msg);
+        std::pair<std::map<std::string, int>::iterator , bool> nick =\
+        m_nicknames.insert(std::make_pair(msg.arguments.front(), 0));
+        if (nick.second)
+        {
+            client.messages.pop_front();
+            client._nickname = msg.arguments.front();
+            client._nickAuth = true;
+        }
+        else
+            m_reply(client._sock_fd, Replies::ERR_NICKNAMEINUSE);
     }
-    // pop the first message
-    client.msg.parse();
-    if (client.msg.command == USER_COMMAND)
+    msg = client.messages.front();
+    msg.parse();
+    if (msg.command == USER_COMMAND && !client._userAuth)
     {
-        client._username = client.msg.arguments[0];
-        mode = client.msg.arguments[1];
-        client._realname = client.msg._literalMsg;
+        client._username = msg.arguments[0];
+        mode = msg.arguments[1];
+        client._realname = msg._literalMsg;
+        client._userAuth = true;
+        client.messages.pop_front();
     }
-    return (0);
+    if (client._userAuth && client._nickAuth)
+    {
+        m_reply(client._sock_fd, Replies::RPL_WELCOME);
+        return (client._authenticated = true);
+    }
+    return (false);
+}
+
+void    Server::m_reply(int clientFd, int replyCode)
+{
+    if (replyCode == Replies::RPL_WELCOME)
+    {
+        this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome bitch\r\n");
+    }
+    else if (replyCode == Replies::ERR_NICKNAMEINUSE)
+    {
+        this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].messages.front().arguments.front() + " :Nickname is already in use bitch\r\n");
+    }
 }
 
 void            Server::m_managePoll(void)
@@ -380,6 +436,14 @@ void    Server::m_eraseClientPolls(int clientFd)
 
 
 
+// hash function for the nicknames since the std::hash function is a c++11 feature
+// no need for now
+// long long Server::m_hash(char *str)
+// {
+//     int prime = 31;
+//     int mod = BIG_NUMBER;
+// }
+
 /********************************************************
  *                                                      *
  *                                                      *
@@ -405,4 +469,9 @@ void                    Server::m_quit(int clientFd, std::string quitMessage)
     this->m_eraseClientPolls(clientFd);
     // removing it from client list
     this->m_clients.erase(clientFd);
+
+
+
+    // just to compile the thing
+    (void) quitMessage;
 };
