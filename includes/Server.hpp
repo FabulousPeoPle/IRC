@@ -40,6 +40,8 @@ namespace Replies
     };
 };
 
+
+
 typedef struct addrinfo         t_addrinfo;
 typedef struct sockaddr         t_sockaddr;
 typedef struct sockaddr_storage t_sockaddr_storage;
@@ -51,6 +53,7 @@ std::string strToken(std::string str);
 
 class Client;
 class Message;
+class Server;
 // Add this one to client class.
 typedef struct      s_m_socketInfo 
 {
@@ -63,65 +66,69 @@ typedef struct      s_m_socketInfo
 // TODO: ADD EXCEPTIONS
 // TODO: THROW EXCEPTIONS INSTEAD OF EXITING?
 // TODO: change inet_ntoa in startServer(), only converts from IPv4, we need to be able to convert from IPv6
+// TODO: BIT masking for user modes
 class Server {
     public:
+typedef void (*commandFunc)(Client&);
                                 // constructors are probably going to be usless
-                                Server(void);
-                                Server(std::string port, std::string hostname, std::string serverName);
-                                Server(const Server& serverRef);
-                                ~Server();
-        Server&              operator=(const Server& serverRef);
+                                        Server(void);
+                                        Server(std::string port, std::string hostname, std::string serverName);
+                                        Server(const Server& serverRef);
+                                        ~Server();
+        Server&                         operator=(const Server& serverRef);
 
-        std::string             getPort(void) const;
-        std::string             getHostname(void) const;
-        t_addrinfo              getHints(void) const;
-        t_addrinfo              getServInfo(void) const;
-        int                     getSockfd(void) const;
-        t_sockaddr_in6          getAddr_in6(void) const;
-        t_sockaddr_in           getAddr_in(void) const;
+        std::string                     getPort(void) const;
+        std::string                     getHostname(void) const;
+        t_addrinfo                      getHints(void) const;
+        t_addrinfo                      getServInfo(void) const;
+        int                             getSockfd(void) const;
+        t_sockaddr_in6                  getAddr_in6(void) const;
+        t_sockaddr_in                   getAddr_in(void) const;
 
         //  Might wanna set protection for multiple IP adresses
 
-        std::string             getServName(void) const;
-        int                     setServerInfo(void);
-        void                    setServerHints(int family, int sockType, int flags);
+        std::string                     getServName(void) const;
+        int                             setServerInfo(void);
+        void                            setServerHints(int family, int sockType, int flags);
 
         //  might upgrade it to taking socktype and protocol?
-        int                     setSockfd(int family);
+        int                             setSockfd(int family);
 
-        int                     setSockfd_in(void);
-        int                     setSockfd_in6(void);
+        int                             setSockfd_in(void);
+        int                             setSockfd_in6(void);
 
 
-        int                     listen(void);
+        int                             listen(void);
 
-        int                     startServer(void);
+        int                             startServer(void);
 
     private:
 
-        bool                    m_isAuthenticated(int clientFd);
+        bool                            m_isAuthenticated(int clientFd);
 
-        void                    m_managePoll(void);
-        int                     m_manageServerEvent(void);
-        void                    m_manageClientEvent(int pollIndex);
+        void                            m_managePoll(void);
+        int                             m_manageServerEvent(void);
+        void                            m_manageClientEvent(int pollIndex);
         //  Maybe this is usless since we are always going to connect to the same thing
-        int                     m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen);
-        void                    m_poll(void);
-        void*                   m_getInAddr(t_sockaddr* addr) const;
-        //void                    m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
-        void                    m_parse(std::string& str);
-        int                     m_manageRecv(std::string message, int clientFd);
-        bool                    m_tryAuthentificate(Client& client);
-        void                    m_relay(int clientFd){(void)clientFd;};
-        void                    m_reply(int clientFd){(void)clientFd; std::cout << "Will be ralyed\n";};
-        void                    m_debugAuthentificate(int clientFd);
-        int                     m_send(int toFd, std::string message);
+        int                             m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen);
+        void                            m_poll(void);
+        void*                           m_getInAddr(t_sockaddr* addr) const;
+        //void                            m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
+        void                            m_parse(std::string& str);
+        int                             m_manageRecv(std::string message, int clientFd);
+        bool                            m_tryAuthentificate(Client& client);
+        void                            m_relay(int clientFd);
+        void                            m_reply(int clientFd);
+        void                            m_debugAuthentificate(int clientFd);
+        int                             m_send(int toFd, std::string message);
 
-        void                    m_eraseClientPolls(int clientFd);
+        void                            m_setCommandFuncs(void);
 
-        void                    m_quit(int clientFd, std::string quitMessage);
+        void                            m_eraseClientPolls(int clientFd);
+
+        void                            m_quit(int clientFd, std::string quitMessage);
         // Need to know more about channel class
-        void                    m_join(int channelNum);
+        void                            m_join(int channelNum);
 
 
 
@@ -136,13 +143,15 @@ class Server {
         t_sockaddr_in6                  m_addr_in6;
         
         int                             m_sockfd;
-        // this might be totally         usless
+        // this might be totally usless
         t_socketInfo                    m_socketInfo;
 
         int                             m_poll_count;
         std::vector<t_pollfd>           m_pfds;
 
         std::map<int, Client>           m_clients;
+
+        std::map<std::string, commandFunc> m_commands;
 };
 
 #endif

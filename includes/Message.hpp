@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/09 16:41:22 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/09 21:22:15 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,9 +30,6 @@ typedef std::deque<std::string> t_strDQeue;
 
 class Message
 {
-private:
-    std::string _message;
-
 public:
     t_strDQeue  _messageQueue;
     std::string message;

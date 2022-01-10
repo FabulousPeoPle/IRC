@@ -215,7 +215,25 @@ bool            Server::m_isAuthenticated(int clientFd)
     return (this->m_clients[clientFd]._authenticated);
 }
 
-void             Server::m_manageClientEvent(int pollIndex)
+void                Server::m_relay(int clientFd)
+{
+    Client& client = this->m_clients[clientFd];
+
+    Message message = client.messages.front();
+
+    message.parse();
+
+    std::cout << message.command << " this is the command\n";
+    // a map that has command function as values and the string command as key
+}
+
+void                Server::m_setCommandFuncs(void)
+{
+    this->m_commands["QUIT"] = &(this->m_quit);
+
+}
+
+void                Server::m_manageClientEvent(int pollIndex)
 {
     // I have to error management message size
     char    buffer[BUFFER_SIZE];
@@ -240,7 +258,7 @@ void             Server::m_manageClientEvent(int pollIndex)
         {
             if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
             {             
-                // this->m_relay(this->m_pfds[pollIndex].fd);
+                this->m_relay(this->m_pfds[pollIndex].fd);
                 // this->m_reply(this->m_pfds[pollIndex].fd);
                 // this->m_clients[this->m_pfds[pollIndex].fd].msg._messageQueue.pop_front();
             }
@@ -393,7 +411,7 @@ void                    Server::m_quit(int clientFd, std::string quitMessage)
     Client& client = this->m_clients[clientFd];
 
     std::string messageToSend = ":" + client._nickname + "!" + client.hostname
-                                 + " " + client.messages.front().message;
+                                 + " " + quitMessage;
 
     std::map<int, Client>::iterator ib = this->m_clients.begin();
     std::map<int, Client>::iterator ie = this->m_clients.end();
