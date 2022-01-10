@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Server.hpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2022/01/10 15:04:52 by azouiten          #+#    #+#             */
+/*   Updated: 2022/01/10 23:32:42 by ohachim          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
 
@@ -32,11 +44,14 @@
 
 #define END_STRING "\r\n"
 
+// #define BIG_NUMBER 2000000000
+
 namespace Replies
 {
     enum
     {
-        RPL_WELCOME,
+        RPL_WELCOME = 1,
+        ERR_NICKNAMEINUSE = 433,
     };
 };
 
@@ -69,8 +84,8 @@ typedef struct      s_m_socketInfo
 // TODO: BIT masking for user modes
 class Server {
     public:
-typedef void (*commandFunc)(Client&);
-                                // constructors are probably going to be usless
+        // typedef void (*commandFunc)(Client&);
+                                    // constructors are probably going to be useless
                                         Server(void);
                                         Server(std::string port, std::string hostname, std::string serverName);
                                         Server(const Server& serverRef);
@@ -118,12 +133,13 @@ typedef void (*commandFunc)(Client&);
         int                             m_manageRecv(std::string message, int clientFd);
         bool                            m_tryAuthentificate(Client& client);
         void                            m_relay(int clientFd);
-        void                            m_reply(int clientFd);
         void                            m_debugAuthentificate(int clientFd);
         int                             m_send(int toFd, std::string message);
 
+        void                            m_reply(int clientFd, int replyCode);
         void                            m_setCommandFuncs(void);
 
+        bool                            m_checkNickSyntax(Message& message);
         void                            m_eraseClientPolls(int clientFd);
 
         void                            m_quit(int clientFd, std::string quitMessage);
@@ -150,8 +166,8 @@ typedef void (*commandFunc)(Client&);
         std::vector<t_pollfd>           m_pfds;
 
         std::map<int, Client>           m_clients;
-
-        std::map<std::string, commandFunc> m_commands;
+        
+        std::map<std::string, int>      m_nicknames;
 };
 
 #endif

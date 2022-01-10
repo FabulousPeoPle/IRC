@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/09 21:24:21 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/10 23:30:47 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,6 @@ Message::Message(Message const & src): _literalMsg("")
 
 Message::Message(std::string message, Client & client) : _client(&client), _literalMsg("")
 {
-    // messageQueue.push_back(message);
     this->message = message;
     // should i call the parse function in here? is that a good thing to do?
 }
@@ -53,10 +52,9 @@ int  Message::checkCommand(char *token)
 void Message::parse(void)
 {
     char *token = NULL;
-
-    // fetch the command while skipping if the prefix if present
     char * msg = strdup(message.c_str());
     char * literalMessage = std::strchr(msg, ':');
+    
     if (literalMessage)
     {
         _literalMsg = std::string(literalMessage);
