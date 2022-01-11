@@ -5,19 +5,22 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/01/10 15:03:13 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/11 16:38:31 by ohachim          ###   ########.fr       */
+/*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
+/*   Updated: 2022/01/11 19:48:09 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-char* strdup(const char *s);
+#define DEBUG
 
+char* strdup(const char *s);
 
 Server::Server(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME)
 {
+    #ifdef DEBUG
     std::cout << "Default Server constructor called." << std::endl;
+    #endif
     this->m_servinfo = NULL;
     this->m_sockfd = -1;
     this->m_poll_count = 0;
@@ -29,12 +32,17 @@ Server::Server(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME)
 
 Server::~Server(void)
 {
+    #ifdef DEBUG
     std::cout << "Default Server destructor called." << std::endl;
+    #endif
+
 }
 
 Server::Server(std::string port, std::string hostname, std::string name) : m_serverName(name), m_port(port), m_hostname(hostname)
 {
+    #ifdef DEBUG
     std::cout << "Port/Hostname constructor called." << std::endl;
+    #endif
     this->m_servinfo = NULL;
     this->m_sockfd = -1;
     this->m_poll_count = 0;
@@ -46,7 +54,9 @@ Server::Server(std::string port, std::string hostname, std::string name) : m_ser
 
 Server::Server(const Server& serverRef)
 {
+    #ifdef DEBUG
     std::cout << "Copy constructor called." << std::endl;
+    #endif
     *this = serverRef;
 }
 
@@ -207,11 +217,14 @@ void*           Server::m_getInAddr(t_sockaddr* addr) const
 
 int            Server::m_manageServerEvent(void)
 {
-    printf("something happening\n");
+    #ifdef DEBUG
+    std::cout << "something happening\n";
+    #endif
     t_sockaddr_storage  remoteAddr;
     socklen_t           addrlen = sizeof(t_sockaddr_storage);
     int                 newFd = accept(this->m_sockfd, (t_sockaddr*)&remoteAddr,
                                         &addrlen);
+
     if (newFd == -1)
     {
         perror("accept: ");
@@ -230,14 +243,22 @@ bool            Server::m_isAuthenticated(int clientFd)
 void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
+    t_messageDQeue& messages = client.messages;
+    std::cout << messages.size() << "this is the size\n";
+    while (!messages.empty())
+    {
+        Message message = messages.front();
 
-    Message message = client.messages.front();
+        message.parse();
 
-    message.parse();
-
-    std::cout << message.command << " this is the command\n";
-    if (message.command == "QUIT")
-        this->m_quit(clientFd, message.arguments[0]);
+        #ifdef DEBUG
+        std::cout << message.command << " this is the command\n";
+        #endif
+        if (message.command == "QUIT")
+            this->m_quitCmd(clientFd, message._literalMsg);
+        if (!messages.empty())
+            messages.pop_front();
+    }
     // a map that has command function as values and the string command as key
 }
 
@@ -256,7 +277,7 @@ void                Server::m_manageClientEvent(int pollIndex)
     if (bytesRead <= 0)
     {
         if (bytesRead == 0)
-            printf("Client disconnected.\n");
+            std::cout << "Client disconnected.\n";
         else
             perror("recv: ");
         this->m_pfds.erase(this->m_pfds.begin() + pollIndex);
@@ -277,7 +298,9 @@ void                Server::m_manageClientEvent(int pollIndex)
             }
             else
             {
+                #ifdef DEBUG
                 std::cout << "client not authenticated" << std::endl;
+                #endif
                 // this->m_debugAuthentificate(this->m_pfds[pollIndex].fd);
                 m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
             }
@@ -292,58 +315,60 @@ bool    Server::m_checkNickSyntax(Message& message)
     
     // pending research on the restrictions demanded
     if (len > 9 || len < 1)
+    {
+        
         return (false);
+    }
     return (true);
 }
 
-bool    Server::m_tryAuthentificate(Client& client)
+bool    Server::m_checkStatusAuth(Client& client)
 {
-    std::string mode;
-    Message& msg = client.messages.front();
-    
-    msg.parse();
-    std::cout << client.messages.front().command << std::endl;
-    if (msg.command == NICK_COMMAND && !client._nickAuth)
-    {
-        m_checkNickSyntax(msg);
-        std::pair<std::map<std::string, int>::iterator , bool> nick =\
-        m_nicknames.insert(std::make_pair(msg.arguments.front(), 0));
-        if (nick.second)
-        {
-            client.messages.pop_front();
-            client._nickname = msg.arguments.front();
-            client._nickAuth = true;
-        }
-        else
-            m_reply(client._sock_fd, Replies::ERR_NICKNAMEINUSE);
-    }
-    msg = client.messages.front();
-    msg.parse();
-    if (msg.command == USER_COMMAND && !client._userAuth)
-    {
-        client._username = msg.arguments[0];
-        mode = msg.arguments[1];
-        client._realname = msg._literalMsg;
-        client._userAuth = true;
-        client.messages.pop_front();
-    }
     if (client._userAuth && client._nickAuth)
     {
+        #ifdef DEBUG
+        std::cout << "Has authenticated correctly\n";
+        #endif
         m_reply(client._sock_fd, Replies::RPL_WELCOME);
         return (client._authenticated = true);
     }
     return (false);
 }
-// can switch case instead
+
+bool    Server::m_tryAuthentificate(Client& client)
+{
+    #ifdef DEBUG
+    std::cout << "Trying to authenticate\n";
+    #endif
+    while (!m_checkStatusAuth(client) && client.messages.size())
+    {
+        m_userCmd(client);
+        m_nickCmd(client);
+        if (!client.messages.empty())
+            client.messages.pop_front();
+    }
+    return (this->m_isAuthenticated(client._sock_fd));
+}
+// heavy refactor
 void    Server::m_reply(int clientFd, int replyCode) 
 {
+    #ifdef DEBUG
+    std::cout << m_clients[clientFd]._nickname << "|\n";
+    #endif
     if (replyCode == Replies::RPL_WELCOME)
     {
         this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome bitch\r\n");
     }
     else if (replyCode == Replies::ERR_NICKNAMEINUSE)
     {
+        #ifdef DEBUG
+        std::cout << "already used\n";
+        #endif
         this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].messages.front().arguments.front() + " :Nickname is already in use bitch\r\n");
+    }
+    else if (replyCode == Replies::ERR_ERRONEUSNICKNAME)
+    {
+        this->m_send(clientFd, ":" + this->m_serverName + " 432  " + m_clients[clientFd]._nickname + " :Erroneous nickname\r\n");
     }
 }
 
@@ -373,7 +398,8 @@ void    Server::m_debugAuthentificate(int clientFd)
 {
     this->m_send(clientFd, ":" + this->m_serverName + " 001 ohachim :Welcome\r\n");
     this->m_clients[clientFd]._authenticated = true;
-    this->m_clients[clientFd].messages.pop_front();
+    if (this->m_clients[clientFd].messages.empty())
+        this->m_clients[clientFd].messages.pop_front();
 }
 
 int             Server::startServer(void)
@@ -393,6 +419,7 @@ int Server::m_send(int toFd, std::string message)
 
     while (size)
     {
+        // TODO: What the last parameter?
         bytesSent = send(toFd, message.data() + bytesSent, size, 0);
         if (bytesSent == -1)
             return (-1);
@@ -421,24 +448,31 @@ int	Server::m_manageRecv(std::string message, int clientFd)
     t_messageDQeue& messageQueue = this->m_clients[clientFd].messages;
     std::string token = strToken(message);
 
+    #ifdef DEBUG
     std::cout << "Queue size == " << messageQueue.size() << std::endl;
+    #endif
     while (token.size())
     {
+        #ifdef DEBUG
         std::cout << "this is a token: " << token << std::endl;
-        if (!messageQueue.size() || messageQueue.back().message.find(END_STRING)
+        #endif
+        if (messageQueue.empty() || messageQueue.back().message.find(END_STRING)
                                                         != std::string::npos)
             messageQueue.push_back(Message(token));
         else if (messageQueue.back().message.find(END_STRING) == std::string::npos)
             messageQueue.back().message += token;
         token = strToken("");
     }
+    #ifdef DEBUG
+    std::cout << "Queue size 2 == " << messageQueue.size() << std::endl;
     printQueue(messageQueue);
+    #endif
     if (messageQueue.back().message.find(END_STRING) != std::string::npos)
         return (1);
     return (0);
 }
 
-void    Server::m_eraseClientPolls(int clientFd)
+void    Server::m_eraseClientPoll(int clientFd)
 {
     std::vector<t_pollfd>::iterator ib = this->m_pfds.begin();
     std::vector<t_pollfd>::iterator ie = this->m_pfds.end();
@@ -472,17 +506,67 @@ void    Server::m_eraseClientPolls(int clientFd)
 
 // not tested/ not working
 // will be upgraded when we add channels
-void                    Server::m_quit(int clientFd, std::string quitMessage)
+
+void    Server::m_nickCmd(Client & client)
+{
+    Message& msg = client.messages.front();
+    
+    msg.parse();
+    if (msg.command == NICK_COMMAND && !client._nickAuth)
+    {
+        #ifdef DEBUG
+        std::cout << "We got the user\n";
+        #endif
+        m_checkNickSyntax(msg);
+        std::pair<std::map<std::string, int>::iterator , bool> nick =\
+        m_nicknames.insert(std::make_pair(msg.arguments.front(), 0));
+        if (nick.second)
+        {
+            if (!client.messages.empty())
+                client.messages.pop_front();
+            client._nickname = msg.arguments.front();
+            client._nickAuth = true;
+        }
+        else
+            m_reply(client._sock_fd, Replies::ERR_NICKNAMEINUSE);
+    }
+}
+
+void    Server::m_userCmd(Client & client)
+{
+    Message& msg = client.messages.front();
+    std::string mode;
+    
+    msg.parse();
+    if (msg.command == USER_COMMAND && !client._userAuth)
+    {
+        #ifdef DEBUG
+        std::cout << "we got the nick command\n";
+        #endif
+        client._username = msg.arguments[0];
+        mode = msg.arguments[1];
+        client._realname = msg._literalMsg;
+        client._userAuth = true;
+        if (!client.messages.empty())
+            client.messages.pop_front();
+    }
+}
+
+
+// TO WHO SHOULD I SEND THE REPLAY, maybe if the user belongs to no channel, I do nothing!
+// upgrade with channels
+void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 {
     Client& client = this->m_clients[clientFd];
 
+    std::cout << "this is the message: " << quitMessage << std::endl;
     std::string messageToSend = ":" + client._nickname + "!" + client.hostname
-                                 + " " + quitMessage;
+                                 + " " + quitMessage + "\r\n";
 
     this->m_send(clientFd, messageToSend);
     // should I cut the connection
     // stop listening to incoming events
-    this->m_eraseClientPolls(clientFd);
+    this->m_eraseClientPoll(clientFd);
     // removing it from client list
     this->m_clients.erase(clientFd);
     close(clientFd);

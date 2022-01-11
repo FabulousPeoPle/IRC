@@ -5,10 +5,11 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/01/10 15:04:52 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/10 23:32:42 by ohachim          ###   ########.fr       */
+/*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
+/*   Updated: 2022/01/11 18:46:08 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
@@ -52,6 +53,7 @@ namespace Replies
     {
         RPL_WELCOME = 1,
         ERR_NICKNAMEINUSE = 433,
+        ERR_ERRONEUSNICKNAME = 423,
     };
 };
 
@@ -131,7 +133,14 @@ class Server {
         //void                            m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
         void                            m_parse(std::string& str);
         int                             m_manageRecv(std::string message, int clientFd);
+        
+        bool                            m_checkStatusAuth(Client& client);
         bool                            m_tryAuthentificate(Client& client);
+        
+        void                            m_userCmd(Client & client);
+        void                            m_nickCmd(Client & client);
+        
+        
         void                            m_relay(int clientFd);
         void                            m_debugAuthentificate(int clientFd);
         int                             m_send(int toFd, std::string message);
@@ -140,9 +149,9 @@ class Server {
         void                            m_setCommandFuncs(void);
 
         bool                            m_checkNickSyntax(Message& message);
-        void                            m_eraseClientPolls(int clientFd);
+        void                            m_eraseClientPoll(int clientFd);
 
-        void                            m_quit(int clientFd, std::string quitMessage);
+        void                            m_quitCmd(int clientFd, std::string quitMessage);
         // Need to know more about channel class
         void                            m_join(int channelNum);
 
