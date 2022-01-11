@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/10 15:03:13 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/10 23:31:59 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/11 16:38:31 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -236,6 +236,8 @@ void                Server::m_relay(int clientFd)
     message.parse();
 
     std::cout << message.command << " this is the command\n";
+    if (message.command == "QUIT")
+        this->m_quit(clientFd, message.arguments[0]);
     // a map that has command function as values and the string command as key
 }
 
@@ -264,7 +266,6 @@ void                Server::m_manageClientEvent(int pollIndex)
     else
     {
         buffer[bytesRead] = '\0';
-        std::cout << "this is the buffer |" << buffer << "|\n";
         // send(this->m_pfds[pollIndex].fd, ":555 001 ohachim :welcome\r\n", 86, 0);
         if (this->m_manageRecv(buffer, this->m_pfds[pollIndex].fd))
         {
@@ -333,8 +334,8 @@ bool    Server::m_tryAuthentificate(Client& client)
     }
     return (false);
 }
-
-void    Server::m_reply(int clientFd, int replyCode)
+// can switch case instead
+void    Server::m_reply(int clientFd, int replyCode) 
 {
     if (replyCode == Replies::RPL_WELCOME)
     {
@@ -470,6 +471,7 @@ void    Server::m_eraseClientPolls(int clientFd)
  * *****************************************************/
 
 // not tested/ not working
+// will be upgraded when we add channels
 void                    Server::m_quit(int clientFd, std::string quitMessage)
 {
     Client& client = this->m_clients[clientFd];
@@ -477,19 +479,12 @@ void                    Server::m_quit(int clientFd, std::string quitMessage)
     std::string messageToSend = ":" + client._nickname + "!" + client.hostname
                                  + " " + quitMessage;
 
-    std::map<int, Client>::iterator ib = this->m_clients.begin();
-    std::map<int, Client>::iterator ie = this->m_clients.end();
-            
-    for (std::map<int, Client>::iterator i = ib; i != ie; i++)
-        this->m_send((*i).first, messageToSend);
+    this->m_send(clientFd, messageToSend);
     // should I cut the connection
     // stop listening to incoming events
     this->m_eraseClientPolls(clientFd);
     // removing it from client list
     this->m_clients.erase(clientFd);
-
-
-
+    close(clientFd);
     // just to compile the thing
-    (void) quitMessage;
 };
