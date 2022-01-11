@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/11 19:48:09 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/11 20:55:49 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -553,6 +553,8 @@ void    Server::m_userCmd(Client & client)
 }
 
 
+
+
 // TO WHO SHOULD I SEND THE REPLAY, maybe if the user belongs to no channel, I do nothing!
 // upgrade with channels
 void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
@@ -572,3 +574,4 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
     close(clientFd);
     // just to compile the thing
 };
+

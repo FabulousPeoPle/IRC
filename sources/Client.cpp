@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/10 18:21:52 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/01/11 21:09:22 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,3 +42,21 @@ Client & Client::operator=(Client const & rhs)
 	_authenticated = rhs._authenticated;
 	return (*this);
 }
+
+
+void		Client::turnOffMode(int modeNum)
+{
+	this->modes &= ~(this->modeBitMasks[modeNum]);
+}
+
+void		Client::turnOnMode(int modeNum)
+{
+	this->modes |= this->modeBitMasks[modeNum];
+}
+
+bool		Client::getModeValue(int modeNum) const
+{
+	return (this->modeBitMasks[modeNum] & this->modes);
+}
+
+std::uint8_t        Client::modeBitMasks[NUM_MODES] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6};

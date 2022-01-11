@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/11 18:46:08 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/11 20:53:36 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 # define _SERVER_HPP_
 
 #include <sstream>
+#include <cstdint>
 #include <string>
 #include <iostream>
 
@@ -43,9 +44,13 @@
 
 #define BUFFER_SIZE 512
 
+
+
 #define END_STRING "\r\n"
 
 // #define BIG_NUMBER 2000000000
+
+
 
 namespace Replies
 {
@@ -56,6 +61,8 @@ namespace Replies
         ERR_ERRONEUSNICKNAME = 423,
     };
 };
+
+
 
 
 
@@ -177,6 +184,7 @@ class Server {
         std::map<int, Client>           m_clients;
         
         std::map<std::string, int>      m_nicknames;
+
 };
 
 #endif

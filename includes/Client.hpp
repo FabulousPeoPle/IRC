@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/11 16:17:49 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/11 20:58:22 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,25 @@
 #include <sys/socket.h>
 #include <deque>
 #include "Message.hpp"
+#include <cstdint>
 
 class Message;
+
+#define NUM_MODES 7
+
+namespace Modes
+{
+    enum
+    {
+        a,
+        i,
+        w,
+        r,
+        o,
+        O,
+        s
+    };
+};
 
 typedef std::deque<Message> t_messageDQeue;
 class Client
@@ -48,13 +65,21 @@ class Client
         bool                        _nickAuth;
         bool                        _userAuth;
         bool                        _authenticated;
+        std::uint8_t                modes; // need to give em default modes
+        static std::uint8_t         modeBitMasks[NUM_MODES];
 
+        
         Client(void);
         Client(Client const & src);
         Client(int, struct sockaddr_storage, socklen_t);
         ~Client(void);
 
         Client & operator=(Client const & rhs);
+
+        bool        getModeValue(int modeNum) const;
+
+        void        turnOnMode(int modeNum);
+        void        turnOffMode(int modeNum);
 };
 
 #endif
