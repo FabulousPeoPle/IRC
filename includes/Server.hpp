@@ -3,12 +3,13 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/01/10 15:04:52 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/11 16:19:09 by azouiten         ###   ########.fr       */
+/*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
+/*   Updated: 2022/01/11 18:46:08 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
@@ -148,9 +149,9 @@ class Server {
         void                            m_setCommandFuncs(void);
 
         bool                            m_checkNickSyntax(Message& message);
-        void                            m_eraseClientPolls(int clientFd);
+        void                            m_eraseClientPoll(int clientFd);
 
-        void                            m_quit(int clientFd, std::string quitMessage);
+        void                            m_quitCmd(int clientFd, std::string quitMessage);
         // Need to know more about channel class
         void                            m_join(int channelNum);
 
