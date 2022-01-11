@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/10 15:03:13 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/10 23:31:59 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/11 16:06:55 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -295,13 +295,21 @@ bool    Server::m_checkNickSyntax(Message& message)
     return (true);
 }
 
-bool    Server::m_tryAuthentificate(Client& client)
+bool    Server::m_checkStatusAuth(Client& client)
 {
-    std::string mode;
+    if (client._userAuth && client._nickAuth)
+    {
+        m_reply(client._sock_fd, Replies::RPL_WELCOME);
+        return (client._authenticated = true);
+    }
+    return (false);
+}
+
+void    Server::m_userCmd(Client & client)
+{
     Message& msg = client.messages.front();
     
     msg.parse();
-    std::cout << client.messages.front().command << std::endl;
     if (msg.command == NICK_COMMAND && !client._nickAuth)
     {
         m_checkNickSyntax(msg);
@@ -316,7 +324,13 @@ bool    Server::m_tryAuthentificate(Client& client)
         else
             m_reply(client._sock_fd, Replies::ERR_NICKNAMEINUSE);
     }
-    msg = client.messages.front();
+}
+
+void    Server::m_nickCmd(Client & client)
+{
+    Message& msg = client.messages.front();
+    std::string mode;
+    
     msg.parse();
     if (msg.command == USER_COMMAND && !client._userAuth)
     {
@@ -326,12 +340,13 @@ bool    Server::m_tryAuthentificate(Client& client)
         client._userAuth = true;
         client.messages.pop_front();
     }
-    if (client._userAuth && client._nickAuth)
-    {
-        m_reply(client._sock_fd, Replies::RPL_WELCOME);
-        return (client._authenticated = true);
-    }
-    return (false);
+}
+
+bool    Server::m_tryAuthentificate(Client& client)
+{
+    m_userCmd(client);
+    m_nickCmd(client);
+    return (m_checkStatusAuth(client));
 }
 
 void    Server::m_reply(int clientFd, int replyCode)

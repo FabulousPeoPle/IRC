@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/10 15:04:52 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/10 23:32:42 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/11 16:00:16 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,7 +131,14 @@ class Server {
         //void                            m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
         void                            m_parse(std::string& str);
         int                             m_manageRecv(std::string message, int clientFd);
+        
+        bool                            m_checkStatusAuth(Client& client);
         bool                            m_tryAuthentificate(Client& client);
+        
+        void                            m_userCmd(Client & client);
+        void                            m_nickCmd(Client & client);
+        
+        
         void                            m_relay(int clientFd);
         void                            m_debugAuthentificate(int clientFd);
         int                             m_send(int toFd, std::string message);
