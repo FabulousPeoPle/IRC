@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/10 15:03:13 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/11 16:06:55 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/01/11 16:32:33 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -291,7 +291,10 @@ bool    Server::m_checkNickSyntax(Message& message)
     
     // pending research on the restrictions demanded
     if (len > 9 || len < 1)
+    {
+        
         return (false);
+    }
     return (true);
 }
 
@@ -351,6 +354,7 @@ bool    Server::m_tryAuthentificate(Client& client)
 
 void    Server::m_reply(int clientFd, int replyCode)
 {
+    std::cout << m_clients[clientFd]._nickname << "|\n";
     if (replyCode == Replies::RPL_WELCOME)
     {
         this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome bitch\r\n");
@@ -358,6 +362,10 @@ void    Server::m_reply(int clientFd, int replyCode)
     else if (replyCode == Replies::ERR_NICKNAMEINUSE)
     {
         this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].messages.front().arguments.front() + " :Nickname is already in use bitch\r\n");
+    }
+    else if (replyCode == Replies::ERR_ERRONEUSNICKNAME)
+    {
+        this->m_send(clientFd, ":" + this->m_serverName + " 432  " + m_clients[clientFd]._nickname + " :Erroneous nickname\r\n");
     }
 }
 

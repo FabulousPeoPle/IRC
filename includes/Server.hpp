@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/10 15:04:52 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/11 16:00:16 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/01/11 16:19:09 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,6 +52,7 @@ namespace Replies
     {
         RPL_WELCOME = 1,
         ERR_NICKNAMEINUSE = 433,
+        ERR_ERRONEUSNICKNAME = 423,
     };
 };
 

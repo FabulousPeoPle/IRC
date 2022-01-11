@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/11 16:07:25 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/01/11 16:35:51 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,12 +48,20 @@ int  Message::checkCommand(char *token)
     }
     return (1);
 }
+// also needs a redo
+void Message::m_trim(char *str)
+{
+    char *end = std::strchr(str, '\r');
+    if (end)
+        end[0] = '\0';
+}
 
 // needs a quick redo
 void Message::parse(void)
 {
     char *token = NULL;
     char * msg = strdup(message.c_str());
+    m_trim(msg);
     char * literalMessage = std::strchr(msg, ':');
     
     if (literalMessage)
