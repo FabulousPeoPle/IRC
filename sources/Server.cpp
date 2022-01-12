@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/11 19:48:09 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/12 20:36:28 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
-#define DEBUG
+// #define DEBUG
+#define DEBUG_USERHOST
 
 char* strdup(const char *s);
 
@@ -35,7 +36,6 @@ Server::~Server(void)
     #ifdef DEBUG
     std::cout << "Default Server destructor called." << std::endl;
     #endif
-
 }
 
 Server::Server(std::string port, std::string hostname, std::string name) : m_serverName(name), m_port(port), m_hostname(hostname)
@@ -244,6 +244,7 @@ void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
     t_messageDQeue& messages = client.messages;
+    
     std::cout << messages.size() << "this is the size\n";
     while (!messages.empty())
     {
@@ -254,7 +255,12 @@ void                Server::m_relay(int clientFd)
         #ifdef DEBUG
         std::cout << message.command << " this is the command\n";
         #endif
-        if (message.command == "QUIT")
+        
+        if (message.command == USERHOST_COMMAND)
+            this->m_userhostCmd(m_clients[clientFd]);
+        if (message.command == USER_COMMAND)
+            m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, 0);// not sure about this
+        else if (message.command == QUIT_COMMAND)
             this->m_quitCmd(clientFd, message._literalMsg);
         if (!messages.empty())
             messages.pop_front();
@@ -291,7 +297,7 @@ void                Server::m_manageClientEvent(int pollIndex)
         if (this->m_manageRecv(buffer, this->m_pfds[pollIndex].fd))
         {
             if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
-            {             
+            {
                 this->m_relay(this->m_pfds[pollIndex].fd);
                 // this->m_reply(this->m_pfds[pollIndex].fd);
                 // this->m_clients[this->m_pfds[pollIndex].fd].msg._messageQueue.pop_front();
@@ -310,13 +316,22 @@ void                Server::m_manageClientEvent(int pollIndex)
 
 bool    Server::m_checkNickSyntax(Message& message)
 {
+    if (message.arguments.empty())
+    {
+        #ifdef DEBUG_USERHOST
+        std::cout << message.arguments.empty() << " there are no arguments u cunt!\n";
+        #endif
+        return false;
+    }
     std::string & nick = message.arguments.front();
     int len = nick.length();
     
     // pending research on the restrictions demanded
     if (len > 9 || len < 1)
     {
-        
+        #ifdef DEBUG_USERHOST
+        std::cout << "wrong length u cunt!\n";
+        #endif
         return (false);
     }
     return (true);
@@ -329,7 +344,7 @@ bool    Server::m_checkStatusAuth(Client& client)
         #ifdef DEBUG
         std::cout << "Has authenticated correctly\n";
         #endif
-        m_reply(client._sock_fd, Replies::RPL_WELCOME);
+        m_reply(client._sock_fd, Replies::RPL_WELCOME, 0);
         return (client._authenticated = true);
     }
     return (false);
@@ -350,25 +365,36 @@ bool    Server::m_tryAuthentificate(Client& client)
     return (this->m_isAuthenticated(client._sock_fd));
 }
 // heavy refactor
-void    Server::m_reply(int clientFd, int replyCode) 
+
+void    Server::m_reply(int clientFd, int replyCode, int extraArg) 
 {
-    #ifdef DEBUG
+    #ifdef DEBUG_USERHOST
     std::cout << m_clients[clientFd]._nickname << "|\n";
+    std::cout << extraArg << "+++" << clientFd << std::endl;
     #endif
-    if (replyCode == Replies::RPL_WELCOME)
+    
+    switch (replyCode)
     {
-        this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome bitch\r\n");
-    }
-    else if (replyCode == Replies::ERR_NICKNAMEINUSE)
-    {
-        #ifdef DEBUG
-        std::cout << "already used\n";
-        #endif
-        this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].messages.front().arguments.front() + " :Nickname is already in use bitch\r\n");
-    }
-    else if (replyCode == Replies::ERR_ERRONEUSNICKNAME)
-    {
-        this->m_send(clientFd, ":" + this->m_serverName + " 432  " + m_clients[clientFd]._nickname + " :Erroneous nickname\r\n");
+        case Replies::RPL_WELCOME :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome bitch\r\n");
+            break;
+        case Replies::RPL_USERHOST :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd]._nickname + " :"\
+            + m_clients[extraArg]._nickname + ((m_clients[extraArg]._isServerOp) ? "*" : "\0") + "=" \
+            + ((m_clients[extraArg]._away) ? "+" : "-") + m_clients[extraArg].hostname + "\r\n");
+            break;
+        case Replies::ERR_NICKNAMEINUSE :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].messages.front().arguments.front() + " :Nickname is already in use bitch\r\n");;
+            break;
+        case Replies::ERR_ERRONEUSNICKNAME :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 432  " + m_clients[clientFd]._nickname + " :Erroneous nickname\r\n");
+            break;
+        case Replies::ERR_NEEDMOREPARAMS :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 461 :Not enough parameters\r\n"); // needs the name of the command
+            break;
+        case Replies::ERR_ALREADYREGISTRED :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 462 :Unauthorized command (already registered)\r\n");
+            break;
     }
 }
 
@@ -487,16 +513,6 @@ void    Server::m_eraseClientPoll(int clientFd)
     }
 };
 
-
-
-// hash function for the nicknames since the std::hash function is a c++11 feature
-// no need for now
-// long long Server::m_hash(char *str)
-// {
-//     int prime = 31;
-//     int mod = BIG_NUMBER;
-// }
-
 /********************************************************
  *                                                      *
  *                                                      *
@@ -507,6 +523,31 @@ void    Server::m_eraseClientPoll(int clientFd)
 // not tested/ not working
 // will be upgraded when we add channels
 
+void    Server::m_userhostCmd(Client & client)
+{
+    // no need to check the size of the queue cz it must has atleast one message at this point
+    Message & msg = client.messages.front();
+    std::vector<std::string>::iterator it = msg.arguments.begin();
+    std::vector<std::string>::iterator end = msg.arguments.end();
+    int count = 0;
+
+    
+    msg.parse();
+    #ifdef DEBUG_USERHOST
+    std::cout << msg.arguments.empty() <<" outside the thing\n";
+    #endif
+    // no need to parse as it would already be parsed from the CMD check
+    while (msg.arguments.empty("") /*&& m_checkNickSyntax(msg) */&& it < end && count < 5)
+    {
+        #ifdef DEBUG_USERHOST
+        std::cout << !msg.arguments.empty() << " inside the thing\n";
+        #endif
+        // call the userhost reply
+        m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it++]);
+        count += 1;
+    }
+}
+
 void    Server::m_nickCmd(Client & client)
 {
     Message& msg = client.messages.front();
@@ -515,11 +556,11 @@ void    Server::m_nickCmd(Client & client)
     if (msg.command == NICK_COMMAND && !client._nickAuth)
     {
         #ifdef DEBUG
-        std::cout << "We got the user\n";
+        std::cout << "We got the nick command\n";
         #endif
         m_checkNickSyntax(msg);
         std::pair<std::map<std::string, int>::iterator , bool> nick =\
-        m_nicknames.insert(std::make_pair(msg.arguments.front(), 0));
+        m_nicknames.insert(std::make_pair(msg.arguments.front(), client._sock_fd));
         if (nick.second)
         {
             if (!client.messages.empty())
@@ -528,7 +569,7 @@ void    Server::m_nickCmd(Client & client)
             client._nickAuth = true;
         }
         else
-            m_reply(client._sock_fd, Replies::ERR_NICKNAMEINUSE);
+            m_reply(client._sock_fd, Replies::ERR_NICKNAMEINUSE, 0);
     }
 }
 
@@ -538,17 +579,24 @@ void    Server::m_userCmd(Client & client)
     std::string mode;
     
     msg.parse();
-    if (msg.command == USER_COMMAND && !client._userAuth)
+    if (msg.command == USER_COMMAND)
     {
         #ifdef DEBUG
-        std::cout << "we got the nick command\n";
+        std::cout << "we got the user command\n";
         #endif
-        client._username = msg.arguments[0];
-        mode = msg.arguments[1];
-        client._realname = msg._literalMsg;
-        client._userAuth = true;
-        if (!client.messages.empty())
-            client.messages.pop_front();
+        if (client._userAuth)
+            m_reply(client._sock_fd, Replies::ERR_ALREADYREGISTRED, 0);
+        else if (msg.arguments.size() != 3)
+            m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0);
+        else
+        {
+            client._username = msg.arguments[0];
+            mode = msg.arguments[1];
+            client._realname = msg._literalMsg;
+            client._userAuth = true;
+            if (!client.messages.empty())
+                client.messages.pop_front();
+        }
     }
 }
 
@@ -567,6 +615,8 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
     // should I cut the connection
     // stop listening to incoming events
     this->m_eraseClientPoll(clientFd);
+    // remove the nickname from the map
+    this->m_nicknames.erase(m_clients[clientFd]._nickname);
     // removing it from client list
     this->m_clients.erase(clientFd);
     close(clientFd);
