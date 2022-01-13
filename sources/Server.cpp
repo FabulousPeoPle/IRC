@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/13 16:03:56 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/01/13 16:56:30 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -387,10 +387,10 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg)
             this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].messages.front().arguments.front() + " :Nickname is already in use bitch\r\n");;
             break;
         case Replies::ERR_ERRONEUSNICKNAME :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 432  " + m_clients[clientFd]._nickname + " :Erroneous nickname\r\n");
+            this->m_send(clientFd, ":" + this->m_serverName + " 432 " + m_clients[clientFd]._nickname + " :Erroneous nickname\r\n");
             break;
         case Replies::ERR_NEEDMOREPARAMS :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 461 :Not enough parameters\r\n"); // needs the name of the command
+            this->m_send(clientFd, ":" + this->m_serverName + " 461 " + m_clients[clientFd].messages.front().command + " :Not enough parameters\r\n"); // needs the name of the command
             break;
         case Replies::ERR_ALREADYREGISTRED :\
             this->m_send(clientFd, ":" + this->m_serverName + " 462 :Unauthorized command (already registered)\r\n");
@@ -420,6 +420,7 @@ void            Server::m_managePoll(void)
         i++;
     }
 }
+
 void    Server::m_debugAuthentificate(int clientFd)
 {
     this->m_send(clientFd, ":" + this->m_serverName + " 001 ohachim :Welcome\r\n");
@@ -539,6 +540,23 @@ void    Server::m_userhostCmd(Client & client)
             m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it]);
         it++;
         count += 1;
+    }
+}
+// not yet functional as we have to talk about the reply function
+void    Server::m_isonCmd(Client & client)
+{
+    // no need to check the size of the queue cz it must has atleast one message at this point
+    Message & msg = client.messages.front();
+    msg.parse();
+    std::vector<std::string>::iterator it = msg.arguments.begin();
+    std::vector<std::string>::iterator end = msg.arguments.end();
+
+    while (!msg.arguments.empty() && m_checkNickSyntax(msg) && it < end)
+    {
+        // call the ison reply
+        if (m_nicknames.find(*it) != m_nicknames.end())
+            m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it]);
+        it++;
     }
 }
 

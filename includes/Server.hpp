@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/12 17:56:24 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/01/13 16:13:09 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,7 @@ namespace Replies
 #define PASS_COMMAND "PASS"
 #define USERHOST_COMMAND "USERHOST"
 #define QUIT_COMMAND "QUIT"
+#define ISON_COMMAND "ISON"
 
 typedef struct addrinfo         t_addrinfo;
 typedef struct sockaddr         t_sockaddr;
@@ -147,7 +148,9 @@ class Server {
         
         void                            m_userCmd(Client & client);
         void                            m_nickCmd(Client & client);
+        
         void                            m_userhostCmd(Client & client);
+        void                            m_isonCmd(Client & client);
         
         void                            m_relay(int clientFd);
         void                            m_debugAuthentificate(int clientFd);
