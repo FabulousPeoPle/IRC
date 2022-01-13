@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/12 20:36:28 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/01/13 16:03:56 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -527,23 +527,17 @@ void    Server::m_userhostCmd(Client & client)
 {
     // no need to check the size of the queue cz it must has atleast one message at this point
     Message & msg = client.messages.front();
+    msg.parse();
     std::vector<std::string>::iterator it = msg.arguments.begin();
     std::vector<std::string>::iterator end = msg.arguments.end();
     int count = 0;
 
-    
-    msg.parse();
-    #ifdef DEBUG_USERHOST
-    std::cout << msg.arguments.empty() <<" outside the thing\n";
-    #endif
-    // no need to parse as it would already be parsed from the CMD check
-    while (msg.arguments.empty("") /*&& m_checkNickSyntax(msg) */&& it < end && count < 5)
+    while (!msg.arguments.empty() && m_checkNickSyntax(msg) && it < end && count < 5)
     {
-        #ifdef DEBUG_USERHOST
-        std::cout << !msg.arguments.empty() << " inside the thing\n";
-        #endif
         // call the userhost reply
-        m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it++]);
+        if (m_nicknames.find(*it) != m_nicknames.end())
+            m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it]);
+        it++;
         count += 1;
     }
 }
