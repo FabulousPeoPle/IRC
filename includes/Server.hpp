@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/11 20:53:36 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/13 20:40:06 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,10 +59,19 @@ namespace Replies
         RPL_WELCOME = 1,
         ERR_NICKNAMEINUSE = 433,
         ERR_ERRONEUSNICKNAME = 423,
+        RPL_USERHOST = 302,
+        ERR_NEEDMOREPARAMS = 461,
+        ERR_ALREADYREGISTRED = 462,
     };
 };
 
 
+#define USER_COMMAND "USER"
+#define NICK_COMMAND "NICK"
+#define PASS_COMMAND "PASS"
+#define USERHOST_COMMAND "USERHOST"
+#define QUIT_COMMAND "QUIT"
+#define ISON_COMMAND "ISON"
 
 
 
@@ -71,7 +80,7 @@ typedef struct sockaddr         t_sockaddr;
 typedef struct sockaddr_storage t_sockaddr_storage;
 typedef struct sockaddr_in      t_sockaddr_in;
 typedef struct sockaddr_in6     t_sockaddr_in6;
-typedef struct pollfd           t_pollfd;  
+typedef struct pollfd           t_pollfd;
 
 std::string strToken(std::string str);
 
@@ -147,12 +156,14 @@ class Server {
         void                            m_userCmd(Client & client);
         void                            m_nickCmd(Client & client);
         
+        void                            m_userhostCmd(Client & client);
+        void                            m_isonCmd(Client & client);
         
         void                            m_relay(int clientFd);
         void                            m_debugAuthentificate(int clientFd);
         int                             m_send(int toFd, std::string message);
 
-        void                            m_reply(int clientFd, int replyCode);
+        void                            m_reply(int clientFd, int replyCode, int extraArg);
         void                            m_setCommandFuncs(void);
 
         bool                            m_checkNickSyntax(Message& message);
@@ -183,6 +194,7 @@ class Server {
 
         std::map<int, Client>           m_clients;
         
+        // the key is the nickname itself and the value is the clientfd
         std::map<std::string, int>      m_nicknames;
 
 };

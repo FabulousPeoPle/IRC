@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:54 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/11 16:42:00 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/11 20:52:16 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,5 +34,4 @@ int main(void)
     myServer.setSockfd(AF_INET6);
     myServer.listen();
     myServer.startServer();
-
 }
