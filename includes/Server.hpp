@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/13 20:40:06 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/13 21:50:02 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -72,6 +72,7 @@ namespace Replies
 #define USERHOST_COMMAND "USERHOST"
 #define QUIT_COMMAND "QUIT"
 #define ISON_COMMAND "ISON"
+#define MODE_COMMAND "MODE"
 
 
 
@@ -171,7 +172,8 @@ class Server {
 
         void                            m_quitCmd(int clientFd, std::string quitMessage);
         // Need to know more about channel class
-        void                            m_join(int channelNum);
+        // void                            m_join(int channelNum);
+        void                            m_modeCmd(Client& client);
 
 
 

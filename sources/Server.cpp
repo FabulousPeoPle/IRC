@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/13 20:40:20 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/01/13 22:13:46 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -239,7 +239,14 @@ bool            Server::m_isAuthenticated(int clientFd)
 {
     return (this->m_clients[clientFd]._authenticated);
 }
+void            Server::m_modeCmd(Client& client)
+{
 
+    std::cout << "IN MODE COMMAND\n";
+    client.messages.front().parse();
+    std::cout << client.messages.front().command << std::endl;
+    
+}
 void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
@@ -248,7 +255,7 @@ void                Server::m_relay(int clientFd)
     std::cout << messages.size() << "this is the size\n";
     while (!messages.empty())
     {
-        Message message = messages.front();
+        Message& message = messages.front();
 
         message.parse();
 
@@ -256,14 +263,16 @@ void                Server::m_relay(int clientFd)
         std::cout << message.command << " this is the command\n";
         #endif
         
+        if (!messages.empty())
+            messages.pop_front();
         if (message.command == USERHOST_COMMAND)
             this->m_userhostCmd(m_clients[clientFd]);
         if (message.command == USER_COMMAND)
             m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, 0);// not sure about this
         else if (message.command == QUIT_COMMAND)
             this->m_quitCmd(clientFd, message._literalMsg);
-        if (!messages.empty())
-            messages.pop_front();
+        if (message.command == MODE_COMMAND)
+            this->m_modeCmd(m_clients[clientFd]);
     }
     // a map that has command function as values and the string command as key
 }
@@ -617,6 +626,7 @@ void    Server::m_userCmd(Client & client)
 
 // TO WHO SHOULD I SEND THE REPLAY, maybe if the user belongs to no channel, I do nothing!
 // upgrade with channels
+// parameters should be the client& instead of both the client and the message
 void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 {
     Client& client = this->m_clients[clientFd];
@@ -634,6 +644,5 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
     // removing it from client list
     this->m_clients.erase(clientFd);
     close(clientFd);
-    // just to compile the thing
 };
 
