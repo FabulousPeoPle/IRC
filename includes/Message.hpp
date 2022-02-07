@@ -17,6 +17,7 @@
 
 #include <deque>
 #include <vector>
+#include <cstring>
 
 class Client;
 

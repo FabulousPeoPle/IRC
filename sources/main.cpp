@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "Server.hpp"
+#include <cstring>
 #include <iostream>
 
 char* strdup(const char *s)

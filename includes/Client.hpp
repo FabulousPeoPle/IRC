@@ -20,7 +20,7 @@
 #include <deque>
 #include "Message.hpp"
 #include <cstdint>
-
+#include <cstring>
 class Message;
 
 #define NUM_MODES 7

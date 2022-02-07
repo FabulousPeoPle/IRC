@@ -265,13 +265,13 @@ void                Server::m_relay(int clientFd)
         
         if (!messages.empty())
             messages.pop_front();
-        if (message.command == USERHOST_COMMAND)
+        else if (message.command == USERHOST_COMMAND)
             this->m_userhostCmd(m_clients[clientFd]);
-        if (message.command == USER_COMMAND)
-            m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, 0);// not sure about this
+        else if (message.command == USER_COMMAND)
+            m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, 0); // not sure about this
         else if (message.command == QUIT_COMMAND)
             this->m_quitCmd(clientFd, message._literalMsg);
-        if (message.command == MODE_COMMAND)
+        else if (message.command == MODE_COMMAND)
             this->m_modeCmd(m_clients[clientFd]);
     }
     // a map that has command function as values and the string command as key
@@ -317,7 +317,7 @@ void                Server::m_manageClientEvent(int pollIndex)
                 std::cout << "client not authenticated" << std::endl;
                 #endif
                 // this->m_debugAuthentificate(this->m_pfds[pollIndex].fd);
-                m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
+                this->m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
             }
         }
     }
@@ -542,8 +542,10 @@ void    Server::m_userhostCmd(Client & client)
     std::vector<std::string>::iterator end = msg.arguments.end();
     int count = 0;
 
+    std::cout << "userhost command\n";
     while (!msg.arguments.empty() && m_checkNickSyntax(msg) && it < end && count < 5)
     {
+        std::cout << "inside while\n";
         // call the userhost reply
         if (m_nicknames.find(*it) != m_nicknames.end())
             m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it]);
@@ -579,7 +581,13 @@ void    Server::m_nickCmd(Client & client)
         #ifdef DEBUG
         std::cout << "We got the nick command\n";
         #endif
-        m_checkNickSyntax(msg);
+        std::cout << "segfault pre test\n";
+        if (!m_checkNickSyntax(msg))
+        {
+            //TODO: should reply error
+            return ;
+        }
+        std::cout << "segfault after test\n";
         std::pair<std::map<std::string, int>::iterator , bool> nick =\
         m_nicknames.insert(std::make_pair(msg.arguments.front(), client._sock_fd));
         if (nick.second)
