@@ -257,6 +257,8 @@ void                Server::m_relay(int clientFd)
     {
         Message& message = messages.front();
 
+        std::cout << &message << "this is the message\n";
+        std::cout << &(messages.front()) << "this is the message\n";
         message.parse();
 
         #ifdef DEBUG
@@ -367,7 +369,9 @@ bool    Server::m_tryAuthentificate(Client& client)
     while (!m_checkStatusAuth(client) && client.messages.size())
     {
         m_userCmd(client);
+        std::cout << "pre nick\n";
         m_nickCmd(client);
+        std::cout << "after nick\n";
         if (!client.messages.empty())
             client.messages.pop_front();
     }
@@ -581,13 +585,11 @@ void    Server::m_nickCmd(Client & client)
         #ifdef DEBUG
         std::cout << "We got the nick command\n";
         #endif
-        std::cout << "segfault pre test\n";
         if (!m_checkNickSyntax(msg))
         {
             //TODO: should reply error
             return ;
         }
-        std::cout << "segfault after test\n";
         std::pair<std::map<std::string, int>::iterator , bool> nick =\
         m_nicknames.insert(std::make_pair(msg.arguments.front(), client._sock_fd));
         if (nick.second)
