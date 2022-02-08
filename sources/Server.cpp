@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/13 16:56:30 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/08 21:15:01 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -542,6 +542,7 @@ void    Server::m_userhostCmd(Client & client)
         count += 1;
     }
 }
+
 // not yet functional as we have to talk about the reply function
 void    Server::m_isonCmd(Client & client)
 {
@@ -634,3 +635,51 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
     close(clientFd);
     // just to compile the thing
 };
+
+bool                    Server::m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes)
+{
+    std::vector<std::string>::iterator it = msg.arguments.begin();
+    std::vector<std::string>::iterator end = msg.arguments.end();
+    std::string arg;
+
+    //normally i shouldnt parse here but i have a feel i have to
+    if (msg.arguments.empty())
+        return (false);
+    while (it != end && (it->at(0) == LOCAL_CHAN || it->at(0) == NETWORKWIDE_CHAN))
+    {
+        chans.push_back(*it);
+        it++;
+    }
+    while (it != end)
+    {
+        passes.push_back(*it);
+        it++;
+    }
+    if (chans.empty())
+        return (false);
+    return (true);
+}
+
+void                    Server::m_joinCmd(Client & client)
+{
+    std::vector<std::string>    chans;
+    std::vector<std::string>    passes;
+    Message& msg = client.messages.front();
+    
+    msg.parse();
+    //grab the channels with their passes
+    m_grabChannelsNames(msg, chans, passes);
+    std::vector<std::string>::iterator it_chan = chans.begin();
+    std::vector<std::string>::iterator end_chan = chans.end();
+    std::vector<std::string>::iterator it_passes = passes.begin();
+    std::vector<std::string>::iterator end_passes = passes.end();
+
+    while (it_chan < end_chan)
+    {
+        if (m_channelExists(*it_chan))
+        {
+            // m_addClientToChan(*it_chan, it);
+        }
+        else{}
+    }
+}
