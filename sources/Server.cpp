@@ -243,8 +243,6 @@ void            Server::m_modeCmd(Client& client)
 {
 
     std::cout << "IN MODE COMMAND\n";
-    client.messages.front().parse();
-    std::cout << client.messages.front().command << std::endl;
     
 }
 void                Server::m_relay(int clientFd)
@@ -258,16 +256,18 @@ void                Server::m_relay(int clientFd)
         Message& message = messages.front();
 
         std::cout << &message << "this is the message\n";
-        std::cout << &(messages.front()) << "this is the message\n";
         message.parse();
+        std::cout << &(messages.front()) << "this is the message\n";
 
         #ifdef DEBUG
         std::cout << message.command << " this is the command\n";
         #endif
         
-        if (!messages.empty())
-            messages.pop_front();
-        else if (message.command == USERHOST_COMMAND)
+        std::cout << "hello\n";
+        std::cout << message.command << " this is the command\n";
+        // This two lines might be deleting our message
+        // if (!messages.empty())
+        if (message.command == USERHOST_COMMAND)
             this->m_userhostCmd(m_clients[clientFd]);
         else if (message.command == USER_COMMAND)
             m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, 0); // not sure about this
@@ -275,6 +275,8 @@ void                Server::m_relay(int clientFd)
             this->m_quitCmd(clientFd, message._literalMsg);
         else if (message.command == MODE_COMMAND)
             this->m_modeCmd(m_clients[clientFd]);
+        if (!messages.empty())
+            messages.pop_front();
     }
     // a map that has command function as values and the string command as key
 }
@@ -368,10 +370,12 @@ bool    Server::m_tryAuthentificate(Client& client)
     #endif
     while (!m_checkStatusAuth(client) && client.messages.size())
     {
+        // should userCMD parse?
+        Message& msg = client.messages.front();
+
+        msg.parse();
         m_userCmd(client);
-        std::cout << "pre nick\n";
         m_nickCmd(client);
-        std::cout << "after nick\n";
         if (!client.messages.empty())
             client.messages.pop_front();
     }
@@ -546,10 +550,8 @@ void    Server::m_userhostCmd(Client & client)
     std::vector<std::string>::iterator end = msg.arguments.end();
     int count = 0;
 
-    std::cout << "userhost command\n";
     while (!msg.arguments.empty() && m_checkNickSyntax(msg) && it < end && count < 5)
     {
-        std::cout << "inside while\n";
         // call the userhost reply
         if (m_nicknames.find(*it) != m_nicknames.end())
             m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it]);
@@ -579,25 +581,29 @@ void    Server::m_nickCmd(Client & client)
 {
     Message& msg = client.messages.front();
     
-    msg.parse();
     if (msg.command == NICK_COMMAND && !client._nickAuth)
     {
         #ifdef DEBUG
         std::cout << "We got the nick command\n";
         #endif
         if (!m_checkNickSyntax(msg))
-        {
-            //TODO: should reply error
             return ;
-        }
+        // ask about this
         std::pair<std::map<std::string, int>::iterator , bool> nick =\
         m_nicknames.insert(std::make_pair(msg.arguments.front(), client._sock_fd));
         if (nick.second)
         {
-            if (!client.messages.empty())
-                client.messages.pop_front();
-            client._nickname = msg.arguments.front();
-            client._nickAuth = true;
+            // TODO: find a better fix, segfault in this line if there are no arguments
+            // These two lines cause a segfault
+            // if (!client.messages.empty())
+            //     client.messages.pop_front();
+            if (msg.arguments.size() >= 1)
+            {
+                client._nickname = msg.arguments.front();
+                client._nickAuth = true;
+            }
+            else
+                client._nickAuth = false;
         }
         else
             m_reply(client._sock_fd, Replies::ERR_NICKNAMEINUSE, 0);
@@ -609,7 +615,6 @@ void    Server::m_userCmd(Client & client)
     Message& msg = client.messages.front();
     std::string mode;
     
-    msg.parse();
     if (msg.command == USER_COMMAND)
     {
         #ifdef DEBUG
@@ -624,6 +629,7 @@ void    Server::m_userCmd(Client & client)
             client._username = msg.arguments[0];
             mode = msg.arguments[1];
             client._realname = msg._literalMsg;
+            std::cout << "We got the user command\n";
             client._userAuth = true;
             if (!client.messages.empty())
                 client.messages.pop_front();
@@ -641,7 +647,6 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 {
     Client& client = this->m_clients[clientFd];
 
-    std::cout << "this is the message: " << quitMessage << std::endl;
     std::string messageToSend = ":" + client._nickname + "!" + client.hostname
                                  + " " + quitMessage + "\r\n";
 
