@@ -270,9 +270,9 @@ void            Server::m_modeCmd(Client& client)
     Message& message = client.messages.front();
 
     if (message.arguments.size() < 2)
-        m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0); // NOT SURE ABOUT THIS
+        m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0, ""); // NOT SURE ABOUT THIS
     else if (message.arguments[0] != client._nickname)
-        m_reply(client._sock_fd, Replies::ERR_USERSDONTMATCH, 0);
+        m_reply(client._sock_fd, Replies::ERR_USERSDONTMATCH, 0, "");
     
     for (int i = 1; i < message.arguments.size() - 1; ++i) // MIGHT check for enough params inside looop?
     {
@@ -284,7 +284,7 @@ void            Server::m_modeCmd(Client& client)
                 continue ;
             if (modeNum == -1)
             {
-                m_reply(client._sock_fd, Replies::ERR_UMODEUNKNOWNFLAG, 0);
+                m_reply(client._sock_fd, Replies::ERR_UMODEUNKNOWNFLAG, 0, "");
                 continue ; // Ignore it for now, but might be a warning
             }
             if (prefix == '+')
@@ -302,8 +302,44 @@ void            Server::m_modeCmd(Client& client)
         }
     }
     // should reply with a string of the modes
-    m_reply(client._sock_fd, Replies::RPL_UMODEIS, 0);
+    m_reply(client._sock_fd, Replies::RPL_UMODEIS, 0, "");
 }
+
+std::string         Server::m_composeMotd(std::ifstream& motdFile)
+{
+    std::string     text;
+    char            c;
+    int             count;
+
+    count = 0;
+    while (motdFile >> c)
+    {
+        text += c;
+        ++count;
+        if (count == MOTD_LENGTH_LINE)
+        {
+            text += '\n';
+            count = 0;
+        }
+    }
+    return (text);
+}
+
+void                Server::m_motdCmd(Client& client) // We will assume that there is no target, considering it's server to server communication
+{
+    std::ifstream motd("motd.txt");
+
+    if (motd.fail())
+    {
+        m_reply(client._sock_fd, Replies::ERR_NOMOTD, 0, "");
+        return ;
+    }
+    m_reply(client._sock_fd, Replies::RPL_MOTDSTART, 0, "");
+
+    m_reply(client._sock_fd, Replies::RPL_MOTD, 0, this->m_composeMotd(motd));
+    m_reply(client._sock_fd, Replies::RPL_ENDOFMOTD, 0, "");
+}
+
 void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
@@ -323,11 +359,17 @@ void                Server::m_relay(int clientFd)
         if (message.command == USERHOST_COMMAND)
             this->m_userhostCmd(m_clients[clientFd]);
         else if (message.command == USER_COMMAND)
-            m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, 0); // not sure about this
+            m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, 0, ""); // not sure about this
         else if (message.command == QUIT_COMMAND)
             this->m_quitCmd(clientFd, message._literalMsg);
         else if (message.command == MODE_COMMAND)
             this->m_modeCmd(m_clients[clientFd]);
+        else if (message.command == PING_COMMAND)
+            this->m_pingCmd(m_clients[clientFd]); // doesn't do anything for now
+        else if (message.command == PONG_COMMAND)
+            this->m_pongCmd(m_clients[clientFd]); // doesn't do anything for now
+        else if (message.command == MOTD_COMMAND)
+            this->m_motdCmd(m_clients[clientFd]);
         if (!messages.empty())
             messages.pop_front();
     }
@@ -410,7 +452,7 @@ bool    Server::m_checkStatusAuth(Client& client)
         #ifdef DEBUG
         std::cout << "Has authenticated correctly\n";
         #endif
-        m_reply(client._sock_fd, Replies::RPL_WELCOME, 0);
+        m_reply(client._sock_fd, Replies::RPL_WELCOME, 0, "");
         return (client._authenticated = true);
     }
     return (false);
@@ -436,7 +478,7 @@ bool    Server::m_tryAuthentificate(Client& client)
 }
 // heavy refactor
 
-void    Server::m_reply(int clientFd, int replyCode, int extraArg) // TODO:: change this so that it can take a string argument, needed for MODE reply
+void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string message) // TODO:: change this so that it can take a string argument, needed for MODE reply
 {
     #ifdef DEBUG_USERHOST
     std::cout << m_clients[clientFd]._nickname << "|\n";
@@ -471,8 +513,20 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg) // TODO:: cha
         case Replies::ERR_UMODEUNKNOWNFLAG:\
             this->m_send(clientFd, ":" + this->m_serverName + " 501 :Unknown MODE flag\r\n");
             break;
-        case Replies:: RPL_UMODEIS:\
+        case Replies::RPL_UMODEIS:\
             this->m_send(clientFd, ":" + this->m_serverName + " 221 " + m_clients[clientFd]._nickname + " :+i\r\n"); // TODO: change +i to the correct value of modes
+            break;
+        case Replies::ERR_NOMOTD :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 422 :MOTD File is missing\r\n");
+            break;
+        case Replies::RPL_MOTDSTART :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 375 :- " + this->m_serverName + " Message of the day -\r\n");
+            break;
+        case Replies::RPL_ENDOFMOTD :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 376 :End of MOTD command\r\n");
+            break;
+        case Replies::RPL_MOTD:
+            this->m_send(clientFd, ":" + this->m_serverName + " 372 :- " + message + "\r\n");
             break;
     }
 }
@@ -616,7 +670,7 @@ void    Server::m_userhostCmd(Client & client)
     {
         // call the userhost reply
         if (m_nicknames.find(*it) != m_nicknames.end())
-            m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it]);
+            m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it], "");
         it++;
         count += 1;
     }
@@ -634,7 +688,7 @@ void    Server::m_isonCmd(Client & client)
     {
         // call the ison reply
         if (m_nicknames.find(*it) != m_nicknames.end())
-            m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it]);
+            m_reply(client._sock_fd, Replies::RPL_USERHOST, m_nicknames[*it], "");
         it++;
     }
 }
@@ -668,7 +722,7 @@ void    Server::m_nickCmd(Client & client)
                 client._nickAuth = false;
         }
         else
-            m_reply(client._sock_fd, Replies::ERR_NICKNAMEINUSE, 0);
+            m_reply(client._sock_fd, Replies::ERR_NICKNAMEINUSE, 0, "");
     }
 }
 
@@ -683,9 +737,9 @@ void    Server::m_userCmd(Client & client)
         std::cout << "we got the user command\n";
         #endif
         if (client._userAuth)
-            m_reply(client._sock_fd, Replies::ERR_ALREADYREGISTRED, 0);
+            m_reply(client._sock_fd, Replies::ERR_ALREADYREGISTRED, 0, "");
         else if (msg.arguments.size() != 3)
-            m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0);
+            m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0, "");
         else
         {
             client._username = msg.arguments[0];

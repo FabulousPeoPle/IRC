@@ -15,6 +15,7 @@
 # define _SERVER_HPP_
 
 #include <sstream>
+#include <fstream>
 #include <cstdint>
 #include <string>
 #include <iostream>
@@ -66,6 +67,10 @@ namespace Replies
         ERR_USERSDONTMATCH = 502,
         ERR_UMODEUNKNOWNFLAG = 501,
         RPL_UMODEIS = 221,
+        RPL_MOTDSTART = 375,
+        RPL_MOTD = 372,
+        RPL_ENDOFMOTD = 376,
+        ERR_NOMOTD = 422,
     };
 };
 
@@ -77,7 +82,11 @@ namespace Replies
 #define QUIT_COMMAND "QUIT"
 #define ISON_COMMAND "ISON"
 #define MODE_COMMAND "MODE"
+#define PONG_COMMAND "PONG"
+#define PING_COMMAND "PING"
+#define MOTD_COMMAND "MOTD"
 
+#define MOTD_LENGTH_LINE 80
 
 
 typedef struct addrinfo         t_addrinfo;
@@ -168,7 +177,7 @@ class Server {
         void                            m_debugAuthentificate(int clientFd);
         int                             m_send(int toFd, std::string message);
 
-        void                            m_reply(int clientFd, int replyCode, int extraArg);
+        void                            m_reply(int clientFd, int replyCode, int extraArg, std::string message);
         void                            m_setCommandFuncs(void);
 
         bool                            m_checkNickSyntax(Message& message);
@@ -178,7 +187,12 @@ class Server {
         // Need to know more about channel class
         // void                            m_join(int channelNum);
         void                            m_modeCmd(Client& client);
+        void                            m_motdCmd(Client& client);
+        void                            m_pingCmd(Client& client){}; // TODO: Need to test with BITCHX
+        void                            m_pongCmd(Client& client){};
 
+
+        std::string                     m_composeMotd(std::ifstream& motdFile);
 
 
         const std::string               m_serverName;
