@@ -64,6 +64,8 @@ namespace Replies
         ERR_NEEDMOREPARAMS = 461,
         ERR_ALREADYREGISTRED = 462,
         ERR_USERSDONTMATCH = 502,
+        ERR_UMODEUNKNOWNFLAG = 501,
+        RPL_UMODEIS = 221,
     };
 };
 

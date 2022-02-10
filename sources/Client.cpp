@@ -13,7 +13,10 @@
 #include "Client.hpp"
 
 Client::Client(void) : _nickAuth(false), _userAuth(false), _isServerOp(false), _away(false), _authenticated(false)
-{}
+{
+	this->modes = 0;
+	this->turnOnMode(Modes::restricted);
+}
 
 Client::Client(Client const & src)
 {
@@ -23,7 +26,10 @@ Client::Client(Client const & src)
 
 Client::Client(int sock_fd, struct sockaddr_storage addr, socklen_t len) : _sock_fd(sock_fd),
 _addr(addr), _addr_size(len), _nickAuth(false), _userAuth(false), _isServerOp(false), _away(false), _authenticated(false)
-{}
+{
+	this->modes = 0;
+	this->turnOnMode(Modes::restricted);
+}
 
 Client::~Client(void)
 {}

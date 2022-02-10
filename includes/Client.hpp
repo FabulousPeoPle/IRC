@@ -66,7 +66,7 @@ class Client
         bool                        _isServerOp;
         bool                        _away;
         bool                        _authenticated;
-        std::uint8_t                modes = 0; // need to give em default modes
+        std::uint8_t                modes; // need to give em default modes
         static std::uint8_t         modeBitMasks[NUM_MODES];
 
         

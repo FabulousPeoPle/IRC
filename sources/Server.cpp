@@ -280,14 +280,29 @@ void            Server::m_modeCmd(Client& client)
         for (int j = 1; j < message.arguments[i].size(); ++j)
         {
             int modeNum = findMode(message.arguments[i][j]);
+            if (modeNum == Modes::away) // ignore it for now, don't know the exact behaviour
+                continue ;
             if (modeNum == -1)
+            {
+                m_reply(client._sock_fd, Replies::ERR_UMODEUNKNOWNFLAG, 0);
                 continue ; // Ignore it for now, but might be a warning
+            }
             if (prefix == '+')
+            {
+                if (modeNum == Modes::oper || modeNum == Modes::local_oper)
+                    continue ;
                 client.turnOnMode(modeNum);
+            }
             else if (prefix == '-')
+            {
+                if (modeNum == Modes::restricted)
+                    continue ;
                 client.turnOffMode(modeNum);
+            }
         }
     }
+    // should reply with a string of the modes
+    m_reply(client._sock_fd, Replies::RPL_UMODEIS, 0);
 }
 void                Server::m_relay(int clientFd)
 {
@@ -421,7 +436,7 @@ bool    Server::m_tryAuthentificate(Client& client)
 }
 // heavy refactor
 
-void    Server::m_reply(int clientFd, int replyCode, int extraArg) 
+void    Server::m_reply(int clientFd, int replyCode, int extraArg) // TODO:: change this so that it can take a string argument, needed for MODE reply
 {
     #ifdef DEBUG_USERHOST
     std::cout << m_clients[clientFd]._nickname << "|\n";
@@ -452,6 +467,12 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg)
             break;
         case Replies::ERR_USERSDONTMATCH:
             this->m_send(clientFd, ":" + this->m_serverName + " 446 :Cannot change mode for other users\r\n");
+            break;
+        case Replies::ERR_UMODEUNKNOWNFLAG:\
+            this->m_send(clientFd, ":" + this->m_serverName + " 501 :Unknown MODE flag\r\n");
+            break;
+        case Replies:: RPL_UMODEIS:\
+            this->m_send(clientFd, ":" + this->m_serverName + " 221 " + m_clients[clientFd]._nickname + " :+i\r\n"); // TODO: change +i to the correct value of modes
             break;
     }
 }
