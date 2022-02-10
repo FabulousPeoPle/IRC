@@ -13,7 +13,7 @@
 #include "Server.hpp"
 
 // #define DEBUG
-#define DEBUG_USERHOST
+// #define DEBUG_USERHOST
 
 char* strdup(const char *s);
 
@@ -239,32 +239,70 @@ bool            Server::m_isAuthenticated(int clientFd)
 {
     return (this->m_clients[clientFd]._authenticated);
 }
+
+// TODO: check RPL_UMODEIS in other severs
+
+
+int     findMode(char c)
+{
+    switch (c)
+    {
+        case 'a':
+            return (Modes::away);
+        case 'i':
+            return (Modes::invisible);
+        case 'w':
+            return (Modes::wallops);
+        case 'r':
+            return (Modes::restricted);
+        case 'o':
+            return (Modes::oper);
+        case 'O':
+            return (Modes::local_oper);
+        case 's':
+            return (Modes::server_notices);           
+        default:
+            return (-1);
+    }
+}
 void            Server::m_modeCmd(Client& client)
 {
+    Message& message = client.messages.front();
 
-    std::cout << "IN MODE COMMAND\n";
+    if (message.arguments.size() < 2)
+        m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0); // NOT SURE ABOUT THIS
+    else if (message.arguments[0] != client._nickname)
+        m_reply(client._sock_fd, Replies::ERR_USERSDONTMATCH, 0);
     
+    for (int i = 1; i < message.arguments.size() - 1; ++i) // MIGHT check for enough params inside looop?
+    {
+        char prefix = message.arguments[i][0];
+        for (int j = 1; j < message.arguments[i].size(); ++j)
+        {
+            int modeNum = findMode(message.arguments[i][j]);
+            if (modeNum == -1)
+                continue ; // Ignore it for now, but might be a warning
+            if (prefix == '+')
+                client.turnOnMode(modeNum);
+            else if (prefix == '-')
+                client.turnOffMode(modeNum);
+        }
+    }
 }
 void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
     t_messageDQeue& messages = client.messages;
     
-    std::cout << messages.size() << "this is the size\n";
     while (!messages.empty())
     {
         Message& message = messages.front();
 
-        std::cout << &message << "this is the message\n";
         message.parse();
-        std::cout << &(messages.front()) << "this is the message\n";
-
         #ifdef DEBUG
         std::cout << message.command << " this is the command\n";
         #endif
         
-        std::cout << "hello\n";
-        std::cout << message.command << " this is the command\n";
         // This two lines might be deleting our message
         // if (!messages.empty())
         if (message.command == USERHOST_COMMAND)
@@ -411,6 +449,9 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg)
             break;
         case Replies::ERR_ALREADYREGISTRED :\
             this->m_send(clientFd, ":" + this->m_serverName + " 462 :Unauthorized command (already registered)\r\n");
+            break;
+        case Replies::ERR_USERSDONTMATCH:
+            this->m_send(clientFd, ":" + this->m_serverName + " 446 :Cannot change mode for other users\r\n");
             break;
     }
 }

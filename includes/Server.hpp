@@ -63,6 +63,7 @@ namespace Replies
         RPL_USERHOST = 302,
         ERR_NEEDMOREPARAMS = 461,
         ERR_ALREADYREGISTRED = 462,
+        ERR_USERSDONTMATCH = 502,
     };
 };
 
