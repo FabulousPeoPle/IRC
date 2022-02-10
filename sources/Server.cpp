@@ -307,22 +307,29 @@ void            Server::m_modeCmd(Client& client)
 
 std::string         Server::m_composeMotd(std::ifstream& motdFile)
 {
-    std::string     text;
+    std::string     line;
+    std::string     motd;
     char            c;
     int             count;
+    int             cursor;
 
+    while (std::getline(motdFile, line))
+        motd += line;
     count = 0;
-    while (motdFile >> c)
+    cursor = 0;
+    while (cursor < motd.size()) // NEEDS TO BE CHANGED UGLLYYYYYYYY
     {
-        text += c;
-        ++count;
-        if (count == MOTD_LENGTH_LINE)
+        if (count == MOTD_LENGTH_LINE + 1) 
         {
-            text += '\n';
+            if (motd[cursor] != '\n')
+                motd.insert(cursor, "\n");
             count = 0;
         }
+        cursor += 1;
+        count += 1;
     }
-    return (text);
+    std::cout << motd << ": this is motd\n";
+    return (motd);
 }
 
 void                Server::m_motdCmd(Client& client) // We will assume that there is no target, considering it's server to server communication
