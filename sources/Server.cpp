@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/13 22:13:46 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/11 13:01:21 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -270,9 +270,15 @@ void            Server::m_modeCmd(Client& client)
     Message& message = client.messages.front();
 
     if (message.arguments.size() < 2)
+    {
         m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0, ""); // NOT SURE ABOUT THIS
+        return ;
+    }
     else if (message.arguments[0] != client._nickname)
+    {
         m_reply(client._sock_fd, Replies::ERR_USERSDONTMATCH, 0, "");
+        return ;
+    }
     
     for (int i = 1; i < message.arguments.size() - 1; ++i) // MIGHT check for enough params inside looop?
     {
