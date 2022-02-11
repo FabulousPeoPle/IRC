@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/11 15:15:00 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/11 16:52:13 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -419,6 +419,7 @@ void                Server::m_manageClientEvent(int pollIndex)
     else
     {
         buffer[bytesRead] = '\0';
+        std::cout << "buffer: " << buffer << std::endl;
         // send(this->m_pfds[pollIndex].fd, ":555 001 ohachim :welcome\r\n", 86, 0);
         if (this->m_manageRecv(buffer, this->m_pfds[pollIndex].fd))
         {
@@ -763,10 +764,7 @@ void    Server::m_userCmd(Client & client)
             client._username = msg.arguments[0];
             mode = msg.arguments[1];
             client._realname = msg._literalMsg;
-            std::cout << "We got the user command\n";
             client._userAuth = true;
-            if (!client.messages.empty())
-                client.messages.pop_front();
         }
     }
 }
@@ -795,3 +793,6 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
     close(clientFd);
 };
 
+// TODO: compose modes
+// TODO: delete clients when they exit
+// AF_UNSPEC comboed with AF_INET6
