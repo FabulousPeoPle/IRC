@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/11 17:23:25 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/11 17:53:37 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,9 +82,10 @@ namespace Replies
 #define QUIT_COMMAND "QUIT"
 #define ISON_COMMAND "ISON"
 #define MODE_COMMAND "MODE"
-#define PONG_COMMAND "PONG"
-#define PING_COMMAND "PING"
+#define PONG_COMMAND "PONG" // yeet
+#define PING_COMMAND "PING" // yeet
 #define MOTD_COMMAND "MOTD"
+#define AWAY_COMMAND "AWAY"
 
 #define MOTD_LENGTH_LINE 80
 
