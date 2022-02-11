@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/13 20:39:50 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/11 17:25:56 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,6 +68,7 @@ class Client
         bool                        _authenticated;
         std::uint8_t                modes; // need to give em default modes
         static std::uint8_t         modeBitMasks[NUM_MODES];
+        static std::string          potentialModes;
 
         
         Client(void);

@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/11 16:52:13 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/11 17:49:57 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -279,13 +279,13 @@ void            Server::m_modeCmd(Client& client)
         m_reply(client._sock_fd, Replies::ERR_USERSDONTMATCH, 0, "");
         return ;
     }
-    
-    for (int i = 1; i < message.arguments.size() - 1; ++i) // MIGHT check for enough params inside looop?
+    for (int i = 1; i < message.arguments.size(); ++i) // MIGHT check for enough params inside looop?
     {
         char prefix = message.arguments[i][0];
         for (int j = 1; j < message.arguments[i].size(); ++j)
         {
             int modeNum = findMode(message.arguments[i][j]);
+
             if (modeNum == Modes::away) // ignore it for now, don't know the exact behaviour
                 continue ;
             if (modeNum == -1)
@@ -308,7 +308,20 @@ void            Server::m_modeCmd(Client& client)
         }
     }
     // should reply with a string of the modes
-    m_reply(client._sock_fd, Replies::RPL_UMODEIS, 0, "");
+    m_reply(client._sock_fd, Replies::RPL_UMODEIS, 0, this->m_composeModes(client));
+}
+
+std::string         Server::m_composeModes(const Client& client)
+{
+    std::string composition = "+";
+
+    for (int i = 0; i < Client::potentialModes.size(); ++i)
+    {
+        if (client.getModeValue(i))
+            composition += Client::potentialModes[i];
+    }
+    std::cout << std::endl;
+    return (composition);
 }
 
 std::string         Server::m_composeMotd(std::ifstream& motdFile)
@@ -509,11 +522,11 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_WELCOME :\
             this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome bitch\r\n");
             break;
-        case Replies::RPL_USERHOST :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd]._nickname + " :"\
-            + m_clients[extraArg]._nickname + ((m_clients[extraArg]._isServerOp) ? "*" : "\0") + "=" \
-            + ((m_clients[extraArg]._away) ? "+" : "-") + m_clients[extraArg].hostname + "\r\n");
-            break;
+        // case Replies::RPL_USERHOST :\
+        //     this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd]._nickname + " :"\
+        //     + m_clients[extraArg]._nickname + ((m_clients[extraArg]._isServerOp) ? "*" : "\0") + "=" \
+        //     + ((m_clients[extraArg]._away) ? "+" : "-") + m_clients[extraArg].hostname + "\r\n");
+        //     break;
         case Replies::ERR_NICKNAMEINUSE :\
             this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].messages.front().arguments.front() + " :Nickname is already in use bitch\r\n");;
             break;
@@ -533,7 +546,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             this->m_send(clientFd, ":" + this->m_serverName + " 501 :Unknown MODE flag\r\n");
             break;
         case Replies::RPL_UMODEIS:\
-            this->m_send(clientFd, ":" + this->m_serverName + " 221 " + m_clients[clientFd]._nickname + " :+i\r\n"); // TODO: change +i to the correct value of modes
+            this->m_send(clientFd, ":" + this->m_serverName + " 221 " + m_clients[clientFd]._nickname + " :" + message + "\r\n"); // TODO: change +i to the correct value of modes
             break;
         case Replies::ERR_NOMOTD :\
             this->m_send(clientFd, ":" + this->m_serverName + " 422 :MOTD File is missing\r\n");
@@ -769,12 +782,6 @@ void    Server::m_userCmd(Client & client)
     }
 }
 
-
-
-
-// TO WHO SHOULD I SEND THE REPLAY, maybe if the user belongs to no channel, I do nothing!
-// upgrade with channels
-// parameters should be the client& instead of both the client and the message
 void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 {
     Client& client = this->m_clients[clientFd];

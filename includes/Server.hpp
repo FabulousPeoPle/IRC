@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/13 21:50:02 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/11 17:23:25 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,6 +193,7 @@ class Server {
 
 
         std::string                     m_composeMotd(std::ifstream& motdFile);
+        std::string                     m_composeModes(const Client& client);
 
 
         const std::string               m_serverName;

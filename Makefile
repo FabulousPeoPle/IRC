@@ -6,7 +6,7 @@
 #    By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2021/10/05 12:47:22 by ohachim           #+#    #+#              #
-#    Updated: 2022/01/13 22:01:28 by ohachim          ###   ########.fr        #
+#    Updated: 2022/02/11 17:51:47 by ohachim          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -41,8 +41,11 @@ $(OBJ_PATH)/%.o: $(SRC_PATH)/%.cpp $(HEADER)
 	@mkdir $(OBJ_PATH) 2> /dev/null || true
 	$(CC) $(CFLAGS) -I $(INC) -o $@ -c $<
 
+bot:
+	g++ sources/bot.cpp -o bot
 clean:
 	@rm -vf $(OBJ)
+	@rm -vf bot
 	@rmdir $(OBJ_PATH) 2> /dev/null || true
 
 fclean: clean
