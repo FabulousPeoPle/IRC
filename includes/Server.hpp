@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/11 17:53:37 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/11 20:47:29 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,9 @@ namespace Replies
         RPL_MOTD = 372,
         RPL_ENDOFMOTD = 376,
         ERR_NOMOTD = 422,
+        RPL_NOWAWAY = 306,
+        RPL_UNAWAY = 305,
+        ERR_NOTREGISTERED = 541,
     };
 };
 
@@ -184,17 +187,17 @@ class Server {
         bool                            m_checkNickSyntax(Message& message);
         void                            m_eraseClientPoll(int clientFd);
 
-        void                            m_quitCmd(int clientFd, std::string quitMessage);
+        void                            m_quitCmd(int clientFd, std::string quitMessage); // Needs a recheck
         // Need to know more about channel class
         // void                            m_join(int channelNum);
         void                            m_modeCmd(Client& client);
         void                            m_motdCmd(Client& client);
+        void                            m_awayCmd(Client& client);
         void                            m_pingCmd(Client& client){}; // TODO: Need to test with BITCHX
         void                            m_pongCmd(Client& client){};
 
 
         std::string                     m_composeMotd(std::ifstream& motdFile);
-        std::string                     m_composeModes(const Client& client);
 
 
         const std::string               m_serverName;

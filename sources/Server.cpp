@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/11 19:06:28 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/11 20:47:53 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -279,9 +279,9 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
         m_reply(client._sock_fd, Replies::ERR_USERSDONTMATCH, 0, "");
         return ;
     }
-    std::string changes;
+    std::string modeChanges;
     char prefix = message.arguments[1][0];
-    changes += prefix;
+    modeChanges += prefix;
     for (int j = 1; j < message.arguments[1].size(); ++j)
     {
         int modeNum = findMode(message.arguments[1][j]);
@@ -300,7 +300,7 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
             if (!client.getModeValue(modeNum))
             {
                 client.turnOnMode(modeNum);
-                changes += message.arguments[1][j];
+                modeChanges += message.arguments[1][j];
             }
         }
         else if (prefix == '-')
@@ -310,26 +310,13 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
             if (client.getModeValue(modeNum))
             {
                 client.turnOffMode(modeNum);
-                changes += message.arguments[1][j];
+                modeChanges += message.arguments[1][j];
             }
         }
     }
     // should reply with a string of the modes
-    if (changes.size() > 1) // that's how GeekShed do it
-        m_reply(client._sock_fd, Replies::RPL_UMODEIS, 0, changes);
-}
-
-std::string         Server::m_composeModes(const Client& client)
-{
-    std::string composition = "+";
-
-    for (int i = 0; i < Client::potentialModes.size(); ++i)
-    {
-        if (client.getModeValue(i))
-            composition += Client::potentialModes[i];
-    }
-    std::cout << std::endl;
-    return (composition);
+    if (modeChanges.size() > 1) // that's how GeekShed do it
+        m_reply(client._sock_fd, Replies::RPL_UMODEIS, 0, modeChanges);
 }
 
 std::string         Server::m_composeMotd(std::ifstream& motdFile)
@@ -352,10 +339,7 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile)
         if (count == MOTD_LENGTH_LINE + 1) 
         {
             if (motd[cursor] != '\n')
-            {
-                std::cout << "inserted a new line in: " << cursor << std::endl;
                 motd.insert(cursor, "\n");
-            }
             count = 0;
         }
         cursor += 1;
@@ -377,6 +361,24 @@ void                Server::m_motdCmd(Client& client) // We will assume that the
 
     m_reply(client._sock_fd, Replies::RPL_MOTD, 0, this->m_composeMotd(motd));
     m_reply(client._sock_fd, Replies::RPL_ENDOFMOTD, 0, "");
+}
+
+void                Server::m_awayCmd(Client& client) // SHOULD WORK TOGETHER WITH PRIVMSG
+{
+    Message& message = client.messages.front();
+
+    if (message._literalMsg.size())
+    {
+        client.awayMessage = message._literalMsg;
+        client.turnOnMode(Modes::away);
+        m_reply(client._sock_fd, Replies::RPL_NOWAWAY, 0, "");
+    }
+    else
+    {
+        client.awayMessage = "";
+        client.turnOffMode(Modes::away);
+        m_reply(client._sock_fd, Replies::RPL_UNAWAY, 0, "");
+    }
 }
 
 void                Server::m_relay(int clientFd)
@@ -409,6 +411,8 @@ void                Server::m_relay(int clientFd)
             this->m_pongCmd(m_clients[clientFd]); // doesn't do anything for now
         else if (message.command == MOTD_COMMAND)
             this->m_motdCmd(m_clients[clientFd]);
+        else if (message.command == AWAY_COMMAND)
+            this->m_awayCmd(m_clients[clientFd]);
         if (!messages.empty())
             messages.pop_front();
     }
@@ -430,9 +434,12 @@ void                Server::m_manageClientEvent(int pollIndex)
     if (bytesRead <= 0)
     {
         if (bytesRead == 0)
+        {
             std::cout << "Client disconnected.\n";
+        }
         else
             perror("recv: ");
+        this->m_nicknames.erase(m_clients[this->m_pfds[pollIndex].fd]._nickname);
         this->m_pfds.erase(this->m_pfds.begin() + pollIndex);
         m_clients.erase(this->m_pfds[pollIndex].fd);
         close(this->m_pfds[pollIndex].fd);
@@ -509,6 +516,12 @@ bool    Server::m_tryAuthentificate(Client& client)
         Message& msg = client.messages.front();
 
         msg.parse();
+        // TODO: these two functions should return bool, if non of them returns true, an ERR_NOTREGISTERED ERROR should be returned
+        if (msg.command != NICK_COMMAND && msg.command != USER_COMMAND)
+        {
+            m_reply(client._sock_fd, Replies::ERR_NOTREGISTERED, 0, "");
+            return (false);
+        }
         m_userCmd(client);
         m_nickCmd(client);
         if (!client.messages.empty())
@@ -568,6 +581,12 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_MOTD:
             this->m_send(clientFd, ":" + this->m_serverName + " 372 :- " + message + "\r\n");
             break;
+        case Replies::RPL_NOWAWAY:
+            this->m_send(clientFd, ":You have been marked as being away\r\n");
+        case Replies::RPL_UNAWAY:
+            this->m_send(clientFd, ":You are no longer marked as being away\r\n");
+        case Replies::ERR_NOTREGISTERED:
+            this->m_send(clientFd, ":You have not registered\r\n");
     }
 }
 
@@ -790,12 +809,14 @@ void    Server::m_userCmd(Client & client)
     }
 }
 
-void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
+// TODO: needs tweaks, mainly a hostname, a string of the address, and an if else depending on if a message was left or not
+void                    Server::m_quitCmd(int clientFd, std::string quitMessage) 
 {
     Client& client = this->m_clients[clientFd];
 
-    std::string messageToSend = ":" + client._nickname + "!" + client.hostname
-                                 + " " + quitMessage + "\r\n";
+    std::string messageToSend = "ERROR : Closing Link: " + client._username + "(" 
+                                + client.messages.front()._literalMsg + ") [address] (Quit: "
+                                    + client._nickname + ")" + END_STRING;
 
     this->m_send(clientFd, messageToSend);
     // should I cut the connection
@@ -808,6 +829,9 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
     close(clientFd);
 };
 
-// TODO: compose modes
-// TODO: delete clients when they exit
+/* QUIT ERROR MSG in GeekShed
+ *  QUIT :sayonara wa
+ *  ERROR :Closing Link: ohachim[ll62-88-161-251-62.ll62.iam.net.ma] (Quit: ohachim)
+*/
+
 // AF_UNSPEC comboed with AF_INET6
