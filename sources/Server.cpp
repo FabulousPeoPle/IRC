@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/11 13:01:21 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/11 15:15:00 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -320,21 +320,26 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile)
     int             cursor;
 
     while (std::getline(motdFile, line))
+    {
         motd += line;
+        motd += '\n';
+    }
     count = 0;
     cursor = 0;
-    while (cursor < motd.size()) // NEEDS TO BE CHANGED UGLLYYYYYYYY
+    while (cursor < motd.size()) // NEEDS TO BE CHANGED; UGLLYYYYYYYY
     {
         if (count == MOTD_LENGTH_LINE + 1) 
         {
             if (motd[cursor] != '\n')
+            {
+                std::cout << "inserted a new line in: " << cursor << std::endl;
                 motd.insert(cursor, "\n");
+            }
             count = 0;
         }
         cursor += 1;
         count += 1;
     }
-    std::cout << motd << ": this is motd\n";
     return (motd);
 }
 
