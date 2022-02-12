@@ -1,8 +1,8 @@
+    
+    emails and stuff:
 
-emails and stuff:
+        [ohachim@student.1337.ma]
 
-    [ohachim@student.1337.ma]
+        [azouiten@student.1337.ma]
 
-    [azouiten@student.1337.ma]
-
-    [melalj@student.1337.ma]
+        [melalj@student.1337.ma]

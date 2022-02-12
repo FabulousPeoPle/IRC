@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/11 20:47:29 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/12 11:32:33 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,10 @@ namespace Replies
     enum
     {
         RPL_WELCOME = 1,
+        RPL_YOURHOST = 2,
+        RPL_CREATED = 3,
+        RPL_MYINFO = 4,
+        RPL_BOUNCE = 5,
         ERR_NICKNAMEINUSE = 433,
         ERR_ERRONEUSNICKNAME = 423,
         RPL_USERHOST = 302,
@@ -123,7 +127,7 @@ class Server {
         // typedef void (*commandFunc)(Client&);
                                     // constructors are probably going to be useless
                                         Server(void);
-                                        Server(std::string port, std::string hostname, std::string serverName);
+                                        Server(std::string port, std::string hostname, std::string serverName, int maxClients);
                                         Server(const Server& serverRef);
                                         ~Server();
         Server&                         operator=(const Server& serverRef);
@@ -204,6 +208,8 @@ class Server {
         const std::string               m_port;
         // Maybe this is usless since we are always going to connect to the same thing
         const std::string               m_hostname;
+        const std::string               m_version;
+        const int                       m_maxClients;
         t_addrinfo*                     m_servinfo;
         t_addrinfo                      m_hints;
         // in case we wanted to do it manually

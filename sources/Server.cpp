@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/11 20:47:53 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/12 12:04:58 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 
 char* strdup(const char *s);
 
-Server::Server(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME)
+Server::Server(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME), m_version("0.1"), m_maxClients(150)
 {
     #ifdef DEBUG
     std::cout << "Default Server constructor called." << std::endl;
@@ -38,7 +38,7 @@ Server::~Server(void)
     #endif
 }
 
-Server::Server(std::string port, std::string hostname, std::string name) : m_serverName(name), m_port(port), m_hostname(hostname)
+Server::Server(std::string port, std::string hostname, std::string name, int maxClients) : m_serverName(name), m_port(port), m_hostname(hostname), m_version("0.1"), m_maxClients(maxClients)
 {
     #ifdef DEBUG
     std::cout << "Port/Hostname constructor called." << std::endl;
@@ -52,7 +52,7 @@ Server::Server(std::string port, std::string hostname, std::string name) : m_ser
     memset(&(this->m_addr_in6), 0, sizeof(this->m_addr_in6));
 }
 
-Server::Server(const Server& serverRef)
+Server::Server(const Server& serverRef) : m_maxClients(serverRef.m_maxClients) // ach had s7our
 {
     #ifdef DEBUG
     std::cout << "Copy constructor called." << std::endl;
@@ -230,8 +230,17 @@ int            Server::m_manageServerEvent(void)
         perror("accept: ");
         return (-1);
     }
-    this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
-    this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
+    if (this->m_clients.size() < this->m_maxClients)
+    {
+        this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
+        this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
+    }
+    else
+    {
+        m_reply(newFd, Replies::RPL_BOUNCE, 0, "");
+        close(newFd);
+        return (-2);
+    }
     return (0);
 }
 
@@ -348,6 +357,8 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile)
     return (motd);
 }
 
+// TODO: FIX BUG, WHERE A NEW LINE IS INSERTED WHEN IT'S NOT NEEDED
+
 void                Server::m_motdCmd(Client& client) // We will assume that there is no target, considering it's server to server communication
 {
     std::ifstream motd("motd.txt");
@@ -447,7 +458,6 @@ void                Server::m_manageClientEvent(int pollIndex)
     else
     {
         buffer[bytesRead] = '\0';
-        std::cout << "buffer: " << buffer << std::endl;
         // send(this->m_pfds[pollIndex].fd, ":555 001 ohachim :welcome\r\n", 86, 0);
         if (this->m_manageRecv(buffer, this->m_pfds[pollIndex].fd))
         {
@@ -500,6 +510,9 @@ bool    Server::m_checkStatusAuth(Client& client)
         std::cout << "Has authenticated correctly\n";
         #endif
         m_reply(client._sock_fd, Replies::RPL_WELCOME, 0, "");
+        m_reply(client._sock_fd, Replies::RPL_YOURHOST, 0, "");
+        m_reply(client._sock_fd, Replies::RPL_CREATED, 0, "");
+        m_reply(client._sock_fd, Replies::RPL_MYINFO, 0, "");
         return (client._authenticated = true);
     }
     return (false);
@@ -538,10 +551,22 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
     std::cout << extraArg << "+++" << clientFd << std::endl;
     #endif
     
-    switch (replyCode)
+    switch (replyCode)  // TODO: care for message syntax
     {
         case Replies::RPL_WELCOME :\
             this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome bitch\r\n");
+            break;
+        case Replies::RPL_YOURHOST:  // TODO: care for message syntax
+            this->m_send(clientFd, ":" + this->m_serverName + " 002 " + m_clients[clientFd]._nickname + " :Your host is " + this->m_serverName + ", running version " + this->m_version + "\r\n");
+            break;
+        case Replies::RPL_CREATED:
+            this->m_send(clientFd, ":" + this->m_serverName + " 003 " + m_clients[clientFd]._nickname + " :This server was created Sat Feb 12 2020 at 10:40:00 GMT\r\n");
+            break;
+        case Replies::RPL_MYINFO: // TODO: decide on the possible modes for channels and users
+            this->m_send(clientFd, ":" + this->m_serverName + " 004 " + m_clients[clientFd]._nickname + " " + this->m_serverName + " " + this->m_version + " " + "ao" + " " + "mtov");
+            break;
+        case Replies::RPL_BOUNCE:
+            this->m_send(clientFd, ":" + this->m_serverName + " 005 " + m_clients[clientFd]._nickname + " :Try server 'DS9.GeekShed.net', port '6667'\r\n");
             break;
         // case Replies::RPL_USERHOST :\
         //     this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd]._nickname + " :"\
@@ -566,8 +591,8 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::ERR_UMODEUNKNOWNFLAG:\
             this->m_send(clientFd, ":" + this->m_serverName + " 501 :Unknown MODE flag\r\n");
             break;
-        case Replies::RPL_UMODEIS:\
-            this->m_send(clientFd, ":" + m_clients[clientFd]._nickname + " 221 " + m_clients[clientFd]._nickname + " :" + message + "\r\n"); // TODO: change +i to the correct value of modes
+        case Replies::RPL_UMODEIS: // TODO: EXTRA CARE
+            this->m_send(clientFd, ":" + this->m_serverName + " 221 " + m_clients[clientFd]._nickname + " :" + message + "\r\n"); // TODO: change +i to the correct value of modes
             break;
         case Replies::ERR_NOMOTD :\
             this->m_send(clientFd, ":" + this->m_serverName + " 422 :MOTD File is missing\r\n");
@@ -581,12 +606,12 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_MOTD:
             this->m_send(clientFd, ":" + this->m_serverName + " 372 :- " + message + "\r\n");
             break;
-        case Replies::RPL_NOWAWAY:
-            this->m_send(clientFd, ":You have been marked as being away\r\n");
-        case Replies::RPL_UNAWAY:
-            this->m_send(clientFd, ":You are no longer marked as being away\r\n");
-        case Replies::ERR_NOTREGISTERED:
-            this->m_send(clientFd, ":You have not registered\r\n");
+        case Replies::RPL_NOWAWAY: // TODO: care for message syntax
+            this->m_send(clientFd, ":" + this->m_serverName + " 306 :You have been marked as being away\r\n");
+        case Replies::RPL_UNAWAY:  // TODO: care for message syntax
+            this->m_send(clientFd, ":" + this->m_serverName + " 305 :You are no longer marked as being away\r\n");
+        case Replies::ERR_NOTREGISTERED:  // TODO: care for message syntax
+            this->m_send(clientFd, ":" + this->m_serverName + " 451 :You have not registered\r\n");
     }
 }
 
@@ -603,7 +628,11 @@ void            Server::m_managePoll(void)
             if (this->m_pfds[i].fd == this->m_sockfd)
             {
                 if (this->m_manageServerEvent())
+                {
+                    this->m_poll_count--;
                     continue ;
+                }
+
             } // if client socket
             else
                 this->m_manageClientEvent(i); 
