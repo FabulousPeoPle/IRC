@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/12 12:25:02 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/12 12:38:16 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -353,11 +353,12 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile)
         }
         cursor += 1;
         count += 1;
+        if (motd[cursor] == '\n')
+            count = 0;
     }
     return (motd);
 }
 
-// TODO: FIX BUG, WHERE A NEW LINE IS INSERTED WHEN IT'S NOT NEEDED
 
 void                Server::m_motdCmd(Client& client) // We will assume that there is no target, considering it's server to server communication
 {
@@ -518,7 +519,7 @@ bool    Server::m_checkStatusAuth(Client& client)
     return (false);
 }
 
-// TODO: BUG
+
 
 bool    Server::m_tryAuthentificate(Client& client)
 {
