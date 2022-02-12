@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/12 13:08:12 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/12 13:25:06 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -523,6 +523,16 @@ bool    Server::m_checkStatusAuth(Client& client)
     return (false);
 }
 
+bool    Server::m_isValidCommand(std::string potentialCommand)
+{
+    for (int i = 0; i < NUM_COMMANDS; ++i)
+    {
+        if (potentialCommand == Server::m_possibleCommands[i])
+            return (true);
+    }
+    return (false);
+}
+
 bool    Server::m_tryAuthentificate(Client& client)
 {
     #ifdef DEBUG
@@ -536,8 +546,8 @@ bool    Server::m_tryAuthentificate(Client& client)
         msg.parse();
         if (msg.command != NICK_COMMAND && msg.command != USER_COMMAND)
         {
-            // if (this->isCommand(msg.command)) // TODO: ANAS check if command is an acceptable command
-            m_reply(client._sock_fd, Replies::ERR_NOTREGISTERED, 0, "");
+            if (this->m_isValidCommand(msg.command)) // TODO: ANAS check if command is an acceptable command
+                m_reply(client._sock_fd, Replies::ERR_NOTREGISTERED, 0, "");
             if (!client.messages.empty())
                 client.messages.pop_front();
             return (false);
@@ -876,3 +886,4 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 
 // AF_UNSPEC comboed with AF_INET6
 
+std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY"};

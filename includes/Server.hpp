@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/12 13:03:41 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/12 13:22:23 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,6 +94,8 @@ namespace Replies
 #define PING_COMMAND "PING" // yeet
 #define MOTD_COMMAND "MOTD"
 #define AWAY_COMMAND "AWAY"
+
+#define NUM_COMMANDS 11
 
 #define MOTD_LENGTH_LINE 80
 
@@ -204,7 +206,7 @@ class Server {
 
         std::string                     m_composeMotd(std::ifstream& motdFile);
 
-        bool                            m_isCommand(std::string potentialCommand);
+        bool                            m_isValidCommand(std::string potentialCommand);
 
         const std::string               m_serverName;
         const std::string               m_port;
@@ -229,6 +231,8 @@ class Server {
         
         // the key is the nickname itself and the value is the clientfd
         std::map<std::string, int>      m_nicknames;
+
+        static std::string              m_possibleCommands[NUM_COMMANDS];
 };
 
 #endif
