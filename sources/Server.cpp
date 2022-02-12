@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/12 12:38:16 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/12 13:08:12 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,9 @@
 
 // #define DEBUG
 // #define DEBUG_USERHOST
+
+// TODO: NICK NEEDS TO CHECK FOR NUMBER OF PARAMETERS
+// 
 
 char* strdup(const char *s);
 
@@ -359,7 +362,6 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile)
     return (motd);
 }
 
-
 void                Server::m_motdCmd(Client& client) // We will assume that there is no target, considering it's server to server communication
 {
     std::ifstream motd("motd.txt");
@@ -370,7 +372,6 @@ void                Server::m_motdCmd(Client& client) // We will assume that the
         return ;
     }
     m_reply(client._sock_fd, Replies::RPL_MOTDSTART, 0, "");
-
     m_reply(client._sock_fd, Replies::RPL_MOTD, 0, this->m_composeMotd(motd));
     m_reply(client._sock_fd, Replies::RPL_ENDOFMOTD, 0, "");
 }
@@ -425,6 +426,8 @@ void                Server::m_relay(int clientFd)
             this->m_motdCmd(m_clients[clientFd]);
         else if (message.command == AWAY_COMMAND)
             this->m_awayCmd(m_clients[clientFd]);
+        else
+            m_reply(clientFd, Replies::ERR_UNKNOWNCOMMAND, 0, message.command);
         if (!messages.empty())
             messages.pop_front();
     }
@@ -464,6 +467,7 @@ void                Server::m_manageClientEvent(int pollIndex)
         {
             if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
             {
+                std::cout << "WTF are u doing here\n";
                 this->m_relay(this->m_pfds[pollIndex].fd);
                 // this->m_reply(this->m_pfds[pollIndex].fd);
                 // this->m_clients[this->m_pfds[pollIndex].fd].msg._messageQueue.pop_front();
@@ -519,8 +523,6 @@ bool    Server::m_checkStatusAuth(Client& client)
     return (false);
 }
 
-
-
 bool    Server::m_tryAuthentificate(Client& client)
 {
     #ifdef DEBUG
@@ -534,6 +536,7 @@ bool    Server::m_tryAuthentificate(Client& client)
         msg.parse();
         if (msg.command != NICK_COMMAND && msg.command != USER_COMMAND)
         {
+            // if (this->isCommand(msg.command)) // TODO: ANAS check if command is an acceptable command
             m_reply(client._sock_fd, Replies::ERR_NOTREGISTERED, 0, "");
             if (!client.messages.empty())
                 client.messages.pop_front();
@@ -616,6 +619,10 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             this->m_send(clientFd, ":" + this->m_serverName + " 305 :You are no longer marked as being away\r\n");
         case Replies::ERR_NOTREGISTERED:  // TODO: care for message syntax
             this->m_send(clientFd, ":" + this->m_serverName + " 451 :You have not registered\r\n");
+            break;
+        case Replies::ERR_UNKNOWNCOMMAND:
+            this->m_send(clientFd, ":" + this->m_serverName + " 421 :" + message + " :Unknown command\r\n");
+            break;
     }
 }
 
@@ -868,3 +875,4 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 */
 
 // AF_UNSPEC comboed with AF_INET6
+

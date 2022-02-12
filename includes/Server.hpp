@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/12 11:32:33 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/12 13:03:41 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,6 +78,7 @@ namespace Replies
         RPL_NOWAWAY = 306,
         RPL_UNAWAY = 305,
         ERR_NOTREGISTERED = 541,
+        ERR_UNKNOWNCOMMAND = 421,
     };
 };
 
@@ -203,6 +204,7 @@ class Server {
 
         std::string                     m_composeMotd(std::ifstream& motdFile);
 
+        bool                            m_isCommand(std::string potentialCommand);
 
         const std::string               m_serverName;
         const std::string               m_port;
@@ -227,7 +229,6 @@ class Server {
         
         // the key is the nickname itself and the value is the clientfd
         std::map<std::string, int>      m_nicknames;
-
 };
 
 #endif
