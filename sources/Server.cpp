@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/12 12:04:58 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/12 12:25:02 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -518,6 +518,8 @@ bool    Server::m_checkStatusAuth(Client& client)
     return (false);
 }
 
+// TODO: BUG
+
 bool    Server::m_tryAuthentificate(Client& client)
 {
     #ifdef DEBUG
@@ -529,10 +531,11 @@ bool    Server::m_tryAuthentificate(Client& client)
         Message& msg = client.messages.front();
 
         msg.parse();
-        // TODO: these two functions should return bool, if non of them returns true, an ERR_NOTREGISTERED ERROR should be returned
         if (msg.command != NICK_COMMAND && msg.command != USER_COMMAND)
         {
             m_reply(client._sock_fd, Replies::ERR_NOTREGISTERED, 0, "");
+            if (!client.messages.empty())
+                client.messages.pop_front();
             return (false);
         }
         m_userCmd(client);
@@ -568,11 +571,11 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_BOUNCE:
             this->m_send(clientFd, ":" + this->m_serverName + " 005 " + m_clients[clientFd]._nickname + " :Try server 'DS9.GeekShed.net', port '6667'\r\n");
             break;
-        // case Replies::RPL_USERHOST :\
-        //     this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd]._nickname + " :"\
-        //     + m_clients[extraArg]._nickname + ((m_clients[extraArg]._isServerOp) ? "*" : "\0") + "=" \
-        //     + ((m_clients[extraArg]._away) ? "+" : "-") + m_clients[extraArg].hostname + "\r\n");
-        //     break;
+        case Replies::RPL_USERHOST :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd]._nickname + " :"\
+            + m_clients[extraArg]._nickname + ((m_clients[extraArg]._isServerOp) ? "*" : "\0") + "=" \
+            + ((m_clients[extraArg]._away) ? "+" : "-") + m_clients[extraArg].hostname + "\r\n");
+            break;
         case Replies::ERR_NICKNAMEINUSE :\
             this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].messages.front().arguments.front() + " :Nickname is already in use bitch\r\n");;
             break;

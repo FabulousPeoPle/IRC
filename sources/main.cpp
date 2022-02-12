@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:54 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/12 11:36:40 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/12 12:15:41 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ char* strdup(const char *s)
 int main(void)
 {
     
-    Server myServer("6667", "", "Server@1337.ma", 1);
+    Server myServer("6667", "", "Server@1337.ma", 150);
 
     std::cout << "Server name: " << myServer.getServName() << std::endl;
     
