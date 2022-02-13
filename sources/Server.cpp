@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/12 13:25:06 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/13 20:15:30 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -331,7 +331,7 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
         m_reply(client._sock_fd, Replies::RPL_UMODEIS, 0, modeChanges);
 }
 
-std::string         Server::m_composeMotd(std::ifstream& motdFile)
+std::string         Server::m_composeMotd(std::ifstream& motdFile, std::string clientNick)
 {
     std::string     line;
     std::string     motd;
@@ -341,7 +341,8 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile)
 
     while (std::getline(motdFile, line))
     {
-        motd += line;
+        if (!motd.empty())
+            motd += ":" + this->m_serverName + " 372 " + clientNick + " :-\t  " + line;
         motd += '\n';
     }
     count = 0;
@@ -362,6 +363,8 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile)
     return (motd);
 }
 
+
+// TODO: Would be nice if we add the servername and command code in every line
 void                Server::m_motdCmd(Client& client) // We will assume that there is no target, considering it's server to server communication
 {
     std::ifstream motd("motd.txt");
@@ -372,7 +375,7 @@ void                Server::m_motdCmd(Client& client) // We will assume that the
         return ;
     }
     m_reply(client._sock_fd, Replies::RPL_MOTDSTART, 0, "");
-    m_reply(client._sock_fd, Replies::RPL_MOTD, 0, this->m_composeMotd(motd));
+    m_reply(client._sock_fd, Replies::RPL_MOTD, 0, this->m_composeMotd(motd, client._nickname));
     m_reply(client._sock_fd, Replies::RPL_ENDOFMOTD, 0, "");
 }
 
@@ -394,6 +397,16 @@ void                Server::m_awayCmd(Client& client) // SHOULD WORK TOGETHER WI
     }
 }
 
+void                Server::m_lusersCmd(Client& client)
+{
+    m_reply(client._sock_fd, Replies::RPL_LUSERCLIENT, 0, "");
+    m_reply(client._sock_fd, Replies::RPL_LUSEROP, 0, "");
+    m_reply(client._sock_fd, Replies::RPL_LUSERUNKNOWN, 0, "");
+    m_reply(client._sock_fd, Replies::RPL_LUSERCHANNELS, 0, "");
+    m_reply(client._sock_fd, Replies::RPL_LUSERME, 0, "");
+    
+}
+// TODO: WE SHOULD BE ABLE TO USE NICK AGAIN
 void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
@@ -426,7 +439,9 @@ void                Server::m_relay(int clientFd)
             this->m_motdCmd(m_clients[clientFd]);
         else if (message.command == AWAY_COMMAND)
             this->m_awayCmd(m_clients[clientFd]);
-        else
+        else if (message.command == LUSERS_COMMAND)
+            this->m_lusersCmd(m_clients[clientFd]);
+        else if (message.command.size())
             m_reply(clientFd, Replies::ERR_UNKNOWNCOMMAND, 0, message.command);
         if (!messages.empty())
             messages.pop_front();
@@ -467,7 +482,6 @@ void                Server::m_manageClientEvent(int pollIndex)
         {
             if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
             {
-                std::cout << "WTF are u doing here\n";
                 this->m_relay(this->m_pfds[pollIndex].fd);
                 // this->m_reply(this->m_pfds[pollIndex].fd);
                 // this->m_clients[this->m_pfds[pollIndex].fd].msg._messageQueue.pop_front();
@@ -518,6 +532,7 @@ bool    Server::m_checkStatusAuth(Client& client)
         m_reply(client._sock_fd, Replies::RPL_YOURHOST, 0, "");
         m_reply(client._sock_fd, Replies::RPL_CREATED, 0, "");
         m_reply(client._sock_fd, Replies::RPL_MYINFO, 0, "");
+        this->m_motdCmd(client);
         return (client._authenticated = true);
     }
     return (false);
@@ -571,7 +586,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
     switch (replyCode)  // TODO: care for message syntax
     {
         case Replies::RPL_WELCOME :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome bitch\r\n");
+            this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome sunshine\r\n");
             break;
         case Replies::RPL_YOURHOST:  // TODO: care for message syntax
             this->m_send(clientFd, ":" + this->m_serverName + " 002 " + m_clients[clientFd]._nickname + " :Your host is " + this->m_serverName + ", running version " + this->m_version + "\r\n");
@@ -580,7 +595,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             this->m_send(clientFd, ":" + this->m_serverName + " 003 " + m_clients[clientFd]._nickname + " :This server was created Sat Feb 12 2020 at 10:40:00 GMT\r\n");
             break;
         case Replies::RPL_MYINFO: // TODO: decide on the possible modes for channels and users
-            this->m_send(clientFd, ":" + this->m_serverName + " 004 " + m_clients[clientFd]._nickname + " " + this->m_serverName + " " + this->m_version + " " + "ao" + " " + "mtov");
+            this->m_send(clientFd, ":" + this->m_serverName + " 004 " + m_clients[clientFd]._nickname + " :" + this->m_serverName + " " + this->m_version + " " + "ao" + " " + "mtov\r\n");
             break;
         case Replies::RPL_BOUNCE:
             this->m_send(clientFd, ":" + this->m_serverName + " 005 " + m_clients[clientFd]._nickname + " :Try server 'DS9.GeekShed.net', port '6667'\r\n");
@@ -591,7 +606,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             + ((m_clients[extraArg]._away) ? "+" : "-") + m_clients[extraArg].hostname + "\r\n");
             break;
         case Replies::ERR_NICKNAMEINUSE :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].messages.front().arguments.front() + " :Nickname is already in use bitch\r\n");;
+            this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].messages.front().arguments.front() + " :Nickname is already in use hun\r\n");;
             break;
         case Replies::ERR_ERRONEUSNICKNAME :\
             this->m_send(clientFd, ":" + this->m_serverName + " 432 " + m_clients[clientFd]._nickname + " :Erroneous nickname\r\n");
@@ -615,25 +630,103 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             this->m_send(clientFd, ":" + this->m_serverName + " 422 :MOTD File is missing\r\n");
             break;
         case Replies::RPL_MOTDSTART :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 375 :- " + this->m_serverName + " Message of the day -\r\n");
+            this->m_send(clientFd, ":" + this->m_serverName + " 375 " + m_clients[clientFd]._nickname +  " :- " + this->m_serverName + " Message of the day -\r\n");
             break;
         case Replies::RPL_ENDOFMOTD :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 376 :End of MOTD command\r\n");
+            this->m_send(clientFd, ":" + this->m_serverName + " 376 " + m_clients[clientFd]._nickname + " :End of MOTD command\r\n");
             break;
-        case Replies::RPL_MOTD:
-            this->m_send(clientFd, ":" + this->m_serverName + " 372 :- " + message + "\r\n");
+        case Replies::RPL_MOTD: // TODO: DECIDE IF WE WANNA PRINT DATE AFTER EVERY LINE
+            this->m_send(clientFd, ":" + this->m_serverName + " 372 " + m_clients[clientFd]._nickname + " :- " + message + "\r\n");
             break;
         case Replies::RPL_NOWAWAY: // TODO: care for message syntax
             this->m_send(clientFd, ":" + this->m_serverName + " 306 :You have been marked as being away\r\n");
+            break;
         case Replies::RPL_UNAWAY:  // TODO: care for message syntax
             this->m_send(clientFd, ":" + this->m_serverName + " 305 :You are no longer marked as being away\r\n");
+            break;
         case Replies::ERR_NOTREGISTERED:  // TODO: care for message syntax
             this->m_send(clientFd, ":" + this->m_serverName + " 451 :You have not registered\r\n");
             break;
         case Replies::ERR_UNKNOWNCOMMAND:
             this->m_send(clientFd, ":" + this->m_serverName + " 421 :" + message + " :Unknown command\r\n");
             break;
+        case Replies::RPL_LUSERCLIENT:
+            this->m_send(clientFd, ":" + this->m_serverName + " 251 " + m_clients[clientFd]._nickname + " :There are " + std::to_string(this->m_calculateUsers()) + " user(s) on the server\r\n"); // TODO: STILL need to add number of services and the number of servers
+            break;
+        case Replies::RPL_LUSEROP:
+            this->m_send(clientFd, ":" + this->m_serverName + " 252 " + m_clients[clientFd]._nickname + " :" + std::to_string(this->m_calculateOperators()) + " operator(s) online\r\n");
+            break;
+        case Replies::RPL_LUSERUNKNOWN:
+            this->m_send(clientFd, ":" + this->m_serverName + " 253 " + m_clients[clientFd]._nickname + " :" + std::to_string(this->m_calculateUnknownConnections()) + " unknown connection(s)\r\n");
+            break;
+        case Replies::RPL_LUSERME:
+            this->m_send(clientFd, ":" + this->m_serverName + " 255 " + m_clients[clientFd]._nickname + " :" + std::to_string(this->m_calculateKnownConnections()) + " client(s)\r\n");
+            break;  
+
+
     }
+}
+
+int             Server::m_calculateOperators(void) // there is probably a better way to do this, but it doesn't matter.
+{
+    std::map<int, Client>::iterator it;
+    int                             operators;
+
+    operators = 0;
+    for (it = this->m_clients.begin(); it != this->m_clients.end(); ++it)
+    {
+        if (it->second.getModeValue(Modes::oper) || it->second.getModeValue(Modes::local_oper)) // both operator types??
+            ++operators;
+    }
+    return (operators);
+
+}
+
+int             Server::m_calculateKnownConnections(void)
+{
+    std::map<int, Client>::iterator it;
+    int                             knowns;
+
+    knowns = 0;
+    for (it = this->m_clients.begin(); it != this->m_clients.end(); ++it)
+    {
+        if (Server::m_isUser(it->second))
+            ++knowns;
+    }
+    return (knowns);
+}
+
+int             Server::m_calculateUsers(void)
+{
+    std::map<int, Client>::iterator it;
+    int                             users;
+
+    users = 0;
+    for (it = this->m_clients.begin(); it != this->m_clients.end(); ++it)
+    {
+        if (this->m_isAuthenticated(it->second._sock_fd))
+            ++users;
+    }
+    return (users);
+}
+
+int             Server::m_calculateUnknownConnections(void)
+{
+    std::map<int, Client>::iterator it;
+    int                             unknowns;
+
+    unknowns = 0;
+    for (it = this->m_clients.begin(); it != this->m_clients.end(); ++it)
+    {
+        if (!Server::m_isUser(it->second))
+            ++unknowns;
+    }
+    return (unknowns);
+}
+
+bool            Server::m_isUser(Client& client) const
+{
+    return (client._userAuth || client._nickAuth);
 }
 
 void            Server::m_managePoll(void)
@@ -886,4 +979,4 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 
 // AF_UNSPEC comboed with AF_INET6
 
-std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY"};
+std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS"};

@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/12 13:22:23 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/13 20:12:38 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,8 +79,15 @@ namespace Replies
         RPL_UNAWAY = 305,
         ERR_NOTREGISTERED = 541,
         ERR_UNKNOWNCOMMAND = 421,
+        RPL_LUSERCLIENT = 251,
+        RPL_LUSEROP = 252,
+        RPL_LUSERUNKNOWN = 253,
+        RPL_LUSERCHANNELS,
+        RPL_LUSERME = 255,
+        //ERR_NOSUCHSERVER
     };
 };
+
 
 
 #define USER_COMMAND "USER"
@@ -94,8 +101,9 @@ namespace Replies
 #define PING_COMMAND "PING" // yeet
 #define MOTD_COMMAND "MOTD"
 #define AWAY_COMMAND "AWAY"
+#define LUSERS_COMMAND "LUSERS"
 
-#define NUM_COMMANDS 11
+#define NUM_COMMANDS 12
 
 #define MOTD_LENGTH_LINE 80
 
@@ -202,11 +210,19 @@ class Server {
         void                            m_awayCmd(Client& client);
         void                            m_pingCmd(Client& client){}; // TODO: Need to test with BITCHX
         void                            m_pongCmd(Client& client){};
+        void                            m_lusersCmd(Client& client);
 
+        std::string                     m_composeMotd(std::ifstream& motdFile, std::string clientNick);
 
-        std::string                     m_composeMotd(std::ifstream& motdFile);
+        bool                            m_isValidCommand(std::string potentialCommand); // should be const
 
-        bool                            m_isValidCommand(std::string potentialCommand);
+        bool                            m_isUser(Client& client) const;
+
+        int                             m_calculateUsers(void);
+        int                             m_calculateOperators(void);
+        int                             m_calculateUnknownConnections(void);
+        int                             m_calculateKnownConnections(void);
+
 
         const std::string               m_serverName;
         const std::string               m_port;
