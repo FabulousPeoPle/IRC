@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 18:13:25 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/14 18:57:02 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -172,7 +172,6 @@ class Server {
         // Need to know more about channel class
         // void                            m_join(int channelNum);
 
-        std::string                     m_intToHex(__uint16_t value[16]);
         
         void                            m_joinCmd(Client & client);
         bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes);
@@ -181,6 +180,7 @@ class Server {
         void                            m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected);
 
         void                            m_partCmd(Client & client);
+        
         const std::string               m_serverName;
         const std::string               m_port;
         // Maybe this is usless since we are always going to connect to the same thing

@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 18:39:01 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/14 18:56:52 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -224,29 +224,6 @@ int            Server::m_manageServerEvent(void)
     socklen_t           addrlen = sizeof(t_sockaddr_storage);
     int                 newFd = accept(this->m_sockfd, (t_sockaddr*)&remoteAddr,
                                         &addrlen);
-    std::string         ipAddress = std::string("");
-    // if (remoteAddr.ss_family == AF_INET)
-    // {
-        sockaddr_in *remoteAddr_in = (sockaddr_in *)&remoteAddr;
-        ipAddress = std::string(inet_ntoa(remoteAddr_in->sin_addr));
-        // std::cout << "ipv4 : " << ipAddress << std::endl;
-    // }
-    // else
-    // {
-    //     sockaddr_in6 *remoteAddr_in6 = (sockaddr_in6 *)&remoteAddr;
-    //     printf("ipv6 : %x:%x:%x:%x:%x:%x:%x:%x\n", remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[0],
-    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[1],
-    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[2],
-    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[3],
-    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[4],
-    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[5],
-    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[6],
-    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[7]
-    //     );
-    //     ipAddress = m_intToHex(remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16);
-    //     std::cout << "my ipv6 : " << ipAddress << std::endl;
-        
-    // }
 
     if (newFd == -1)
     {
@@ -257,24 +234,6 @@ int            Server::m_manageServerEvent(void)
     this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
     return (0);
 }
- /////// work in progress, not important to prioritize  
-// std::string     Server::m_intToHex(__uint16_t value[8]) // this shit sekhetni
-// {
-//     std::string         hexString("");
-//     std::stringstream   ss;
-//     std::string         strBuff;
-//     int                 hex;
-//     int index = 0;
-    
-//     if (!value)
-//         return (std::string("0"));
-//     while (index < 8)
-//     {
-        
-//     }
-//     // hexString = ;
-//     return (hexString);
-// }
 
 bool            Server::m_isAuthenticated(int clientFd)
 {
