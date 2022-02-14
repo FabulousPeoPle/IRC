@@ -6,10 +6,9 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/13 20:12:38 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/14 15:46:30 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
@@ -82,12 +81,17 @@ namespace Replies
         RPL_LUSERCLIENT = 251,
         RPL_LUSEROP = 252,
         RPL_LUSERUNKNOWN = 253,
-        RPL_LUSERCHANNELS,
+        RPL_LUSERCHANNELS = 254,
         RPL_LUSERME = 255,
         //ERR_NOSUCHSERVER
     };
 };
 
+class Channel {
+    public:
+    Channel(){};
+    ~Channel(){};
+};
 
 
 #define USER_COMMAND "USER"
@@ -218,7 +222,6 @@ class Server {
 
         bool                            m_isUser(Client& client) const;
 
-        int                             m_calculateUsers(void);
         int                             m_calculateOperators(void);
         int                             m_calculateUnknownConnections(void);
         int                             m_calculateKnownConnections(void);
@@ -232,10 +235,11 @@ class Server {
         const int                       m_maxClients;
         t_addrinfo*                     m_servinfo;
         t_addrinfo                      m_hints;
+        int                             m_athenticatedUserNum;
         // in case we wanted to do it manually
         t_sockaddr_in                   m_addr_in;
         t_sockaddr_in6                  m_addr_in6;
-        
+        std::map<std::string, Channel>  m_channels;
         int                             m_sockfd;
         // this might be totally usless
         t_socketInfo                    m_socketInfo;

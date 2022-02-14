@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/13 20:15:30 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/14 15:43:51 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@
 
 char* strdup(const char *s);
 
-Server::Server(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME), m_version("0.1"), m_maxClients(150)
+Server::Server(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME), m_version("0.1"), m_maxClients(150), m_athenticatedUserNum(0)
 {
     #ifdef DEBUG
     std::cout << "Default Server constructor called." << std::endl;
@@ -41,7 +41,7 @@ Server::~Server(void)
     #endif
 }
 
-Server::Server(std::string port, std::string hostname, std::string name, int maxClients) : m_serverName(name), m_port(port), m_hostname(hostname), m_version("0.1"), m_maxClients(maxClients)
+Server::Server(std::string port, std::string hostname, std::string name, int maxClients) : m_serverName(name), m_port(port), m_hostname(hostname), m_version("0.1"), m_maxClients(maxClients), m_athenticatedUserNum(0)
 {
     #ifdef DEBUG
     std::cout << "Port/Hostname constructor called." << std::endl;
@@ -533,6 +533,7 @@ bool    Server::m_checkStatusAuth(Client& client)
         m_reply(client._sock_fd, Replies::RPL_CREATED, 0, "");
         m_reply(client._sock_fd, Replies::RPL_MYINFO, 0, "");
         this->m_motdCmd(client);
+        ++(this->m_athenticatedUserNum);
         return (client._authenticated = true);
     }
     return (false);
@@ -651,7 +652,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             this->m_send(clientFd, ":" + this->m_serverName + " 421 :" + message + " :Unknown command\r\n");
             break;
         case Replies::RPL_LUSERCLIENT:
-            this->m_send(clientFd, ":" + this->m_serverName + " 251 " + m_clients[clientFd]._nickname + " :There are " + std::to_string(this->m_calculateUsers()) + " user(s) on the server\r\n"); // TODO: STILL need to add number of services and the number of servers
+            this->m_send(clientFd, ":" + this->m_serverName + " 251 " + m_clients[clientFd]._nickname + " :" + std::to_string(this->m_athenticatedUserNum) + " user(s) on the server\r\n"); // TODO: STILL need to add number of services and the number of servers
             break;
         case Replies::RPL_LUSEROP:
             this->m_send(clientFd, ":" + this->m_serverName + " 252 " + m_clients[clientFd]._nickname + " :" + std::to_string(this->m_calculateOperators()) + " operator(s) online\r\n");
@@ -659,9 +660,13 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_LUSERUNKNOWN:
             this->m_send(clientFd, ":" + this->m_serverName + " 253 " + m_clients[clientFd]._nickname + " :" + std::to_string(this->m_calculateUnknownConnections()) + " unknown connection(s)\r\n");
             break;
+        case Replies::RPL_LUSERCHANNELS:
+            this->m_send(clientFd, ":" + this->m_serverName + " 254 " + m_clients[clientFd]._nickname + " :" + std::to_string(this->m_channels.size()) + " channels(s)\r\n");
+            break;
         case Replies::RPL_LUSERME:
             this->m_send(clientFd, ":" + this->m_serverName + " 255 " + m_clients[clientFd]._nickname + " :" + std::to_string(this->m_calculateKnownConnections()) + " client(s)\r\n");
-            break;  
+            break;
+
 
 
     }
@@ -694,20 +699,6 @@ int             Server::m_calculateKnownConnections(void)
             ++knowns;
     }
     return (knowns);
-}
-
-int             Server::m_calculateUsers(void)
-{
-    std::map<int, Client>::iterator it;
-    int                             users;
-
-    users = 0;
-    for (it = this->m_clients.begin(); it != this->m_clients.end(); ++it)
-    {
-        if (this->m_isAuthenticated(it->second._sock_fd))
-            ++users;
-    }
-    return (users);
 }
 
 int             Server::m_calculateUnknownConnections(void)
@@ -930,7 +921,7 @@ void    Server::m_nickCmd(Client & client)
 
 void    Server::m_userCmd(Client & client)
 {
-    Message& msg = client.messages.front();
+    Message&    msg = client.messages.front();
     std::string mode;
     
     if (msg.command == USER_COMMAND)

@@ -6,7 +6,7 @@
 #    By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2021/10/05 12:47:22 by ohachim           #+#    #+#              #
-#    Updated: 2022/02/11 17:51:47 by ohachim          ###   ########.fr        #
+#    Updated: 2022/02/14 15:46:26 by ohachim          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,7 +24,7 @@ OBJ = $(addprefix $(OBJ_PATH)/, $(OBJ_NAME))
 
 INC = includes
 
-HEADER_NAME =
+HEADER_NAME = Client.hpp Message.hpp Server.hpp
 
 HEADER = $(addprefix $(INC)/, $(HEADER_NAME))
 
