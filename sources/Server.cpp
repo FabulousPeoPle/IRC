@@ -6,14 +6,14 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/08 21:15:01 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/14 18:39:01 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 
 // #define DEBUG
-#define DEBUG_USERHOST
+// #define DEBUG_USERHOST
 
 char* strdup(const char *s);
 
@@ -224,6 +224,29 @@ int            Server::m_manageServerEvent(void)
     socklen_t           addrlen = sizeof(t_sockaddr_storage);
     int                 newFd = accept(this->m_sockfd, (t_sockaddr*)&remoteAddr,
                                         &addrlen);
+    std::string         ipAddress = std::string("");
+    // if (remoteAddr.ss_family == AF_INET)
+    // {
+        sockaddr_in *remoteAddr_in = (sockaddr_in *)&remoteAddr;
+        ipAddress = std::string(inet_ntoa(remoteAddr_in->sin_addr));
+        // std::cout << "ipv4 : " << ipAddress << std::endl;
+    // }
+    // else
+    // {
+    //     sockaddr_in6 *remoteAddr_in6 = (sockaddr_in6 *)&remoteAddr;
+    //     printf("ipv6 : %x:%x:%x:%x:%x:%x:%x:%x\n", remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[0],
+    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[1],
+    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[2],
+    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[3],
+    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[4],
+    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[5],
+    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[6],
+    //     remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16[7]
+    //     );
+    //     ipAddress = m_intToHex(remoteAddr_in6->sin6_addr.__u6_addr.__u6_addr16);
+    //     std::cout << "my ipv6 : " << ipAddress << std::endl;
+        
+    // }
 
     if (newFd == -1)
     {
@@ -234,6 +257,24 @@ int            Server::m_manageServerEvent(void)
     this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
     return (0);
 }
+ /////// work in progress, not important to prioritize  
+// std::string     Server::m_intToHex(__uint16_t value[8]) // this shit sekhetni
+// {
+//     std::string         hexString("");
+//     std::stringstream   ss;
+//     std::string         strBuff;
+//     int                 hex;
+//     int index = 0;
+    
+//     if (!value)
+//         return (std::string("0"));
+//     while (index < 8)
+//     {
+        
+//     }
+//     // hexString = ;
+//     return (hexString);
+// }
 
 bool            Server::m_isAuthenticated(int clientFd)
 {
@@ -376,7 +417,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg)
     switch (replyCode)
     {
         case Replies::RPL_WELCOME :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome bitch\r\n");
+            this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd]._nickname + " :Welcome bitch\r\n");//dont forget this
             break;
         case Replies::RPL_USERHOST :\
             this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd]._nickname + " :"\
@@ -394,6 +435,17 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg)
             break;
         case Replies::ERR_ALREADYREGISTRED :\
             this->m_send(clientFd, ":" + this->m_serverName + " 462 :Unauthorized command (already registered)\r\n");
+            break;
+        // the next too need the channel name (to be concidered when refactoring)
+        case Replies::ERR_BANNEDFROMCHAN :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 474 :Cannot join channel (+b)\r\n");
+            break;
+        case Replies::ERR_BADCHANNELKEY :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 475 :Cannot join channel (+k)\r\n");
+            break;
+             // should change after refactoring
+        case Replies::RPL_TOPIC :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 332 :Topic\r\n");
             break;
     }
 }
@@ -642,7 +694,7 @@ bool                    Server::m_grabChannelsNames(Message & msg, std::vector<s
     std::vector<std::string>::iterator end = msg.arguments.end();
     std::string arg;
 
-    //normally i shouldnt parse here but i have a feel i have to
+    //normally i shouldnt parse here but i have a feeling i have to
     if (msg.arguments.empty())
         return (false);
     while (it != end && (it->at(0) == LOCAL_CHAN || it->at(0) == NETWORKWIDE_CHAN))
@@ -659,14 +711,47 @@ bool                    Server::m_grabChannelsNames(Message & msg, std::vector<s
         return (false);
     return (true);
 }
+// should change to accommodate channel modes concerned
+bool                    Server::m_channelExists(std::string channelName)
+{
+    if (m_channels.find(channelName) != m_channels.end())
+        return (true);
+    return (false);
+}
+
+void                    Server::m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected)
+{
+    Channel & chan = m_channels[channelName];
+
+    if (chan.isBanned(clientFd))
+        m_reply(clientFd, Replies::ERR_BANNEDFROMCHAN, 0);
+    if ((passProtected && !chan.checkPassword(password)) || (!passProtected && !chan.getPassword().empty()))
+        m_reply(clientFd, Replies::ERR_BADCHANNELKEY, 0);
+    else
+    {
+        chan.addMember(clientFd);
+        m_clients[clientFd]._channels.push_back(channelName);
+        m_reply(clientFd, Replies::RPL_TOPIC, 0);
+    }
+}
+
+void                    Server::m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected)
+{
+    Channel newChannel(0, clientFd, channelName, channelName.at(0), (passProtected ? password : ""));
+    newChannel.addOp(clientFd);
+    newChannel.addMember(clientFd);
+    m_channels.insert(m_channels.end(), std::pair<std::string, Channel>(channelName, newChannel));
+}
 
 void                    Server::m_joinCmd(Client & client)
 {
     std::vector<std::string>    chans;
     std::vector<std::string>    passes;
     Message& msg = client.messages.front();
+    bool                        passProtected;
     
-    msg.parse();
+    msg.parse(); // should not be here
+    //check syntax
     //grab the channels with their passes
     m_grabChannelsNames(msg, chans, passes);
     std::vector<std::string>::iterator it_chan = chans.begin();
@@ -676,10 +761,26 @@ void                    Server::m_joinCmd(Client & client)
 
     while (it_chan < end_chan)
     {
+        if (it_passes == end_passes)
+            passProtected = false;
         if (m_channelExists(*it_chan))
         {
-            // m_addClientToChan(*it_chan, it);
+            if (passProtected)
+                m_addClientToChan(client._sock_fd, *it_chan, *it_passes, true);
+            else
+                m_addClientToChan(client._sock_fd, *it_chan, *end_passes, false);
         }
-        else{}
+        else
+        {
+            if (passProtected)
+                m_addChannel(client._sock_fd, *it_chan, *it_passes, true);
+            else
+                m_addChannel(client._sock_fd, *it_chan, *end_passes, false);
+        }
     }
 }
+
+// void                        Server::m_partCmd(Client &client)
+// {
+    
+// }

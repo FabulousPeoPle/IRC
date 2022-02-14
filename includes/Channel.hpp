@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/08 19:05:29 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/14 16:58:36 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,8 @@
 
 #include <iostream>
 #include <vector>
+
+#include <Client.hpp>
 
 #define LOCAL_CHAN '&'
 #define NETWORKWIDE_CHAN '#'
@@ -34,28 +36,43 @@
 #define CHAN_MODE_V 512
 #define CHAN_MODE_K 1024
 
+class Client;
+
 class Channel
 {
 private:
-	std::string			m_name; // cant be 7 ' ' or ',' anything else id fair game
-	int					m_mode; // change
-	int					m_type; // the scope of the channel local/networkwide
-	std::vector<int>	m_operators; // this vector stores the clientfds of the ops
-	std::vector<int>	m_banned;
-	std::string			m_password;
+	std::string					m_name; // cant be 7 ' ' or ',' anything else id fair game
+	int							m_mode; // change
+	int							m_type; // the scope of the channel local/networkwide
+	std::vector<int>			m_operators; // this vector stores the clientfds of the ops
+	std::string					m_topic;
+	std::vector<int>			m_banned;
+	std::vector<int>			m_members;
+	// std::vector<std::string>	m_banned;
+	std::string					m_password;
 public:
 	Channel(void);
 	Channel(int mode, int opFd, std::string name, char type, std::string password);
 	~Channel(void);
 
 	std::string 		getName(void) const;
+	std::string 		getPassword(void) const;
 	int					getMode(void) const;
 	std::vector<int> 	getOps(void) const;
 	int			 		getType(void) const;
+	std::string			getTopic(void) const;
+	void				setTopic(std::string topic);
+	void				setMode(int mode);
+	void				setName(std::string name);
+	void				setPassword(std::string password);
 	bool				isOp(int clientFd) const;
+	bool				checkPassword(std::string password);
+	void				addMember(int clientFd);
+	void				addOp(int clientFd);
 	// very wrong, banning should be done with the ip address or maybe it depends on the kind of the ban (permanent or not)
-	bool				isBanned(int clientFd) const; 
-	void				Ban(int clientFd);
+	bool				isBanned(int clientFd) const;
+	// std::string			m_composeMask(Client & client) const;
+	void				Ban(int clinetFd);
 };
 
 #endif

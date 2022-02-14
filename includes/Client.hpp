@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/12 15:48:34 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/14 11:53:49 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ class Client
         bool                        _isServerOp;
         bool                        _away;
         bool                        _authenticated;
+        std::vector<std::string>    _channels;
 
         Client(void);
         Client(Client const & src);

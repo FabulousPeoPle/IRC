@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:10:43 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/08 17:18:52 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/14 18:40:33 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,16 @@ std::string  Channel::getName(void) const
 	return (this->m_name);
 }
 
+std::string  Channel::getPassword(void) const
+{
+	return (this->m_password);
+}
+
+std::string  Channel::getTopic(void) const
+{
+	return (this->m_topic);
+}
+
 int  Channel::getMode(void) const
 {
 	return (this->m_mode);
@@ -42,10 +52,52 @@ std::vector<int> Channel::getOps(void) const
 	return (this->m_operators);
 }
 
+void	Channel::setName(std::string name)
+{
+	m_name = name;
+}
+
+void	Channel::setPassword(std::string password)
+{
+	m_password = password;
+}
+
+void	Channel::setTopic(std::string topic)
+{
+	m_topic = topic;
+}
+
+void	Channel::setMode(int mode)
+{
+	m_mode = m_mode | mode;
+}
+
+void	Channel::addMember(int clientFd)
+{
+	m_members.push_back(clientFd);
+}
+
+void	Channel::addOp(int clientFd)
+{
+	m_operators.push_back(clientFd);
+}
+
 bool Channel::isOp(int clientFd) const
 {
 	return (((std::find(m_operators.begin(), m_operators.end(), clientFd) != m_operators.end()) ? true : false));
 }
+
+bool	Channel::checkPassword(std::string password)
+{
+	if (m_password == password)
+		return (true);
+	return (false);
+}
+
+// std::string	Channel::m_composeMask(Client & client) const
+// {
+// 	return (client._nickname + "!" + client._username + "@" + client._ip_address);
+// }
 
 bool Channel::isBanned(int clientFd) const
 {

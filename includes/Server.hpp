@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/08 19:38:27 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/14 18:13:25 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,9 +58,13 @@ namespace Replies
         RPL_USERHOST = 302,
         ERR_NEEDMOREPARAMS = 461,
         ERR_ALREADYREGISTRED = 462,
+        ERR_BANNEDFROMCHAN = 474,
+        ERR_BADCHANNELKEY = 457,
+        RPL_TOPIC = 332
     };
 };
 
+typedef unsigned short          __uint16_t;
 
 #define USER_COMMAND "USER"
 #define NICK_COMMAND "NICK"
@@ -167,10 +171,16 @@ class Server {
         void                            m_quitCmd(int clientFd, std::string quitMessage);
         // Need to know more about channel class
         // void                            m_join(int channelNum);
+
+        std::string                     m_intToHex(__uint16_t value[16]);
+        
         void                            m_joinCmd(Client & client);
         bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes);
         bool                            m_channelExists(std::string);
+        void                            m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected);
+        void                            m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected);
 
+        void                            m_partCmd(Client & client);
         const std::string               m_serverName;
         const std::string               m_port;
         // Maybe this is usless since we are always going to connect to the same thing
@@ -194,7 +204,7 @@ class Server {
         std::map<std::string, int>      m_nicknames;
 
         // a vector containing all Channels available on the server
-        std::vector<Channel>            m_channels;
+        std::map<std::string, Channel>            m_channels;
 };
 
 #endif
