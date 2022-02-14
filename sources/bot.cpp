@@ -34,11 +34,11 @@ int main(int argc, char const *argv[])
         return -1;
     }
     printf("\nConnection GOOD \n");
-    char auth[] = "USER abbah * * : bot_john\r\n";
-    char auth1[] = "NICK othman\r\n";
-    send(sock , auth , strlen(auth) , 0 );
+    char auth[] = "USER dhdkjdkfjhkasdfhjkasdhfjksdhfkjadhsfjkahsdjkfhasdfsdfasdfsdkjsdhfkjahdfklhjaksdjfdhfjkadhfjkadhfkajdhfklajdhfkjsdhfklajsdhfkljsdhfklajsdhfkladjshfklasjdhfklsajdhfklsjdfhklsjdfhkjsdfhkPINGfhaklsdjfhaklsdjfhaksldjfhaklsdjfhklsajdfhkjsadhfkljsdhfkjsdhflkadhfjksahdfkjPINGkjhsdkfjhkasdfhjkasdhfjksdhfkjadhsfjkahsdjkfhasdfsdfasdfsdfasdfdhfjkadhfjkadhfkajdhfklajdhfkjsdhfklajsdhfkljsdhfklajsdhfkladjshfklasjdhfklsajdhfklsjdfhklsjdfhkjsdfhkdjsfhkajdhfksajdfhaklsdjfhaklsdjfhaksldjfhaklsdjfhklsajdfhkjsadhfkljsdhfkjsdhflkadhfjksahdfkjPINGkjhsdkfjhkasdfhjkasdhfjksdhfkja^ * * : bot_john\r\n";
+    char auth1[] = "* * :hey\r\n";
+    printf("%ld\n", send(sock , auth , strlen(auth) , 0 ));
     // sleep(2);
-    send(sock , auth1 , strlen(auth1) , 0 );
+    // send(sock , auth1 , strlen(auth1) , 0 );
     // sleep(2);
     // send(sock , auth1 , strlen(auth1) , 0 );
 

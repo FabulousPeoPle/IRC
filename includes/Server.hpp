@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 15:46:30 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/14 18:19:02 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -83,6 +83,7 @@ namespace Replies
         RPL_LUSERUNKNOWN = 253,
         RPL_LUSERCHANNELS = 254,
         RPL_LUSERME = 255,
+        RPL_PINGREQUEST = -1,
         //ERR_NOSUCHSERVER
     };
 };
@@ -106,8 +107,9 @@ class Channel {
 #define MOTD_COMMAND "MOTD"
 #define AWAY_COMMAND "AWAY"
 #define LUSERS_COMMAND "LUSERS"
+#define WHOIS_COMMAND "WHOIS"
 
-#define NUM_COMMANDS 12
+#define NUM_COMMANDS 13
 
 #define MOTD_LENGTH_LINE 80
 
@@ -212,9 +214,10 @@ class Server {
         void                            m_modeCmd(Client& client);
         void                            m_motdCmd(Client& client);
         void                            m_awayCmd(Client& client);
-        void                            m_pingCmd(Client& client){}; // TODO: Need to test with BITCHX
-        void                            m_pongCmd(Client& client){};
+        void                            m_pingCmd(Client& client); // TODO: Need to test with BITCHX
+        void                            m_pongCmd(Client& client);
         void                            m_lusersCmd(Client& client);
+        void                            m_whoisCmd(Client& client);
 
         std::string                     m_composeMotd(std::ifstream& motdFile, std::string clientNick);
 

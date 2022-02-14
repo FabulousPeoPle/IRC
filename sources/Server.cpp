@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 15:43:51 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/14 18:27:07 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -218,6 +218,14 @@ void*           Server::m_getInAddr(t_sockaddr* addr) const
     return (&(((t_sockaddr_in6*)addr)->sin6_addr));
 }
 
+void            printAddress(t_sockaddr_storage& remoteAddr)
+{
+    char buffer[INET6_ADDRSTRLEN];
+
+    int err=getnameinfo((struct sockaddr*)&remoteAddr, sizeof(t_sockaddr_storage), buffer,sizeof(buffer), 0, 0, NI_NUMERICHOST);
+    printf("the address we getting is %s\n", buffer);
+}
+
 int            Server::m_manageServerEvent(void)
 {
     #ifdef DEBUG
@@ -235,6 +243,7 @@ int            Server::m_manageServerEvent(void)
     }
     if (this->m_clients.size() < this->m_maxClients)
     {
+        printAddress(remoteAddr);
         this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
         this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
     }
@@ -407,6 +416,18 @@ void                Server::m_lusersCmd(Client& client)
     
 }
 // TODO: WE SHOULD BE ABLE TO USE NICK AGAIN
+
+void                Server::m_pongCmd(Client& client)
+{
+    (void)client;
+    std::cout << "Somebody Pinged\n";
+}
+
+void                Server::m_pingCmd(Client& client)
+{
+    m_reply(client._sock_fd, Replies::RPL_PINGREQUEST, 0, "");
+}
+
 void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
@@ -432,7 +453,7 @@ void                Server::m_relay(int clientFd)
         else if (message.command == MODE_COMMAND)
             this->m_modeCmd(m_clients[clientFd]);
         else if (message.command == PING_COMMAND)
-            this->m_pingCmd(m_clients[clientFd]); // doesn't do anything for now
+            this->m_pingCmd(m_clients[clientFd]);
         else if (message.command == PONG_COMMAND)
             this->m_pongCmd(m_clients[clientFd]); // doesn't do anything for now
         else if (message.command == MOTD_COMMAND)
@@ -459,7 +480,7 @@ void                Server::m_manageClientEvent(int pollIndex)
 {
     // I have to error management message size
     char    buffer[BUFFER_SIZE];
-    int     bytesRead = recv(this->m_pfds[pollIndex].fd, buffer, BUFFER_SIZE, 0);
+    int     bytesRead = recv(this->m_pfds[pollIndex].fd, buffer, BUFFER_SIZE - 1, 0);
 
     if (bytesRead <= 0)
     {
@@ -601,7 +622,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_BOUNCE:
             this->m_send(clientFd, ":" + this->m_serverName + " 005 " + m_clients[clientFd]._nickname + " :Try server 'DS9.GeekShed.net', port '6667'\r\n");
             break;
-        case Replies::RPL_USERHOST :\
+        case Replies::RPL_USERHOST :\ // causes BitchX segmentation fault
             this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd]._nickname + " :"\
             + m_clients[extraArg]._nickname + ((m_clients[extraArg]._isServerOp) ? "*" : "\0") + "=" \
             + ((m_clients[extraArg]._away) ? "+" : "-") + m_clients[extraArg].hostname + "\r\n");
@@ -666,9 +687,9 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_LUSERME:
             this->m_send(clientFd, ":" + this->m_serverName + " 255 " + m_clients[clientFd]._nickname + " :" + std::to_string(this->m_calculateKnownConnections()) + " client(s)\r\n");
             break;
-
-
-
+        case Replies::RPL_PINGREQUEST:
+            this->m_send(clientFd,":" + this->m_serverName + " PONG " + this->m_serverName + " :" + m_clients[clientFd]._nickname + "\r\n");
+            break;
     }
 }
 
@@ -944,6 +965,7 @@ void    Server::m_userCmd(Client & client)
 }
 
 // TODO: needs tweaks, mainly a hostname, a string of the address, and an if else depending on if a message was left or not
+// TODO: QUIT FROM CHANNELS
 void                    Server::m_quitCmd(int clientFd, std::string quitMessage) 
 {
     Client& client = this->m_clients[clientFd];
@@ -970,4 +992,4 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 
 // AF_UNSPEC comboed with AF_INET6
 
-std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS"};
+std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS"};
