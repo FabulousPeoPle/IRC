@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 18:27:07 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/14 19:01:32 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -218,12 +218,17 @@ void*           Server::m_getInAddr(t_sockaddr* addr) const
     return (&(((t_sockaddr_in6*)addr)->sin6_addr));
 }
 
-void            printAddress(t_sockaddr_storage& remoteAddr)
+std::string            Server::convertToHostname(t_sockaddr_storage& remoteAddr, int sock_fd)
 {
     char buffer[INET6_ADDRSTRLEN];
-
-    int err=getnameinfo((struct sockaddr*)&remoteAddr, sizeof(t_sockaddr_storage), buffer,sizeof(buffer), 0, 0, NI_NUMERICHOST);
-    printf("the address we getting is %s\n", buffer);
+    int err=getnameinfo((struct sockaddr*)&remoteAddr, sizeof(t_sockaddr_storage), buffer,sizeof(buffer), 0, 0, 0);
+    if (err)
+    {
+        printf("Failed to get hostname!\nExiting...");
+        exit(1);
+    }
+    std::string s(buffer);
+    return (s);
 }
 
 int            Server::m_manageServerEvent(void)
@@ -243,8 +248,8 @@ int            Server::m_manageServerEvent(void)
     }
     if (this->m_clients.size() < this->m_maxClients)
     {
-        printAddress(remoteAddr);
         this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
+        this->m_clients[newFd].hostname = this->convertToHostname(remoteAddr, newFd);
         this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
     }
     else
@@ -622,7 +627,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_BOUNCE:
             this->m_send(clientFd, ":" + this->m_serverName + " 005 " + m_clients[clientFd]._nickname + " :Try server 'DS9.GeekShed.net', port '6667'\r\n");
             break;
-        case Replies::RPL_USERHOST :\ // causes BitchX segmentation fault
+        case Replies::RPL_USERHOST : // causes BitchX segmentation fault
             this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd]._nickname + " :"\
             + m_clients[extraArg]._nickname + ((m_clients[extraArg]._isServerOp) ? "*" : "\0") + "=" \
             + ((m_clients[extraArg]._away) ? "+" : "-") + m_clients[extraArg].hostname + "\r\n");

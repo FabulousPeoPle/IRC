@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 18:19:02 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/14 19:01:44 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,6 +147,7 @@ class Server {
                                         Server(std::string port, std::string hostname, std::string serverName, int maxClients);
                                         Server(const Server& serverRef);
                                         ~Server();
+                                        
         Server&                         operator=(const Server& serverRef);
 
         std::string                     getPort(void) const;
@@ -156,6 +157,9 @@ class Server {
         int                             getSockfd(void) const;
         t_sockaddr_in6                  getAddr_in6(void) const;
         t_sockaddr_in                   getAddr_in(void) const;
+
+
+        std::string                     convertToHostname(t_sockaddr_storage& remoteAddr, int sock_fd);
 
         //  Might wanna set protection for multiple IP adresses
 
