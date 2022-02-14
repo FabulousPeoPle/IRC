@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/12 17:09:53 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/07 14:01:31 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,7 @@ typedef std::deque<std::string> t_strDQeue;
 class Message
 {
 public:
-    t_strDQeue  _messageQueue;
+    t_strDQeue  _messageQueue;// this might just be useless
     std::string message;
     Client      *_client;
     // bool        _completed;

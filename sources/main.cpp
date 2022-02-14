@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:54 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 18:43:03 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/14 19:12:19 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #include "Server.hpp"
 #include <cstring>
@@ -30,9 +31,9 @@ int main(void)
 
     std::cout << "Server name: " << myServer.getServName() << std::endl;
     
-    myServer.setServerHints(AF_INET, SOCK_STREAM, AI_PASSIVE);
+    myServer.setServerHints(AF_INET6, SOCK_STREAM, AI_PASSIVE);
     myServer.setServerInfo();
-    myServer.setSockfd(AF_INET);
+    myServer.setSockfd(AF_INET6);
     myServer.listen();
     myServer.startServer();
 }

@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 19:01:32 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/14 19:15:36 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #include "Server.hpp"
 
@@ -16,7 +17,6 @@
 // #define DEBUG_USERHOST
 
 // TODO: NICK NEEDS TO CHECK FOR NUMBER OF PARAMETERS
-// 
 
 char* strdup(const char *s);
 
@@ -695,6 +695,17 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_PINGREQUEST:
             this->m_send(clientFd,":" + this->m_serverName + " PONG " + this->m_serverName + " :" + m_clients[clientFd]._nickname + "\r\n");
             break;
+        // the next too need the channel name (to be concidered when refactoring)
+        case Replies::ERR_BANNEDFROMCHAN :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 474 :Cannot join channel (+b)\r\n");
+            break;
+        case Replies::ERR_BADCHANNELKEY :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 475 :Cannot join channel (+k)\r\n");
+            break;
+             // should change after refactoring
+        case Replies::RPL_TOPIC :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 332 :Topic\r\n");
+            break;
     }
 }
 
@@ -894,6 +905,7 @@ void    Server::m_userhostCmd(Client & client)
         count += 1;
     }
 }
+
 // not yet functional as we have to talk about the reply function
 void    Server::m_isonCmd(Client & client)
 {
@@ -997,4 +1009,102 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 
 // AF_UNSPEC comboed with AF_INET6
 
-std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS"};
+std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS"}; // TODO: UPDATE
+    // just to compile the thing
+
+bool                    Server::m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes)
+{
+    std::vector<std::string>::iterator it = msg.arguments.begin();
+    std::vector<std::string>::iterator end = msg.arguments.end();
+    std::string arg;
+
+    //normally i shouldnt parse here but i have a feeling i have to
+    if (msg.arguments.empty())
+        return (false);
+    while (it != end && (it->at(0) == LOCAL_CHAN || it->at(0) == NETWORKWIDE_CHAN))
+    {
+        chans.push_back(*it);
+        it++;
+    }
+    while (it != end)
+    {
+        passes.push_back(*it);
+        it++;
+    }
+    if (chans.empty())
+        return (false);
+    return (true);
+}
+// should change to accommodate channel modes concerned
+bool                    Server::m_channelExists(std::string channelName)
+{
+    if (m_channels.find(channelName) != m_channels.end())
+        return (true);
+    return (false);
+}
+
+void                    Server::m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected)
+{
+    Channel & chan = m_channels[channelName];
+
+    if (chan.isBanned(clientFd))
+        m_reply(clientFd, Replies::ERR_BANNEDFROMCHAN, 0, "");
+    if ((passProtected && !chan.checkPassword(password)) || (!passProtected && !chan.getPassword().empty()))
+        m_reply(clientFd, Replies::ERR_BADCHANNELKEY, 0, "");
+    else
+    {
+        chan.addMember(clientFd);
+        m_clients[clientFd]._channels.push_back(channelName);
+        m_reply(clientFd, Replies::RPL_TOPIC, 0, "");
+    }
+}
+
+void                    Server::m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected)
+{
+    Channel newChannel(0, clientFd, channelName, channelName.at(0), (passProtected ? password : ""));
+    newChannel.addOp(clientFd);
+    newChannel.addMember(clientFd);
+    m_channels.insert(m_channels.end(), std::pair<std::string, Channel>(channelName, newChannel));
+}
+
+void                    Server::m_joinCmd(Client & client)
+{
+    std::vector<std::string>    chans;
+    std::vector<std::string>    passes;
+    Message& msg = client.messages.front();
+    bool                        passProtected;
+    
+    msg.parse(); // should not be here
+    //check syntax
+    //grab the channels with their passes
+    m_grabChannelsNames(msg, chans, passes);
+    std::vector<std::string>::iterator it_chan = chans.begin();
+    std::vector<std::string>::iterator end_chan = chans.end();
+    std::vector<std::string>::iterator it_passes = passes.begin();
+    std::vector<std::string>::iterator end_passes = passes.end();
+
+    while (it_chan < end_chan)
+    {
+        if (it_passes == end_passes)
+            passProtected = false;
+        if (m_channelExists(*it_chan))
+        {
+            if (passProtected)
+                m_addClientToChan(client._sock_fd, *it_chan, *it_passes, true);
+            else
+                m_addClientToChan(client._sock_fd, *it_chan, *end_passes, false);
+        }
+        else
+        {
+            if (passProtected)
+                m_addChannel(client._sock_fd, *it_chan, *it_passes, true);
+            else
+                m_addChannel(client._sock_fd, *it_chan, *end_passes, false);
+        }
+    }
+}
+
+// void                        Server::m_partCmd(Client &client)
+// {
+    
+// }

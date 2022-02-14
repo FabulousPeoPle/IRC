@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 19:01:44 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/14 19:10:21 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <Channel.hpp>
 
 #define DEFAULT_HOSTNAME NULL
 #define DEFAULT_PORT "6667"
@@ -85,15 +86,11 @@ namespace Replies
         RPL_LUSERME = 255,
         RPL_PINGREQUEST = -1,
         //ERR_NOSUCHSERVER
+        ERR_BANNEDFROMCHAN = 474,
+        ERR_BADCHANNELKEY = 457,
+        RPL_TOPIC = 332
     };
 };
-
-class Channel {
-    public:
-    Channel(){};
-    ~Channel(){};
-};
-
 
 #define USER_COMMAND "USER"
 #define NICK_COMMAND "NICK"
@@ -125,6 +122,7 @@ std::string strToken(std::string str);
 
 class Client;
 class Message;
+class Channel;
 class Server;
 // Add this one to client class.
 typedef struct      s_m_socketInfo 
@@ -214,7 +212,6 @@ class Server {
 
         void                            m_quitCmd(int clientFd, std::string quitMessage); // Needs a recheck
         // Need to know more about channel class
-        // void                            m_join(int channelNum);
         void                            m_modeCmd(Client& client);
         void                            m_motdCmd(Client& client);
         void                            m_awayCmd(Client& client);
@@ -233,7 +230,15 @@ class Server {
         int                             m_calculateUnknownConnections(void);
         int                             m_calculateKnownConnections(void);
 
+        
+        void                            m_joinCmd(Client & client);
+        bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes);
+        bool                            m_channelExists(std::string);
+        void                            m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected);
+        void                            m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected);
 
+        void                            m_partCmd(Client & client);
+        
         const std::string               m_serverName;
         const std::string               m_port;
         // Maybe this is usless since we are always going to connect to the same thing
@@ -246,7 +251,6 @@ class Server {
         // in case we wanted to do it manually
         t_sockaddr_in                   m_addr_in;
         t_sockaddr_in6                  m_addr_in6;
-        std::map<std::string, Channel>  m_channels;
         int                             m_sockfd;
         // this might be totally usless
         t_socketInfo                    m_socketInfo;
@@ -260,6 +264,8 @@ class Server {
         std::map<std::string, int>      m_nicknames;
 
         static std::string              m_possibleCommands[NUM_COMMANDS];
+        // a vector containing all Channels available on the server
+        std::map<std::string, Channel>  m_channels;
 };
 
 #endif

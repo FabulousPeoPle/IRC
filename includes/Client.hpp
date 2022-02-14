@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/11 20:10:41 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/14 19:07:27 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,10 +66,13 @@ class Client
         bool                        _isServerOp;
         bool                        _away;
         bool                        _authenticated;
+
         std::uint8_t                modes; // need to give em default modes
         static std::uint8_t         modeBitMasks[NUM_MODES];
         static std::string          potentialModes;
         std::string                 awayMessage;
+        
+        std::vector<std::string>    _channels;
 
         
         Client(void);
