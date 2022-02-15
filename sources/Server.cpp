@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/15 15:26:46 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 17:07:52 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -484,6 +484,41 @@ void                Server::m_whoisCmd(Client& client)
     m_reply(client._sock_fd, Replies::RPL_ENDOFWHOIS, 0, m_composeWhoisQuery(queryClient, client._nickname, Replies::RPL_ENDOFWHOIS));
 }
 
+std::string         Server::m_composeRplTopic(Channel& channel)
+{
+    return (channel.getName() + ':' + channel.getTopic());
+}
+
+void                Server::m_topicCmd(Client& client)
+{
+    Message& message = client.messages.front();
+
+    if (message.arguments.empty())
+    {
+        m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0, "");
+        return ;
+    }
+    if (std::find(client._channels.begin(), client._channels.end(), message.arguments[0]) == client._channels.end())
+    {
+        m_reply(client._sock_fd, Replies::ERR_NOTONCHANNEL, 0, message.arguments[0]);
+        return ;
+    }
+
+    if (message.arguments.size() == 1) // there is only one argument, channel name
+    {
+        if (m_channels[message.arguments[0]].getTopic().empty()) // checking if topic is empty
+        {
+            m_reply(client._sock_fd, Replies::RPL_NOTOPIC, 0, message.arguments[0]);
+            return;
+        }
+        m_reply(client._sock_fd, Replies::RPL_TOPIC, 0, m_composeRplTopic(m_channels[message.arguments[0]])); // there is a topic
+        return;
+    }
+
+   // TODO: STILL NEED TO IMPLEMENT TOPIC CHANGING STUFF. 
+    
+}
+
 void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
@@ -499,6 +534,7 @@ void                Server::m_relay(int clientFd)
         
         // This two lines might be deleting our message
         // if (!messages.empty())
+        // TODO: replace with switch case
         if (message.command == USERHOST_COMMAND)
             this->m_userhostCmd(m_clients[clientFd]);
         else if (message.command == USER_COMMAND)
@@ -519,6 +555,8 @@ void                Server::m_relay(int clientFd)
             this->m_lusersCmd(m_clients[clientFd]);
         else if (message.command == WHOIS_COMMAND)
             this->m_whoisCmd(m_clients[clientFd]);
+        else if (message.command == TOPIC_COMMAND)
+            this->m_topicCmd(m_clients[clientFd]);
         else if (message.command.size())
             m_reply(clientFd, Replies::ERR_UNKNOWNCOMMAND, 0, message.command);
         if (!messages.empty())
@@ -755,9 +793,6 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             this->m_send(clientFd, ":" + this->m_serverName + " 475 :Cannot join channel (+k)\r\n");
             break;
              // should change after refactoring
-        case Replies::RPL_TOPIC :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 332 :Topic\r\n");
-            break;
         case Replies::RPL_WHOISUSER:
             this->m_send(clientFd, message + "\r\n");
             break;
@@ -770,6 +805,11 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::ERR_NOSUCHNICK:
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_WHOISUSER, this->m_clients[clientFd]._nickname) + " " + message + " :No suck nick\r\n");
             break;
+        case Replies::ERR_NOTONCHANNEL:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_NOTONCHANNEL, this->m_clients[clientFd]._nickname) + " " + message + " :You're not on that channel\r\n");
+            break;
+        case Replies::RPL_TOPIC:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_TOPIC, this->m_clients[clientFd]._nickname) + ' ' + message + "\r\n");
     }
 }
 
@@ -1171,4 +1211,4 @@ void                    Server::m_joinCmd(Client & client)
 // {
     
 // }
-std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS"}; // TODO: UPDATE
+std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS", "TOPIC"}; // TODO: UPDATE

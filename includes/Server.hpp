@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/15 15:28:04 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 16:58:33 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,13 +93,18 @@ namespace Replies
         //ERR_NOSUCHSERVER
         ERR_BANNEDFROMCHAN = 474,
         ERR_BADCHANNELKEY = 457,
-        RPL_TOPIC = 332,
 
         /******-WHOIS-*******/
         RPL_WHOISUSER = 311,
         RPL_WHOISSERVER = 312,
         RPL_ENDOFWHOIS = 318,
         ERR_NOSUCHNICK = 401,
+        /********************/
+
+        /******-TOPIC********/
+        ERR_NOTONCHANNEL = 442,
+        RPL_NOTOPIC = 331,
+        RPL_TOPIC = 332,
         /********************/
     };
 };
@@ -111,14 +116,15 @@ namespace Replies
 #define QUIT_COMMAND "QUIT"
 #define ISON_COMMAND "ISON"
 #define MODE_COMMAND "MODE"
-#define PONG_COMMAND "PONG" // yeet
+#define PONG_COMMAND "PONG"
 #define PING_COMMAND "PING" // yeet
 #define MOTD_COMMAND "MOTD"
 #define AWAY_COMMAND "AWAY"
 #define LUSERS_COMMAND "LUSERS"
 #define WHOIS_COMMAND "WHOIS"
+#define TOPIC_COMMAND "TOPIC"
 
-#define NUM_COMMANDS 13
+#define NUM_COMMANDS 14
 
 #define MOTD_LENGTH_LINE 80
 
@@ -231,11 +237,13 @@ class Server {
         void                            m_pongCmd(Client& client);
         void                            m_lusersCmd(Client& client);
         void                            m_whoisCmd(Client& client);
+        void                            m_topicCmd(Client& client);
 
         std::string                     m_makeReplyHeader(int replyNum, std::string nickname);
 
         std::string                     m_composeMotd(std::ifstream& motdFile, std::string clientNick);
         std::string                     m_composeWhoisQuery(Client& QueryClient, std::string clientNickname, int replyCode);
+        std::string                     m_composeRplTopic(Channel& channel);
 
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
 
