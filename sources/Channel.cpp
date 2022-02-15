@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:10:43 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/15 17:44:39 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 17:46:31 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,5 +125,7 @@ bool		Channel::getModeValue(int modeNum) const
 	return (this->modeBitMasks[modeNum] & this->modes);
 }
 
-std::uint32_t       Channel::modeBitMasks[NUM_MODES_CHANNEL] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6, 1 << 7, 1 << 8, 1 << 9, 1 << 10, 1 << 11, 1 << 12, 1 << 13, 1 << 14, 1 << 15, 1 << 16};
+std::uint32_t       Channel::modeBitMasks[NUM_MODES_CHANNEL] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6,
+																	1 << 7, 1 << 8, 1 << 9, 1 << 10, 1 << 11, 1 << 12,
+																		1 << 13, 1 << 14, 1 << 15, 1 << 16};
 std::string         Channel::potentialModes = "OovaimnqpsrtklbeI";

@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/15 17:07:52 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 17:48:10 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -283,8 +283,6 @@ int     findMode(char c)
             return (Modes::restricted);
         case 'o':
             return (Modes::oper);
-        case 'O':
-            return (Modes::local_oper);
         case 's':
             return (Modes::server_notices);           
         default:
@@ -321,7 +319,7 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
         }
         if (prefix == '+')
         {
-            if (modeNum == Modes::oper || modeNum == Modes::local_oper)
+            if (modeNum == Modes::oper)
                 continue ;
             if (!client.getModeValue(modeNum))
             {
@@ -821,7 +819,7 @@ int             Server::m_calculateOperators(void) // there is probably a better
     operators = 0;
     for (it = this->m_clients.begin(); it != this->m_clients.end(); ++it)
     {
-        if (it->second.getModeValue(Modes::oper) || it->second.getModeValue(Modes::local_oper)) // both operator types??
+        if (it->second.getModeValue(Modes::oper)) // both operator types??
             ++operators;
     }
     return (operators);
