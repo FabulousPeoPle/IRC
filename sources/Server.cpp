@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 19:15:36 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 20:05:36 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -697,14 +697,33 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             break;
         // the next too need the channel name (to be concidered when refactoring)
         case Replies::ERR_BANNEDFROMCHAN :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 474 :Cannot join channel (+b)\r\n");
+            this->m_send(clientFd, ":" + this->m_serverName + " 474 <channel name> :Cannot join channel (+b)\r\n");
             break;
         case Replies::ERR_BADCHANNELKEY :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 475 :Cannot join channel (+k)\r\n");
+            this->m_send(clientFd, ":" + this->m_serverName + " 475 <channel name> :Cannot join channel (+k)\r\n");
             break;
              // should change after refactoring
         case Replies::RPL_TOPIC :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 332 :Topic\r\n");
+            this->m_send(clientFd, ":" + this->m_serverName + " 332 <channel name> :Topic\r\n");
+            break;
+        case Replies::ERR_NOSUCHCHANNEL :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 403 <channel name> :No such channel\r\n");
+            break;
+        case Replies::ERR_NOTONCHANNEL :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 442 <channel name> :You're not on that channel\r\n");
+            break;
+        case Replies::ERR_NORECIPIENT :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 411  :No recipient given " + m_clients[clientFd].messages.front().command + "\r\n");
+            break;
+        case Replies::ERR_NOTEXTTOSEND :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 412 :No text to send\r\n");
+            break;
+        case Replies::ERR_NOSUCHNICK :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 401 " + m_clients[clientFd].messages.front().arguments.front() + " :No such nick/channel\r\n");
+            break;
+            // needs to change
+        case Replies::ERR_TOOMANYTARGETS :\
+            this->m_send(clientFd, ":" + this->m_serverName + " 407 " + m_clients[clientFd].messages.front().arguments.front() + " :too many recipients.\r\n");
             break;
     }
 }
@@ -1074,8 +1093,7 @@ void                    Server::m_joinCmd(Client & client)
     Message& msg = client.messages.front();
     bool                        passProtected;
     
-    msg.parse(); // should not be here
-    //check syntax
+    ////// TODO: syntax check
     //grab the channels with their passes
     m_grabChannelsNames(msg, chans, passes);
     std::vector<std::string>::iterator it_chan = chans.begin();
@@ -1104,7 +1122,120 @@ void                    Server::m_joinCmd(Client & client)
     }
 }
 
-// void                        Server::m_partCmd(Client &client)
-// {
+bool                    Server::m_grabChannelsNames(Message & msg, std::vector<std::string> & chans)
+{
+    std::vector<std::string>::iterator it = msg.arguments.begin();
+    std::vector<std::string>::iterator end = msg.arguments.end();
+    std::string arg;
+
+    if (msg.arguments.empty())
+        return (false);
+    while (it != end && (it->at(0) == LOCAL_CHAN || it->at(0) == NETWORKWIDE_CHAN))
+    {
+        chans.push_back(*it);
+        it++;
+    }
+    if (chans.empty())
+        return (false);
+    return (true);
+}
+
+void                        Server::m_partCmd(Client &client)
+{
+    Message& msg = client.messages.front();
+    std::vector<std::string> channelNames;
+    /// TODO: syntax check
+    std::vector<std::string>::iterator it = msg.arguments.begin();
+    std::vector<std::string>::iterator end = msg.arguments.end();
+    if (!m_grabChannelsNames(msg, channelNames))
+    {
+        m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0, "");
+        return ;
+    }
+    std::vector<std::string>::iterator it_chan = channelNames.begin();
+    std::vector<std::string>::iterator end_chan = channelNames.end();
+    std::string partMsg = msg._literalMsg;
+    while (it_chan != end_chan)
+    {
+        if (!m_channelExists(*it_chan))
+        {
+            m_reply(client._sock_fd, Replies::ERR_NOSUCHCHANNEL, 0, "");
+            it_chan++;
+            continue ;
+        }
+        else if (!m_channels[*it_chan].isMember(client._sock_fd))
+        {
+            m_reply(client._sock_fd, Replies::ERR_NOTONCHANNEL, 0, "");
+            it_chan++;
+            continue ;
+        }
+        m_channels[*it_chan].removeMember(client._sock_fd);
+        m_channels[*it_chan].removeOp(client._sock_fd);
+        client.partChannel(*it_chan);
+        // sende a msg in the channel (use privmsg code)
+        it_chan++;
+    }
+}
+
+void                    Server::m_privMsgCmd_noticeCmd(Client &client, bool notifs)
+{
+    Message& msg = client.messages.front();
     
-// }
+    if (msg.arguments.empty() || msg._literalMsg.empty() || msg.arguments.size() != 1)
+    {
+        if (notifs && msg.arguments.empty())
+            m_reply(client._sock_fd, Replies::ERR_NORECIPIENT, 0, "");
+        else if (notifs && msg._literalMsg.empty())
+            m_reply(client._sock_fd, Replies::ERR_NOTEXTTOSEND, 0, "");
+        else if (notifs && msg.arguments.size() != 1)
+            m_reply(client._sock_fd, Replies::ERR_TOOMANYTARGETS, 0, "");
+        return ;
+    }
+    std::string target = msg.arguments.front();
+    std::string message = msg._literalMsg;
+    if (target.at(0) == LOCAL_CHAN || target.at(0) == NETWORKWIDE_CHAN)
+    {
+        std::map<std::string, Channel>::iterator it_chan = m_channels.find(target);
+        if (it_chan == m_channels.end())
+        {
+            if (notifs)
+                m_reply(client._sock_fd, Replies::ERR_NOSUCHNICK, 0, "");
+            return ;
+        }
+        Channel & chan = m_channels[target];
+        std::vector<int> &members = chan.getMembers();
+        std::vector<int>::iterator it = members.begin();
+        std::vector<int>::iterator end = members.end();
+        while (it != end)
+        {
+            m_send(*it, message);
+            it++;
+        }
+    }
+    else
+    {
+        std::map<std::string, int>::iterator it_user = m_nicknames.find(target);
+        if (it_user == m_nicknames.end())
+        {
+            if (notifs)
+                m_reply(client._sock_fd, Replies::ERR_NOSUCHNICK, 0, "");
+            return ;
+        }
+        int clientFd = m_nicknames[target];
+        m_send(m_nicknames[target], message);
+    }
+}
+
+void            Server::m_kickCmd(Client &client)
+{
+    Message& msg = client.messages.front();
+    std::vector<std::string>    chans;
+    std::vector<std::string>    nicks;
+    m_grabChannelsNames(msg, chans, nicks);
+    if (msg.arguments.size() < 2 || (chans.size() != 1 && nicks.size() != chans.size()))
+    {
+        m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0, "");
+        return ;
+    }
+    // while ()
+}

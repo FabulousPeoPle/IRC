@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 19:10:21 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 15:25:06 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -88,23 +88,33 @@ namespace Replies
         //ERR_NOSUCHSERVER
         ERR_BANNEDFROMCHAN = 474,
         ERR_BADCHANNELKEY = 457,
-        RPL_TOPIC = 332
+        RPL_TOPIC = 332,
+        ERR_NOSUCHCHANNEL = 403,
+        ERR_NOTONCHANNEL = 442,
+        ERR_NORECIPIENT = 411,
+        ERR_NOTEXTTOSEND = 412,
+        ERR_NOSUCHNICK = 401,
+        ERR_TOOMANYTARGETS = 407,
     };
 };
 
-#define USER_COMMAND "USER"
-#define NICK_COMMAND "NICK"
-#define PASS_COMMAND "PASS"
-#define USERHOST_COMMAND "USERHOST"
-#define QUIT_COMMAND "QUIT"
-#define ISON_COMMAND "ISON"
-#define MODE_COMMAND "MODE"
-#define PONG_COMMAND "PONG" // yeet
-#define PING_COMMAND "PING" // yeet
-#define MOTD_COMMAND "MOTD"
-#define AWAY_COMMAND "AWAY"
-#define LUSERS_COMMAND "LUSERS"
-#define WHOIS_COMMAND "WHOIS"
+#define USER_COMMAND        "USER"
+#define NICK_COMMAND        "NICK"
+#define PASS_COMMAND        "PASS"
+#define USERHOST_COMMAND    "USERHOST"
+#define QUIT_COMMAND        "QUIT"
+#define ISON_COMMAND        "ISON"
+#define MODE_COMMAND        "MODE"
+#define PONG_COMMAND        "PONG" // yeet
+#define PING_COMMAND        "PING" // yeet
+#define MOTD_COMMAND        "MOTD"
+#define AWAY_COMMAND        "AWAY"
+#define LUSERS_COMMAND      "LUSERS"
+#define WHOIS_COMMAND       "WHOIS"
+#define JOIN_COMMAND        "JOIN"
+#define PART_COMMAND        "PART"
+#define NOTICE_COMMAND      "NOTICE"
+#define PRIVMSG_COMMAND     "PRIVMSG"
 
 #define NUM_COMMANDS 13
 
@@ -233,12 +243,20 @@ class Server {
         
         void                            m_joinCmd(Client & client);
         bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes);
+        bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans);
         bool                            m_channelExists(std::string);
         void                            m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected);
         void                            m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected);
 
         void                            m_partCmd(Client & client);
+
+        void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs);
+
+        void                            m_kickCmd(Client & client);
         
+        void                            m_namesCmd(Client & client);
+    
+        private:
         const std::string               m_serverName;
         const std::string               m_port;
         // Maybe this is usless since we are always going to connect to the same thing

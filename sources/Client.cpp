@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/11 17:26:21 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 12:33:17 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,18 @@ Client & Client::operator=(Client const & rhs)
 	return (*this);
 }
 
+void		Client::partChannel(std::string name)
+{
+	std::vector<std::string>::iterator it = _channels.begin();
+	std::vector<std::string>::iterator end = _channels.end();
+
+	while (it != end)
+	{
+		if (*it == name)
+			_channels.erase(it);
+		it++;
+	}
+}
 
 void		Client::turnOffMode(int modeNum)
 {
