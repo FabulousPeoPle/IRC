@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 19:10:21 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 15:28:04 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 #include <cstdint>
 #include <string>
 #include <iostream>
@@ -58,11 +59,15 @@ namespace Replies
 {
     enum
     {
+
+        /******-AUTHENTIFICATION-*******/
         RPL_WELCOME = 1,
         RPL_YOURHOST = 2,
         RPL_CREATED = 3,
         RPL_MYINFO = 4,
         RPL_BOUNCE = 5,
+        /*******************************/
+
         ERR_NICKNAMEINUSE = 433,
         ERR_ERRONEUSNICKNAME = 423,
         RPL_USERHOST = 302,
@@ -84,11 +89,18 @@ namespace Replies
         RPL_LUSERUNKNOWN = 253,
         RPL_LUSERCHANNELS = 254,
         RPL_LUSERME = 255,
-        RPL_PINGREQUEST = -1,
+        RPL_PINGREQUEST = 800,
         //ERR_NOSUCHSERVER
         ERR_BANNEDFROMCHAN = 474,
         ERR_BADCHANNELKEY = 457,
-        RPL_TOPIC = 332
+        RPL_TOPIC = 332,
+
+        /******-WHOIS-*******/
+        RPL_WHOISUSER = 311,
+        RPL_WHOISSERVER = 312,
+        RPL_ENDOFWHOIS = 318,
+        ERR_NOSUCHNICK = 401,
+        /********************/
     };
 };
 
@@ -220,7 +232,10 @@ class Server {
         void                            m_lusersCmd(Client& client);
         void                            m_whoisCmd(Client& client);
 
+        std::string                     m_makeReplyHeader(int replyNum, std::string nickname);
+
         std::string                     m_composeMotd(std::ifstream& motdFile, std::string clientNick);
+        std::string                     m_composeWhoisQuery(Client& QueryClient, std::string clientNickname, int replyCode);
 
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
 

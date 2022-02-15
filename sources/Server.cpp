@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/14 19:15:36 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 15:26:46 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -421,6 +421,32 @@ void                Server::m_lusersCmd(Client& client)
     
 }
 // TODO: WE SHOULD BE ABLE TO USE NICK AGAIN
+std::string                 Server::m_makeReplyHeader(int replyNum, std::string nickname)
+{
+    std::string strReplyNum = std::to_string(replyNum);
+    int         len = strReplyNum.size();
+    std::string s = std::string(3 - len, '0');
+    std::string header = ":" + this->m_serverName + " " + s + strReplyNum + ' ' + nickname;
+    return (header);
+}
+
+std::string                Server::m_composeWhoisQuery(Client& queryClient, std::string clientNickname, int replyCode)
+{
+    switch (replyCode)
+    {
+        case Replies::RPL_WHOISUSER:
+            return (m_makeReplyHeader(Replies::RPL_WHOISUSER, clientNickname) + ' ' + queryClient._nickname
+                                        + " ~" + queryClient._username + ' ' + queryClient.hostname + " * " + queryClient._realname);
+        case Replies::RPL_WHOISSERVER:
+            return (m_makeReplyHeader(Replies::RPL_WHOISSERVER, clientNickname) + ' ' + queryClient._nickname
+                                                    + ' ' + m_serverName + ": Morocco 1337 Server, Provided by 1337 students Powered by Itisalat Al Maghreb.");
+        case Replies::RPL_ENDOFWHOIS:
+            return (m_makeReplyHeader(Replies::RPL_ENDOFWHOIS, clientNickname) + ' ' + queryClient._nickname
+                                         + ' ' + ":End of WHOIS list.");
+        default:
+            return ("");
+    }
+}
 
 void                Server::m_pongCmd(Client& client)
 {
@@ -433,6 +459,31 @@ void                Server::m_pingCmd(Client& client)
     m_reply(client._sock_fd, Replies::RPL_PINGREQUEST, 0, "");
 }
 
+void                Server::m_whoisCmd(Client& client)
+{
+    Message&    message = client.messages.front();
+    if (message.arguments.empty())
+    {
+        m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0, ""); // MIGHT remove
+        return ;
+    }
+    std::string queryClientName = message.arguments[0];
+    int clientFd;
+    if (this->m_nicknames.find(queryClientName) == this->m_nicknames.end())
+    {
+        m_reply(client._sock_fd, Replies::ERR_NOSUCHNICK, 0, queryClientName);
+        return ;
+    }
+    else
+        clientFd = this->m_nicknames[queryClientName];
+    std::cout << clientFd << ": this is the clientFd\n";
+    Client&     queryClient = this->m_clients[clientFd];
+
+    m_reply(client._sock_fd, Replies::RPL_WHOISUSER, 0, m_composeWhoisQuery(queryClient, client._nickname, Replies::RPL_WHOISUSER));
+    m_reply(client._sock_fd, Replies::RPL_WHOISSERVER, 0, m_composeWhoisQuery(queryClient, client._nickname, Replies::RPL_WHOISSERVER));
+    m_reply(client._sock_fd, Replies::RPL_ENDOFWHOIS, 0, m_composeWhoisQuery(queryClient, client._nickname, Replies::RPL_ENDOFWHOIS));
+}
+
 void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
@@ -441,7 +492,6 @@ void                Server::m_relay(int clientFd)
     while (!messages.empty())
     {
         Message& message = messages.front();
-
         message.parse();
         #ifdef DEBUG
         std::cout << message.command << " this is the command\n";
@@ -467,6 +517,8 @@ void                Server::m_relay(int clientFd)
             this->m_awayCmd(m_clients[clientFd]);
         else if (message.command == LUSERS_COMMAND)
             this->m_lusersCmd(m_clients[clientFd]);
+        else if (message.command == WHOIS_COMMAND)
+            this->m_whoisCmd(m_clients[clientFd]);
         else if (message.command.size())
             m_reply(clientFd, Replies::ERR_UNKNOWNCOMMAND, 0, message.command);
         if (!messages.empty())
@@ -705,6 +757,18 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
              // should change after refactoring
         case Replies::RPL_TOPIC :\
             this->m_send(clientFd, ":" + this->m_serverName + " 332 :Topic\r\n");
+            break;
+        case Replies::RPL_WHOISUSER:
+            this->m_send(clientFd, message + "\r\n");
+            break;
+        case Replies::RPL_WHOISSERVER:
+            this->m_send(clientFd, message + "\r\n");
+            break;
+        case Replies::RPL_ENDOFWHOIS:
+            this->m_send(clientFd, message + "\r\n");
+            break;
+        case Replies::ERR_NOSUCHNICK:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_WHOISUSER, this->m_clients[clientFd]._nickname) + " " + message + " :No suck nick\r\n");
             break;
     }
 }
@@ -1009,7 +1073,6 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 
 // AF_UNSPEC comboed with AF_INET6
 
-std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS"}; // TODO: UPDATE
     // just to compile the thing
 
 bool                    Server::m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes)
@@ -1108,3 +1171,4 @@ void                    Server::m_joinCmd(Client & client)
 // {
     
 // }
+std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS"}; // TODO: UPDATE
