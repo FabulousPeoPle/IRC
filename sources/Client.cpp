@@ -6,16 +6,17 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/15 12:33:17 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/15 20:14:28 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #include "Client.hpp"
 
 Client::Client(void) : _nickAuth(false), _userAuth(false), _isServerOp(false), _away(false), _authenticated(false)
 {
 	this->modes = 0;
-	this->turnOnMode(Modes::restricted);
+	this->turnOnMode(UserModes::restricted);
 }
 
 Client::Client(Client const & src)
@@ -28,7 +29,7 @@ Client::Client(int sock_fd, struct sockaddr_storage addr, socklen_t len) : _sock
 _addr(addr), _addr_size(len), _nickAuth(false), _userAuth(false), _isServerOp(false), _away(false), _authenticated(false)
 {
 	this->modes = 0;
-	this->turnOnMode(Modes::restricted);
+	this->turnOnMode(UserModes::restricted);
 }
 
 Client::~Client(void)
@@ -77,5 +78,5 @@ bool		Client::getModeValue(int modeNum) const
 	return (this->modeBitMasks[modeNum] & this->modes);
 }
 
-std::uint8_t        Client::modeBitMasks[NUM_MODES] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6};
-std::string         Client::potentialModes = "aiwroOs";
+std::uint8_t        Client::modeBitMasks[NUM_MODES] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5};
+std::string         Client::potentialModes = "aiwros";

@@ -6,15 +6,17 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/15 15:25:06 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/15 20:16:25 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
 
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 #include <cstdint>
 #include <string>
 #include <iostream>
@@ -58,11 +60,15 @@ namespace Replies
 {
     enum
     {
+
+        /******-AUTHENTIFICATION-*******/
         RPL_WELCOME = 1,
         RPL_YOURHOST = 2,
         RPL_CREATED = 3,
         RPL_MYINFO = 4,
         RPL_BOUNCE = 5,
+        /*******************************/
+
         ERR_NICKNAMEINUSE = 433,
         ERR_ERRONEUSNICKNAME = 423,
         RPL_USERHOST = 302,
@@ -84,17 +90,26 @@ namespace Replies
         RPL_LUSERUNKNOWN = 253,
         RPL_LUSERCHANNELS = 254,
         RPL_LUSERME = 255,
-        RPL_PINGREQUEST = -1,
+        RPL_PINGREQUEST = 800,
         //ERR_NOSUCHSERVER
         ERR_BANNEDFROMCHAN = 474,
         ERR_BADCHANNELKEY = 457,
-        RPL_TOPIC = 332,
         ERR_NOSUCHCHANNEL = 403,
-        ERR_NOTONCHANNEL = 442,
         ERR_NORECIPIENT = 411,
         ERR_NOTEXTTOSEND = 412,
-        ERR_NOSUCHNICK = 401,
         ERR_TOOMANYTARGETS = 407,
+          /******-WHOIS-*******/
+        RPL_WHOISUSER = 311,
+        RPL_WHOISSERVER = 312,
+        RPL_ENDOFWHOIS = 318,
+        ERR_NOSUCHNICK = 401,
+        /********************/
+
+        /******-TOPIC********/
+        ERR_NOTONCHANNEL = 442,
+        RPL_NOTOPIC = 331,
+        RPL_TOPIC = 332,
+        /********************/
     };
 };
 
@@ -115,8 +130,9 @@ namespace Replies
 #define PART_COMMAND        "PART"
 #define NOTICE_COMMAND      "NOTICE"
 #define PRIVMSG_COMMAND     "PRIVMSG"
+#define TOPIC_COMMAND "TOPIC"
 
-#define NUM_COMMANDS 13
+#define NUM_COMMANDS 14
 
 #define MOTD_LENGTH_LINE 80
 
@@ -229,8 +245,13 @@ class Server {
         void                            m_pongCmd(Client& client);
         void                            m_lusersCmd(Client& client);
         void                            m_whoisCmd(Client& client);
+        void                            m_topicCmd(Client& client);
+
+        std::string                     m_makeReplyHeader(int replyNum, std::string nickname);
 
         std::string                     m_composeMotd(std::ifstream& motdFile, std::string clientNick);
+        std::string                     m_composeWhoisQuery(Client& QueryClient, std::string clientNickname, int replyCode);
+        std::string                     m_composeRplTopic(Channel& channel);
 
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
 

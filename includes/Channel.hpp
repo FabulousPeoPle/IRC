@@ -6,9 +6,10 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/15 13:06:25 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/15 20:19:02 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef _CHANNEL_
 #define _CHANNEL_
@@ -24,20 +25,36 @@
 
 //IDK IF THIS IS HOW WE ARE HANDLING THIS, THIS IS JUST SO I CAN WORK ON THE JOIN COMMAND 
 
-#define CHAN_MODE_O 1
-#define CHAN_MODE_P 2
-#define CHAN_MODE_S 4
-#define CHAN_MODE_I 8
-#define CHAN_MODE_T 16
-#define CHAN_MODE_N 32
-#define CHAN_MODE_M 64
-#define CHAN_MODE_L 128
-#define CHAN_MODE_B 256
-#define CHAN_MODE_V 512
-#define CHAN_MODE_K 1024
+#define NUM_MODES_CHANNEL 17
 
 class Client;
 
+namespace ChannelModes
+{
+    enum
+    {
+		O_Creator,
+        o_OperatorPrivilege,
+        v_voicePrivilege,
+
+        a_annonymous,
+        i_inviteOnly,
+        m_moderated,
+        n_noOutsideMessage,
+        q_quiet,
+        p_private,
+        s_secret,
+        r_reop,
+        t_topicOperatorOnly,
+        
+        k_password,
+        l_userLimit,
+        
+        b_banMask,
+		e_exceptionMask,
+		I_inviteMask,
+    };
+};
 class Channel
 {
 private:
@@ -50,6 +67,8 @@ private:
 	std::vector<int>			m_members;
 	// std::vector<std::string>	m_banned;
 	std::string					m_password;
+	std::uint32_t               modes; // need to give em default modes
+
 public:
 	Channel(void);
 	Channel(int mode, int opFd, std::string name, char type, std::string password);
@@ -77,7 +96,15 @@ public:
 	bool				isBanned(int clientFd) const;
 	bool				isMember(int clientFd) const;
 	// std::string			m_composeMask(Client & client) const;
-	void				Ban(int clinetFd);
+	void					Ban(int clinetFd);
+
+	bool        			getModeValue(int modeNum) const;
+
+    void        			turnOnMode(int modeNum);
+    void        			turnOffMode(int modeNum);
+
+	static std::uint32_t	modeBitMasks[NUM_MODES_CHANNEL];
+	static std::string		potentialModes;
 };
 
 #endif

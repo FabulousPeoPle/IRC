@@ -6,9 +6,10 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/15 12:31:32 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/15 20:18:53 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
@@ -23,9 +24,9 @@
 #include <cstring>
 class Message;
 
-#define NUM_MODES 7
+#define NUM_MODES 6
 
-namespace Modes
+namespace UserModes
 {
     enum
     {
@@ -33,9 +34,8 @@ namespace Modes
         invisible,
         wallops,
         restricted,
-        oper, // Might be the same as O
-        local_oper, // Might be the same as o
-        server_notices,
+        oper,
+        server_notices
     };
 };
 

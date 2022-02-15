@@ -6,9 +6,10 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/15 20:05:36 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/15 20:18:09 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 #include "Server.hpp"
@@ -274,19 +275,17 @@ int     findMode(char c)
     switch (c)
     {
         case 'a':
-            return (Modes::away);
+            return (UserModes::away);
         case 'i':
-            return (Modes::invisible);
+            return (UserModes::invisible);
         case 'w':
-            return (Modes::wallops);
+            return (UserModes::wallops);
         case 'r':
-            return (Modes::restricted);
+            return (UserModes::restricted);
         case 'o':
-            return (Modes::oper);
-        case 'O':
-            return (Modes::local_oper);
+            return (UserModes::oper);
         case 's':
-            return (Modes::server_notices);           
+            return (UserModes::server_notices);           
         default:
             return (-1);
     }
@@ -312,7 +311,7 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
     {
         int modeNum = findMode(message.arguments[1][j]);
 
-        if (modeNum == Modes::away) // ignore it for now, don't know the exact behaviour
+        if (modeNum == UserModes::away) // ignore it for now, don't know the exact behaviour
             continue ;
         if (modeNum == -1)
         {
@@ -321,7 +320,7 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
         }
         if (prefix == '+')
         {
-            if (modeNum == Modes::oper || modeNum == Modes::local_oper)
+            if (modeNum == UserModes::oper)
                 continue ;
             if (!client.getModeValue(modeNum))
             {
@@ -331,7 +330,7 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
         }
         else if (prefix == '-')
         {
-            if (modeNum == Modes::restricted)
+            if (modeNum == UserModes::restricted)
                 continue ;
             if (client.getModeValue(modeNum))
             {
@@ -400,13 +399,13 @@ void                Server::m_awayCmd(Client& client) // SHOULD WORK TOGETHER WI
     if (message._literalMsg.size())
     {
         client.awayMessage = message._literalMsg;
-        client.turnOnMode(Modes::away);
+        client.turnOnMode(UserModes::away);
         m_reply(client._sock_fd, Replies::RPL_NOWAWAY, 0, "");
     }
     else
     {
         client.awayMessage = "";
-        client.turnOffMode(Modes::away);
+        client.turnOffMode(UserModes::away);
         m_reply(client._sock_fd, Replies::RPL_UNAWAY, 0, "");
     }
 }
@@ -421,6 +420,32 @@ void                Server::m_lusersCmd(Client& client)
     
 }
 // TODO: WE SHOULD BE ABLE TO USE NICK AGAIN
+std::string                 Server::m_makeReplyHeader(int replyNum, std::string nickname)
+{
+    std::string strReplyNum = std::to_string(replyNum);
+    int         len = strReplyNum.size();
+    std::string s = std::string(3 - len, '0');
+    std::string header = ":" + this->m_serverName + " " + s + strReplyNum + ' ' + nickname;
+    return (header);
+}
+
+std::string                Server::m_composeWhoisQuery(Client& queryClient, std::string clientNickname, int replyCode)
+{
+    switch (replyCode)
+    {
+        case Replies::RPL_WHOISUSER:
+            return (m_makeReplyHeader(Replies::RPL_WHOISUSER, clientNickname) + ' ' + queryClient._nickname
+                                        + " ~" + queryClient._username + ' ' + queryClient.hostname + " * " + queryClient._realname);
+        case Replies::RPL_WHOISSERVER:
+            return (m_makeReplyHeader(Replies::RPL_WHOISSERVER, clientNickname) + ' ' + queryClient._nickname
+                                                    + ' ' + m_serverName + ": Morocco 1337 Server, Provided by 1337 students Powered by Itisalat Al Maghreb.");
+        case Replies::RPL_ENDOFWHOIS:
+            return (m_makeReplyHeader(Replies::RPL_ENDOFWHOIS, clientNickname) + ' ' + queryClient._nickname
+                                         + ' ' + ":End of WHOIS list.");
+        default:
+            return ("");
+    }
+}
 
 void                Server::m_pongCmd(Client& client)
 {
@@ -433,6 +458,66 @@ void                Server::m_pingCmd(Client& client)
     m_reply(client._sock_fd, Replies::RPL_PINGREQUEST, 0, "");
 }
 
+void                Server::m_whoisCmd(Client& client)
+{
+    Message&    message = client.messages.front();
+    if (message.arguments.empty())
+    {
+        m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0, ""); // MIGHT remove
+        return ;
+    }
+    std::string queryClientName = message.arguments[0];
+    int clientFd;
+    if (this->m_nicknames.find(queryClientName) == this->m_nicknames.end())
+    {
+        m_reply(client._sock_fd, Replies::ERR_NOSUCHNICK, 0, queryClientName);
+        return ;
+    }
+    else
+        clientFd = this->m_nicknames[queryClientName];
+    std::cout << clientFd << ": this is the clientFd\n";
+    Client&     queryClient = this->m_clients[clientFd];
+
+    m_reply(client._sock_fd, Replies::RPL_WHOISUSER, 0, m_composeWhoisQuery(queryClient, client._nickname, Replies::RPL_WHOISUSER));
+    m_reply(client._sock_fd, Replies::RPL_WHOISSERVER, 0, m_composeWhoisQuery(queryClient, client._nickname, Replies::RPL_WHOISSERVER));
+    m_reply(client._sock_fd, Replies::RPL_ENDOFWHOIS, 0, m_composeWhoisQuery(queryClient, client._nickname, Replies::RPL_ENDOFWHOIS));
+}
+
+std::string         Server::m_composeRplTopic(Channel& channel)
+{
+    return (channel.getName() + ':' + channel.getTopic());
+}
+
+void                Server::m_topicCmd(Client& client)
+{
+    Message& message = client.messages.front();
+
+    if (message.arguments.empty())
+    {
+        m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0, "");
+        return ;
+    }
+    if (std::find(client._channels.begin(), client._channels.end(), message.arguments[0]) == client._channels.end())
+    {
+        m_reply(client._sock_fd, Replies::ERR_NOTONCHANNEL, 0, message.arguments[0]);
+        return ;
+    }
+
+    if (message.arguments.size() == 1) // there is only one argument, channel name
+    {
+        if (m_channels[message.arguments[0]].getTopic().empty()) // checking if topic is empty
+        {
+            m_reply(client._sock_fd, Replies::RPL_NOTOPIC, 0, message.arguments[0]);
+            return;
+        }
+        m_reply(client._sock_fd, Replies::RPL_TOPIC, 0, m_composeRplTopic(m_channels[message.arguments[0]])); // there is a topic
+        return;
+    }
+
+   // TODO: STILL NEED TO IMPLEMENT TOPIC CHANGING STUFF. 
+    
+}
+
 void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
@@ -441,7 +526,6 @@ void                Server::m_relay(int clientFd)
     while (!messages.empty())
     {
         Message& message = messages.front();
-
         message.parse();
         #ifdef DEBUG
         std::cout << message.command << " this is the command\n";
@@ -449,6 +533,7 @@ void                Server::m_relay(int clientFd)
         
         // This two lines might be deleting our message
         // if (!messages.empty())
+        // TODO: replace with switch case
         if (message.command == USERHOST_COMMAND)
             this->m_userhostCmd(m_clients[clientFd]);
         else if (message.command == USER_COMMAND)
@@ -467,6 +552,10 @@ void                Server::m_relay(int clientFd)
             this->m_awayCmd(m_clients[clientFd]);
         else if (message.command == LUSERS_COMMAND)
             this->m_lusersCmd(m_clients[clientFd]);
+        else if (message.command == WHOIS_COMMAND)
+            this->m_whoisCmd(m_clients[clientFd]);
+        else if (message.command == TOPIC_COMMAND)
+            this->m_topicCmd(m_clients[clientFd]);
         else if (message.command.size())
             m_reply(clientFd, Replies::ERR_UNKNOWNCOMMAND, 0, message.command);
         if (!messages.empty())
@@ -703,14 +792,8 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             this->m_send(clientFd, ":" + this->m_serverName + " 475 <channel name> :Cannot join channel (+k)\r\n");
             break;
              // should change after refactoring
-        case Replies::RPL_TOPIC :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 332 <channel name> :Topic\r\n");
-            break;
         case Replies::ERR_NOSUCHCHANNEL :\
             this->m_send(clientFd, ":" + this->m_serverName + " 403 <channel name> :No such channel\r\n");
-            break;
-        case Replies::ERR_NOTONCHANNEL :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 442 <channel name> :You're not on that channel\r\n");
             break;
         case Replies::ERR_NORECIPIENT :\
             this->m_send(clientFd, ":" + this->m_serverName + " 411  :No recipient given " + m_clients[clientFd].messages.front().command + "\r\n");
@@ -724,7 +807,20 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             // needs to change
         case Replies::ERR_TOOMANYTARGETS :\
             this->m_send(clientFd, ":" + this->m_serverName + " 407 " + m_clients[clientFd].messages.front().arguments.front() + " :too many recipients.\r\n");
+        case Replies::RPL_WHOISUSER:
+            this->m_send(clientFd, message + "\r\n");
             break;
+        case Replies::RPL_WHOISSERVER:
+            this->m_send(clientFd, message + "\r\n");
+            break;
+        case Replies::RPL_ENDOFWHOIS:
+            this->m_send(clientFd, message + "\r\n");
+            break;
+        case Replies::ERR_NOTONCHANNEL:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_NOTONCHANNEL, this->m_clients[clientFd]._nickname) + " " + message + " :You're not on that channel\r\n");
+            break;
+        case Replies::RPL_TOPIC:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_TOPIC, this->m_clients[clientFd]._nickname) + ' ' + message + "\r\n");
     }
 }
 
@@ -736,7 +832,7 @@ int             Server::m_calculateOperators(void) // there is probably a better
     operators = 0;
     for (it = this->m_clients.begin(); it != this->m_clients.end(); ++it)
     {
-        if (it->second.getModeValue(Modes::oper) || it->second.getModeValue(Modes::local_oper)) // both operator types??
+        if (it->second.getModeValue(UserModes::oper)) // both operator types??
             ++operators;
     }
     return (operators);
@@ -1028,7 +1124,6 @@ void                    Server::m_quitCmd(int clientFd, std::string quitMessage)
 
 // AF_UNSPEC comboed with AF_INET6
 
-std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS"}; // TODO: UPDATE
     // just to compile the thing
 
 bool                    Server::m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes)
@@ -1239,3 +1334,5 @@ void            Server::m_kickCmd(Client &client)
     }
     // while ()
 }
+// }
+std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS", "TOPIC"}; // TODO: UPDATE
