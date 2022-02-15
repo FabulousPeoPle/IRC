@@ -394,7 +394,9 @@ void                Server::m_manageClientEvent(int pollIndex)
     // I have to error management message size
     char    buffer[BUFFER_SIZE];
     int     bytesRead = recv(this->m_pfds[pollIndex].fd, buffer, BUFFER_SIZE, 0);
-
+    
+    std::cout << bytesRead << std::endl;
+    std::cout << buffer << std::endl;
     if (bytesRead <= 0)
     {
         if (bytesRead == 0)
