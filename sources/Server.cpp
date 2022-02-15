@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/15 20:18:09 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/15 21:44:13 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1332,7 +1332,11 @@ void            Server::m_kickCmd(Client &client)
         m_reply(client._sock_fd, Replies::ERR_NEEDMOREPARAMS, 0, "");
         return ;
     }
-    // while ()
+    std::vector<std::string>::iterator it_chan = chans.begin();
+    std::vector<std::string>::iterator end_chan = chans.begin();
+    std::vector<std::string>::iterator it_chan = nicks.begin();
+    std::vector<std::string>::iterator end_chan = nicks.begin();
+    // while (it){}
 }
 // }
-std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS", "TOPIC"}; // TODO: UPDATE
+std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS", "TOPIC", "JOIN", "PART", "KICK", "PRIVMSG", "NOTICE"}; // TODO: UPDATE
