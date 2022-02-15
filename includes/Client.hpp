@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/15 17:46:51 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 18:01:34 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@ class Message;
 
 #define NUM_MODES 6
 
-namespace Modes
+namespace UserModes
 {
     enum
     {
@@ -33,8 +33,8 @@ namespace Modes
         invisible,
         wallops,
         restricted,
-        oper, // Might be the same as O
-        server_notices,
+        oper,
+        server_notices
     };
 };
 

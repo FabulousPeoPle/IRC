@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/15 17:48:10 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 17:51:44 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -274,17 +274,17 @@ int     findMode(char c)
     switch (c)
     {
         case 'a':
-            return (Modes::away);
+            return (UserModes::away);
         case 'i':
-            return (Modes::invisible);
+            return (UserModes::invisible);
         case 'w':
-            return (Modes::wallops);
+            return (UserModes::wallops);
         case 'r':
-            return (Modes::restricted);
+            return (UserModes::restricted);
         case 'o':
-            return (Modes::oper);
+            return (UserModes::oper);
         case 's':
-            return (Modes::server_notices);           
+            return (UserModes::server_notices);           
         default:
             return (-1);
     }
@@ -310,7 +310,7 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
     {
         int modeNum = findMode(message.arguments[1][j]);
 
-        if (modeNum == Modes::away) // ignore it for now, don't know the exact behaviour
+        if (modeNum == UserModes::away) // ignore it for now, don't know the exact behaviour
             continue ;
         if (modeNum == -1)
         {
@@ -319,7 +319,7 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
         }
         if (prefix == '+')
         {
-            if (modeNum == Modes::oper)
+            if (modeNum == UserModes::oper)
                 continue ;
             if (!client.getModeValue(modeNum))
             {
@@ -329,7 +329,7 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
         }
         else if (prefix == '-')
         {
-            if (modeNum == Modes::restricted)
+            if (modeNum == UserModes::restricted)
                 continue ;
             if (client.getModeValue(modeNum))
             {
@@ -398,13 +398,13 @@ void                Server::m_awayCmd(Client& client) // SHOULD WORK TOGETHER WI
     if (message._literalMsg.size())
     {
         client.awayMessage = message._literalMsg;
-        client.turnOnMode(Modes::away);
+        client.turnOnMode(UserModes::away);
         m_reply(client._sock_fd, Replies::RPL_NOWAWAY, 0, "");
     }
     else
     {
         client.awayMessage = "";
-        client.turnOffMode(Modes::away);
+        client.turnOffMode(UserModes::away);
         m_reply(client._sock_fd, Replies::RPL_UNAWAY, 0, "");
     }
 }
@@ -819,7 +819,7 @@ int             Server::m_calculateOperators(void) // there is probably a better
     operators = 0;
     for (it = this->m_clients.begin(); it != this->m_clients.end(); ++it)
     {
-        if (it->second.getModeValue(Modes::oper)) // both operator types??
+        if (it->second.getModeValue(UserModes::oper)) // both operator types??
             ++operators;
     }
     return (operators);
