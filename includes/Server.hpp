@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/15 20:16:25 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/16 12:48:57 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -132,7 +132,7 @@ namespace Replies
 #define PRIVMSG_COMMAND     "PRIVMSG"
 #define TOPIC_COMMAND "TOPIC"
 
-#define NUM_COMMANDS 14
+#define NUM_COMMANDS 19
 
 #define MOTD_LENGTH_LINE 80
 
