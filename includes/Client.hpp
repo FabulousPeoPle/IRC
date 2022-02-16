@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/15 18:01:34 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/16 14:27:52 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,9 +21,10 @@
 #include "Message.hpp"
 #include <cstdint>
 #include <cstring>
+
 class Message;
 
-#define NUM_MODES 6
+#define NUM_MODES 9
 
 namespace UserModes
 {
@@ -66,8 +67,8 @@ class Client
         bool                        _away;
         bool                        _authenticated;
 
-        std::uint8_t                modes; // need to give em default modes
-        static std::uint8_t         modeBitMasks[NUM_MODES];
+        std::uint16_t                modes; // also has channel specific modes now
+        static std::uint16_t         modeBitMasks[NUM_MODES];
         static std::string          potentialModes;
         std::string                 awayMessage;
         
