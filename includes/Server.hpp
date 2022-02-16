@@ -6,9 +6,11 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/15 18:56:05 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/16 18:56:20 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+
 
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
@@ -93,8 +95,11 @@ namespace Replies
         //ERR_NOSUCHSERVER
         ERR_BANNEDFROMCHAN = 474,
         ERR_BADCHANNELKEY = 457,
-
-        /******-WHOIS-*******/
+        ERR_NOSUCHCHANNEL = 403,
+        ERR_NORECIPIENT = 411,
+        ERR_NOTEXTTOSEND = 412,
+        ERR_TOOMANYTARGETS = 407,
+          /******-WHOIS-*******/
         RPL_WHOISUSER = 311,
         RPL_WHOISSERVER = 312,
         RPL_ENDOFWHOIS = 318,
@@ -106,25 +111,36 @@ namespace Replies
         RPL_NOTOPIC = 331,
         RPL_TOPIC = 332,
         /********************/
+
+        /******-OPER-********/
+        RPL_YOUREOPER = 381,
+        ERR_NOOPERHOST = 491,
+        ERR_PASSWDMISMATCH = 464,
+        /********************/
     };
 };
 
-#define USER_COMMAND "USER"
-#define NICK_COMMAND "NICK"
-#define PASS_COMMAND "PASS"
-#define USERHOST_COMMAND "USERHOST"
-#define QUIT_COMMAND "QUIT"
-#define ISON_COMMAND "ISON"
-#define MODE_COMMAND "MODE"
-#define PONG_COMMAND "PONG"
-#define PING_COMMAND "PING" // yeet
-#define MOTD_COMMAND "MOTD"
-#define AWAY_COMMAND "AWAY"
-#define LUSERS_COMMAND "LUSERS"
-#define WHOIS_COMMAND "WHOIS"
-#define TOPIC_COMMAND "TOPIC"
+#define USER_COMMAND        "USER"
+#define NICK_COMMAND        "NICK"
+#define PASS_COMMAND        "PASS"
+#define USERHOST_COMMAND    "USERHOST"
+#define QUIT_COMMAND        "QUIT"
+#define ISON_COMMAND        "ISON"
+#define MODE_COMMAND        "MODE"
+#define PONG_COMMAND        "PONG" // yeet
+#define PING_COMMAND        "PING" // yeet
+#define MOTD_COMMAND        "MOTD"
+#define AWAY_COMMAND        "AWAY"
+#define LUSERS_COMMAND      "LUSERS"
+#define WHOIS_COMMAND       "WHOIS"
+#define JOIN_COMMAND        "JOIN"
+#define PART_COMMAND        "PART"
+#define NOTICE_COMMAND      "NOTICE"
+#define PRIVMSG_COMMAND     "PRIVMSG"
+#define TOPIC_COMMAND       "TOPIC"
+#define OPER_COMMAND        "OPER"
 
-#define NUM_COMMANDS 14
+#define NUM_COMMANDS 20
 
 #define MOTD_LENGTH_LINE 80
 
@@ -180,6 +196,7 @@ class Server {
         //  Might wanna set protection for multiple IP adresses
 
         std::string                     getServName(void) const;
+
         int                             setServerInfo(void);
         void                            setServerHints(int family, int sockType, int flags);
 
@@ -189,6 +206,7 @@ class Server {
         int                             setSockfd_in(void);
         int                             setSockfd_in6(void);
 
+        void                            setOperPassword(std::string password); // server password is bo7do
 
         int                             listen(void);
 
@@ -238,6 +256,7 @@ class Server {
         void                            m_lusersCmd(Client& client);
         void                            m_whoisCmd(Client& client);
         void                            m_topicCmd(Client& client);
+        void                            m_operCmd(Client& client);
 
         std::string                     m_makeReplyHeader(int replyNum, std::string nickname);
 
@@ -256,12 +275,19 @@ class Server {
         
         void                            m_joinCmd(Client & client);
         bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes);
+        bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans);
         bool                            m_channelExists(std::string);
         void                            m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected);
         void                            m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected);
 
         void                            m_partCmd(Client & client);
+
+        void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs);
+
+        void                            m_kickCmd(Client & client);
         
+        void                            m_namesCmd(Client & client);
+    
         const std::string               m_serverName;
         const std::string               m_port;
         // Maybe this is usless since we are always going to connect to the same thing
@@ -280,6 +306,7 @@ class Server {
 
         int                             m_poll_count;
         std::vector<t_pollfd>           m_pfds;
+        std::string                     m_operPassword;
 
         std::map<int, Client>           m_clients;
         

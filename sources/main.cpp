@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:54 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/15 12:20:40 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/16 17:17:06 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@ int main(void)
     
     Server myServer("6667", "", "Server@1337.ma", 150);
 
+    myServer.setOperPassword("meh");
     std::cout << "Server name: " << myServer.getServName() << std::endl;
     
     // myServer.setServerHints(AF_INET6, SOCK_STREAM, AI_PASSIVE);

@@ -6,9 +6,11 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/16 14:28:15 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/16 16:26:39 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+
 
 #include "Client.hpp"
 
@@ -34,6 +36,183 @@ _addr(addr), _addr_size(len), _nickAuth(false), _userAuth(false), _isServerOp(fa
 Client::~Client(void)
 {}
 
+int		Client::getFd(void) const
+{
+	return (_sock_fd);
+}
+
+struct sockaddr_storage	Client::getRawAddress(void) const
+{
+	return (_addr);
+}
+
+socklen_t	Client::getAddrLen(void) const
+{
+	return (_addr_size);
+}
+
+t_messageDQeue	&Client::getMessageQueue(void)
+{
+	return (messages);
+}
+
+std::string	Client::getNickname(void) const
+{
+	return (_nickname);
+}
+
+std::string	Client::getUsername(void) const
+{
+	return (_username);
+}
+
+std::string	Client::getHostname(void) const
+{
+	return (hostname);
+}
+
+std::string	Client::getIp(void) const
+{
+	return (_ip_address);
+}
+
+std::string	Client::getRealname(void) const
+{
+	return (_realname);
+}
+
+std::string	Client::getAwayMsg(void) const
+{
+	return (awayMessage);
+}
+
+bool		Client::isNickAuth(void) const
+{
+	return(_nickAuth);
+}
+
+bool		Client::isUserAuth(void) const
+{
+	return(_userAuth);
+}
+
+bool		Client::isServerOp(void) const
+{
+	return(_isServerOp);
+}
+
+bool		Client::isAuthComplete(void) const
+{
+	return(_authenticated);
+}
+
+bool		Client::isAway(void) const
+{
+	return(_away);
+}
+
+void	Client::setFd(int fd)
+{
+	_sock_fd = fd;
+}
+
+void	Client::setRawAddress(struct sockaddr_storage addr)
+{
+	_addr = addr;
+}
+
+void	Client::setAddrLen(socklen_t len)
+{
+	_addr_size = len;
+}
+
+void	Client::pushMsg(Message &message)
+{
+	messages.push_back(message);
+}
+
+void	Client::setNickname(std::string nickname)
+{
+	_nickname = nickname;	
+}
+
+void	Client::setUsername(std::string username)
+{
+	_username = username;	
+}
+
+void	Client::setIp(std::string ip)
+{
+	_ip_address = ip;	
+}
+
+void	Client::setHostname(std::string hostname)
+{
+	this->hostname = hostname;	
+}
+
+void	Client::setRealname(std::string realname)
+{
+	_realname = realname;	
+}
+
+void	Client::setAwayMsg(std::string awayMessage)
+{
+	this->awayMessage = awayMessage;	
+}
+
+void	Client::setNickAuth()
+{
+	_nickAuth = true;
+}
+
+void	Client::setUserAuth()
+{
+	_userAuth = true;
+}
+
+void	Client::setAsServerOp()
+{
+	_isServerOp = true;
+}
+
+void	Client::setAway()
+{
+	_away = true;
+}
+
+void	Client::setAuthComplete()
+{
+	_authenticated = true;
+}
+
+void	Client::pushChannel(std::string channelName, std::uint8_t modes)
+{
+	_channels.push_back(channelName);
+	_channelModes[channelName] = modes;
+}
+
+void	Client::popChannel(std::string channelName)
+{
+	std::vector<std::string>::iterator it = _channels.begin();
+	std::vector<std::string>::iterator end = _channels.end();
+
+	while (it != end)
+	{
+		if (*it == channelName)
+		{
+			_channels.erase(it);
+			break ;
+		}
+		it++;
+	}
+}
+
+std::vector<std::string>        &Client::getChannels(void)
+{
+	return (_channels);
+}
+
 Client & Client::operator=(Client const & rhs)
 {
 	_sock_fd = rhs._sock_fd;
@@ -49,6 +228,18 @@ Client & Client::operator=(Client const & rhs)
 	return (*this);
 }
 
+void		Client::partChannel(std::string name)
+{
+	std::vector<std::string>::iterator it = _channels.begin();
+	std::vector<std::string>::iterator end = _channels.end();
+
+	while (it != end)
+	{
+		if (*it == name)
+			_channels.erase(it);
+		it++;
+	}
+}
 
 void		Client::turnOffMode(int modeNum)
 {
@@ -65,5 +256,5 @@ bool		Client::getModeValue(int modeNum) const
 	return (this->modeBitMasks[modeNum] & this->modes);
 }
 
-std::uint16_t        Client::modeBitMasks[NUM_MODES] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5};
+std::uint8_t        Client::modeBitMasks[NUM_MODES] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5};
 std::string         Client::potentialModes = "aiwros";

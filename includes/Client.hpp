@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/16 14:27:52 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/16 16:28:37 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
@@ -24,7 +25,11 @@
 
 class Message;
 
-#define NUM_MODES 9
+#define NUM_MODES 6
+
+#define OWNER_MODES 0x7
+
+#define PEASEANT_MODES 0x0
 
 namespace UserModes
 {
@@ -51,41 +56,84 @@ class Client
     // services and users do not have the same privelages, example: services can request part of the global state information(if not all of it), they cannot access channels, users can access channels
     // TODO: what the fuck is the flood control mechanism?
     // TODO: generator QUIT message if the connection breaks
+    private:
+        int                                 _sock_fd;
+        struct sockaddr_storage             _addr;
+        socklen_t                           _addr_size;
+        std::string                         _nickname;
+        std::string                         _username;
+        std::string                         hostname;
+        std::string                         _ip_address;
+        t_messageDQeue                      messages;
+        std::string                         _realname;
+        bool                                _nickAuth;
+        bool                                _userAuth;
+        bool                                _isServerOp;
+        bool                                _away;
+        bool                                _authenticated;
+        std::uint8_t                        modes; // need to give em default modes
+        static std::uint8_t                 modeBitMasks[NUM_MODES];
+        static std::string                  potentialModes;
+        std::string                         awayMessage;
+        
+        std::vector<std::string>            _channels; // TODO: Maybe remove later
+        std::map<std::string, std::uint8_t> _channelModes;
+    
     public:
-        int                         _sock_fd;
-        struct sockaddr_storage     _addr;
-        socklen_t                   _addr_size;
-        std::string                 _nickname;
-        std::string                 _username;
-        std::string                 hostname;
-        std::string                 _ip_address;
-        t_messageDQeue              messages;
-        std::string                 _realname;
-        bool                        _nickAuth;
-        bool                        _userAuth;
-        bool                        _isServerOp;
-        bool                        _away;
-        bool                        _authenticated;
 
-        std::uint16_t                modes; // also has channel specific modes now
-        static std::uint16_t         modeBitMasks[NUM_MODES];
-        static std::string          potentialModes;
-        std::string                 awayMessage;
-        
-        std::vector<std::string>    _channels;
-
-        
         Client(void);
         Client(Client const & src);
         Client(int, struct sockaddr_storage, socklen_t);
         ~Client(void);
 
+        /////////////////
+        //// GETTERS ////
+        /////////////////
+        int         getFd(void) const;
+        struct sockaddr_storage         getRawAddress(void) const;
+        socklen_t                       getAddrLen(void) const;
+        t_messageDQeue                  &getMessageQueue(void);
+        std::string                     getNickname(void) const;
+        std::string                     getUsername(void) const;
+        std::string                     getHostname(void) const;
+        std::string                     getIp(void) const;
+        std::string                     getRealname(void) const;
+        std::string                     getAwayMsg(void) const;
+        bool                            isNickAuth(void) const;
+        bool                            isUserAuth(void) const;
+        bool                            isServerOp(void) const;
+        bool                            isAway(void) const;
+        bool                            isAuthComplete(void) const;
+        bool                            getModeValue(int modeNum) const;
+        std::vector<std::string>        &getChannels(void);
+        
+        /////////////////
+        //// SETTERS ////
+        /////////////////
+        void                            setFd(int fd);
+        void                            setRawAddress(struct sockaddr_storage addr);
+        void                            setAddrLen(socklen_t addrLen);
+        void                            pushMsg(Message & message);
+        void                            setNickname(std::string nickname);
+        void                            setUsername(std::string username);
+        void                            setIp(std::string ip);
+        void                            setHostname(std::string hostname);
+        void                            setRealname(std::string realname);
+        void                            setAwayMsg(std::string awayMsg);
+        void                            setNickAuth(void);
+        void                            setUserAuth(void);
+        void                            setAsServerOp(void);
+        void                            setAway(void);
+        void                            setAuthComplete(void);
+        void                            turnOnMode(int modeNum);
+        void                            turnOffMode(int modeNum);
+        void                            pushChannel(std::string channelName, std::uint8_t modes);
+        void                            popChannel(std::string channelName);
+
         Client & operator=(Client const & rhs);
 
-        bool        getModeValue(int modeNum) const;
 
-        void        turnOnMode(int modeNum);
-        void        turnOffMode(int modeNum);
+        void                            partChannel(std::string channelName);
 };
 
 #endif

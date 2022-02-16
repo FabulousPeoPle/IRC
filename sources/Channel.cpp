@@ -6,7 +6,8 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:10:43 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/15 17:46:31 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/15 13:06:37 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/15 17:46:31 by ohachim          				          */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,9 +49,14 @@ int  Channel::getType(void) const
 	return (this->m_type);
 }
 
-std::vector<int> Channel::getOps(void) const
+std::vector<int> &Channel::getOps(void)
 {
 	return (this->m_operators);
+}
+
+std::vector<int> &Channel::getMembers(void)
+{
+	return (this->m_members);
 }
 
 void	Channel::setName(std::string name)
@@ -83,16 +89,22 @@ void	Channel::addOp(int clientFd)
 	m_operators.push_back(clientFd);
 }
 
-bool Channel::isOp(int clientFd) const
-{
-	return (((std::find(m_operators.begin(), m_operators.end(), clientFd) != m_operators.end()) ? true : false));
-}
 
 bool	Channel::checkPassword(std::string password)
 {
 	if (m_password == password)
 		return (true);
 	return (false);
+}
+
+bool Channel::isOp(int clientFd) const
+{
+	return (((std::find(m_operators.begin(), m_operators.end(), clientFd) != m_operators.end()) ? true : false));
+}
+
+bool Channel::isMember(int clientFd) const
+{
+	return (((std::find(m_members.begin(), m_members.end(), clientFd) != m_members.end()) ? true : false));
 }
 
 // std::string	Channel::m_composeMask(Client & client) const
@@ -110,6 +122,31 @@ void Channel::Ban(int clientFd)
 	this->m_banned.push_back(clientFd);
 }
 
+void	Channel::removeMember(int clientFd)
+{
+	std::vector<int>::iterator it = m_members.begin();
+	std::vector<int>::iterator end = m_members.end();
+	
+	while (it != end)
+	{
+		if (*it == clientFd)
+			m_members.erase(it);
+		it++;
+	}
+}
+
+void	Channel::removeOp(int clientFd)
+{
+	std::vector<int>::iterator it = m_operators.begin();
+	std::vector<int>::iterator end = m_operators.end();
+	
+	while (it != end)
+	{
+		if (*it == clientFd)
+			m_operators.erase(it);
+		it++;
+	}
+}
 void		Channel::turnOffMode(int modeNum)
 {
 	this->modes &= ~(this->modeBitMasks[modeNum]);
