@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/16 16:28:37 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/17 18:38:31 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,7 +40,7 @@ namespace UserModes
         wallops,
         restricted,
         oper,
-        server_notices
+        serverNotices
     };
 };
 
@@ -74,13 +74,14 @@ class Client
         std::uint8_t                        modes; // need to give em default modes
         static std::uint8_t                 modeBitMasks[NUM_MODES];
         static std::string                  potentialModes;
+        static std::string			        potentialChannelModes;
         std::string                         awayMessage;
         
         std::vector<std::string>            _channels; // TODO: Maybe remove later
-        std::map<std::string, std::uint8_t> _channelModes;
     
     public:
 
+        std::map<std::string, std::uint8_t> _channelModes; // TODO: put it in private and make a getter
         Client(void);
         Client(Client const & src);
         Client(int, struct sockaddr_storage, socklen_t);
@@ -105,6 +106,8 @@ class Client
         bool                            isAway(void) const;
         bool                            isAuthComplete(void) const;
         bool                            getModeValue(int modeNum) const;
+        bool		                    getModeValue(int modeNum, std::string channelName);
+
         std::vector<std::string>        &getChannels(void);
         
         /////////////////
@@ -126,7 +129,9 @@ class Client
         void                            setAway(void);
         void                            setAuthComplete(void);
         void                            turnOnMode(int modeNum);
+        void		                    turnOnMode(int modeNum, std::string channelName);
         void                            turnOffMode(int modeNum);
+        void		                    turnOffMode(int modeNum, std::string channelName);
         void                            pushChannel(std::string channelName, std::uint8_t modes);
         void                            popChannel(std::string channelName);
 

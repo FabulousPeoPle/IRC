@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/16 18:56:20 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 15:47:18 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -99,14 +99,14 @@ namespace Replies
         ERR_NORECIPIENT = 411,
         ERR_NOTEXTTOSEND = 412,
         ERR_TOOMANYTARGETS = 407,
-          /******-WHOIS-*******/
+        /******-WHOIS-*******/
         RPL_WHOISUSER = 311,
         RPL_WHOISSERVER = 312,
         RPL_ENDOFWHOIS = 318,
         ERR_NOSUCHNICK = 401,
         /********************/
 
-        /******-TOPIC********/
+        /******-TOPIC-*******/
         ERR_NOTONCHANNEL = 442,
         RPL_NOTOPIC = 331,
         RPL_TOPIC = 332,
@@ -116,6 +116,11 @@ namespace Replies
         RPL_YOUREOPER = 381,
         ERR_NOOPERHOST = 491,
         ERR_PASSWDMISMATCH = 464,
+        /********************/
+
+        /****-MODE_CHANNEL-**/
+        RPL_CHANNELMODEIS = 324,
+        ERR_CHANOPRIVSNEEDED = 482,
         /********************/
     };
 };
@@ -258,15 +263,29 @@ class Server {
         void                            m_topicCmd(Client& client);
         void                            m_operCmd(Client& client);
 
+
+        void                            m_channelModeCmd(Client& client, Message& message);
+        void                            m_userModeCmd(Client& client, Message& message);
+
         std::string                     m_makeReplyHeader(int replyNum, std::string nickname);
 
         std::string                     m_composeMotd(std::ifstream& motdFile, std::string clientNick);
         std::string                     m_composeWhoisQuery(Client& QueryClient, std::string clientNickname, int replyCode);
         std::string                     m_composeRplTopic(Channel& channel);
+        std::string                     m_composeChannelModes(std::string channelName);
+
+        std::vector<std::string>        m_extractTLDs(std::vector<std::string>& arguments, int start);
 
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
-
+        bool                            m_isChannelPrefix(char c) const;
         bool                            m_isUser(Client& client) const;
+        bool                            m_isMaskUserMatch(std::string nickname, std::string TLD);
+        bool                            m_isUserSpecificChannelMode(char c) const;
+        bool                            m_isAttributeSetter(char c) const;
+        bool                            m_isSimpleChannelMode(char c) const;
+        bool                            m_isClientOper(Client& client, std::string channelName) const; // make variable const
+
+        std::vector<std::string>        m_getClientsToMode(std::vector<std::string> arguments);
 
         int                             m_calculateOperators(void);
         int                             m_calculateUnknownConnections(void);

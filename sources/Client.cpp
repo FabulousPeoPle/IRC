@@ -6,11 +6,9 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/16 16:26:39 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 14:27:25 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
-
 
 #include "Client.hpp"
 
@@ -190,6 +188,7 @@ void	Client::pushChannel(std::string channelName, std::uint8_t modes)
 {
 	_channels.push_back(channelName);
 	_channelModes[channelName] = modes;
+	
 }
 
 void	Client::popChannel(std::string channelName)
@@ -256,5 +255,21 @@ bool		Client::getModeValue(int modeNum) const
 	return (this->modeBitMasks[modeNum] & this->modes);
 }
 
+void		Client::turnOffMode(int modeNum, std::string channelName)
+{
+	this->_channelModes[channelName] &= ~(this->modeBitMasks[modeNum]);
+}
+
+void		Client::turnOnMode(int modeNum, std::string channelName)
+{
+	this->_channelModes[channelName] |= this->modeBitMasks[modeNum];
+}
+
+bool		Client::getModeValue(int modeNum,  const std::string channelName)
+{
+	return (this->modeBitMasks[modeNum] & this->_channelModes[channelName]);
+}
+
 std::uint8_t        Client::modeBitMasks[NUM_MODES] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5};
 std::string         Client::potentialModes = "aiwros";
+std::string			Client::potentialChannelModes = "Oovb";

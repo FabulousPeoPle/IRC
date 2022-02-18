@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/16 15:47:54 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 15:30:01 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 
 //IDK IF THIS IS HOW WE ARE HANDLING THIS, THIS IS JUST SO I CAN WORK ON THE JOIN COMMAND 
 
-#define NUM_MODES_CHANNEL 17
+#define NUM_MODES_CHANNEL 9
 
 class Client;
 
@@ -33,11 +33,14 @@ namespace ChannelModes
 {
     enum
     {
+		/******-UserSpecific-****/
 		O_Creator,
-        o_OperatorPrivilege,
+        o_OperatorPrivilege, // we can keep these here, but make sure they don't mix with the other ones
         v_voicePrivilege,
+		/************************/
 
-        a_annonymous,
+		/******-ChannelSpecific-*/
+        a_annonymous = 0,
         i_inviteOnly,
         m_moderated,
         n_noOutsideMessage,
@@ -46,13 +49,9 @@ namespace ChannelModes
         s_secret,
         r_reop,
         t_topicOperatorOnly,
-        
-        k_password,
-        l_userLimit,
-        
-        b_banMask,
-		e_exceptionMask,
-		I_inviteMask,
+		/************************/
+
+		total
     };
 };
 class Channel
@@ -63,11 +62,20 @@ private:
 	int							m_type; // the scope of the channel local/networkwide
 	std::vector<int>			m_operators; // this vector stores the clientfds of the ops
 	std::string					m_topic;
-	std::vector<int>			m_banned;
+	std::vector<int>			m_banned; // probably useless
 	std::vector<int>			m_members;
 	// std::vector<std::string>	m_banned;
 	std::string					m_password;
-	std::uint32_t               modes; // need to give em default modes
+	std::uint16_t               modes; // need to give em default modes
+
+	std::vector<std::string>	m_banMasks;
+	std::vector<std::string>	m_exceptionBanMasks;
+	std::vector<std::string>	m_inviteMasks;
+
+	std::string					m_password;
+	int							m_userLimit;
+
+	
 
 public:
 	Channel(void);
@@ -100,10 +108,12 @@ public:
 
 	bool        			getModeValue(int modeNum) const;
 
+	int 	    			findMode(char c) const;
+
     void        			turnOnMode(int modeNum);
     void        			turnOffMode(int modeNum);
 
-	static std::uint32_t	modeBitMasks[NUM_MODES_CHANNEL];
+	static std::uint16_t	modeBitMasks[NUM_MODES_CHANNEL];
 	static std::string		potentialModes;
 };
 

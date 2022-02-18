@@ -157,12 +157,38 @@ void		Channel::turnOnMode(int modeNum)
 	this->modes |= this->modeBitMasks[modeNum];
 }
 
+int 	    Channel::findMode(char c) const // TODO: TURN THE OTHER ONES TO CONST AS WELL
+{
+    switch (c)
+    {
+        case 'a':
+            return (ChannelModes::a_annonymous);
+        case 'i':
+            return (ChannelModes::i_inviteOnly);
+        case 'm':
+            return (ChannelModes::m_moderated);
+        case 'n':
+            return (ChannelModes::n_noOutsideMessage);
+        case 'q':
+            return (ChannelModes::q_quiet);
+        case 'p':
+            return (ChannelModes::p_private);
+		case 's':
+            return (ChannelModes::s_secret);
+		case 'r':
+            return (ChannelModes::r_reop);
+	    case 't':
+            return (ChannelModes::t_topicOperatorOnly);
+        default:
+            return (-1);
+    }
+}
+
 bool		Channel::getModeValue(int modeNum) const
 {
 	return (this->modeBitMasks[modeNum] & this->modes);
 }
 
-std::uint32_t       Channel::modeBitMasks[NUM_MODES_CHANNEL] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6,
-																	1 << 7, 1 << 8, 1 << 9, 1 << 10, 1 << 11, 1 << 12,
-																		1 << 13, 1 << 14, 1 << 15, 1 << 16};
-std::string         Channel::potentialModes = "OovaimnqpsrtklbeI";
+std::uint16_t       Channel::modeBitMasks[NUM_MODES_CHANNEL] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6,
+																	1 << 7, 1 << 8};
+std::string         Channel::potentialModes = "aimnqpsrt";

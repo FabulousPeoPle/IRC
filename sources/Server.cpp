@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/16 19:08:27 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 15:50:32 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 // #define DEBUG_USERHOST
 
 // TODO: NICK NEEDS TO CHECK FOR NUMBER OF PARAMETERS
+// TODO: LITERAL MESSAGE DOESN'T NECESSARILY CONTAIN ':'
+// TODO: turn on channel creator when creating channel? what did we do before
 
 char* strdup(const char *s);
 
@@ -290,33 +292,114 @@ int     findMode(char c)
         case 'o':
             return (UserModes::oper);
         case 's':
-            return (UserModes::server_notices);           
+            return (UserModes::serverNotices);           
         default:
             return (-1);
     }
 }
-void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMBERS
-{
-    Message& message = client.getMessageQueue().front();
 
-    if (message.getArgs().size() < 2)
+bool            Server::m_isChannelPrefix(char c) const
+{
+    return (c == '#' || c == '&');
+}
+
+std::vector<std::string>     Server::m_extractTLDs(std::vector<std::string>& arguments, int start)
+{
+    std::vector<std::string>::iterator itb = arguments.begin() + start; // 2 is the start of the arguments that contain masks
+    std::vector<std::string>::iterator ite = arguments.end();
+
+    std::vector<std::string>            TLDs;
+    for (std::vector<std::string>::iterator it = itb; it != ite; ++it)
     {
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, 0, ""); // NOT SURE ABOUT THIS
+        if (it->substr(0, 5) != "*!*@*") // Means there are no more masks
+            break;
+        std::string TLD = it->erase(0, 5);
+        if (TLD[0] == '.')
+            TLDs.push_back(TLD);
+    }
+    return (TLDs);
+}
+
+bool            Server::m_isMaskUserMatch(std::string nickname, std::string TLD) // DON'T EXTRACT TLD HERE
+{
+    nickname = nickname.erase(0, nickname.size() - TLD.size());
+
+    return (nickname == TLD || TLD.empty());
+}
+
+std::string     Server::m_composeChannelModes(std::string channelName)
+{
+    Channel& channel = m_channels[channelName];
+
+    std::string channelModes = "+";
+
+    for (int i = 0; i < ChannelModes::total; ++i)
+    {
+        if (channel.getModeValue(i))
+            channelModes += Channel::potentialModes[i];
+    }
+    return (channel.getName() + ' ' + channelModes);
+}
+
+/* take mode
+    is mode userMode?
+    is mode toggler?
+    is mode simple setter/remover
+    is mode complex setter/remover
+*/
+
+bool            Server::m_isUserSpecificChannelMode(char c) const
+{
+    return (c == 'O' || c == 'o' || c == 'v');
+}
+
+
+
+void            Server::m_channelModeCmd(Client& client, Message& message)
+{
+    // TODO: a function that takes a mask and sees if a client mask looks like it
+    std::vector<std::string> arguments = message.getArgs();
+
+    if (!m_channelExists(arguments[1]))
+    {
+        m_reply(client.getFd(), Replies::ERR_NOSUCHCHANNEL, 0, arguments[1]);
         return ;
     }
-    else if (message.getArgs()[0] != client.getNickname())
+    if (!m_isClientOper(client, arguments[1]))
+    {
+        
+    }
+    if (arguments.size() == 1)
+    {
+        m_reply(client.getFd(), Replies::RPL_CHANNELMODEIS, 0, m_composeChannelModes(arguments[1]));
+        return;
+    }  // WHAT IF THE CLIENT IS NOT THE CHANNEL OPERATOR
+    if (arguments.size() >= 2)// MODE CHAN_NAME MODES WHO
+    {
+        if (client._channelModes[arguments[1]]) // loop through modes
+        // std::vector<std::string> clientsToChange = m_getClientsToMode(arguments);//m_extractTLDs(arguments);
+    }
+    
+    
+}
+
+void            Server::m_userModeCmd(Client& client, Message& message) // TODO: REFACTOR
+{
+    if (message.getArgs()[0] != client.getNickname())
     {
         m_reply(client.getFd(), Replies::ERR_USERSDONTMATCH, 0, "");
         return ;
     }
+
     std::string modeChanges;
     char prefix = message.getArgs()[1][0];
+
     modeChanges += prefix;
     for (int j = 1; j < message.getArgs()[1].size(); ++j)
     {
         int modeNum = findMode(message.getArgs()[1][j]);
 
-        if (modeNum == UserModes::away) // ignore it for now, don't know the exact behaviour
+        if (modeNum == UserModes::away) // Ignore it for now, don't know the exact behaviour
             continue ;
         if (modeNum == -1)
         {
@@ -347,6 +430,21 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
     // should reply with a string of the modes
     if (modeChanges.size() > 1) // that's how GeekShed do it
         m_reply(client.getFd(), Replies::RPL_UMODEIS, 0, modeChanges);
+}
+
+void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMBERS
+{
+    Message& message = client.getMessageQueue().front();
+
+    if (message.getArgs().size() < 2)
+    {
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, 0, ""); // NOT SURE ABOUT THIS
+        return ;
+    }
+    if (m_isChannelPrefix(message.getArgs()[0][0]))
+        m_channelModeCmd(client, message);
+    else
+        m_userModeCmd(client, message);
 }
 
 std::string         Server::m_composeMotd(std::ifstream& motdFile, std::string clientNick)
@@ -557,6 +655,7 @@ void                Server::m_relay(int clientFd)
     while (!messages.empty())
     {
         Message& message = messages.front();
+
         message.parse();
         #ifdef DEBUG
         std::cout << message.getCmd()<< " this is the command\n";
@@ -565,7 +664,9 @@ void                Server::m_relay(int clientFd)
         // This two lines might be deleting our message
         // if (!messages.empty())
         // TODO: replace with switch case
+        // TODO: a map that has command function as values and the string command as key
         std::string command = message.getCmd();
+
         if (command == USERHOST_COMMAND)
             this->m_userhostCmd(m_clients[clientFd]);
         else if (command == USER_COMMAND)
@@ -597,7 +698,6 @@ void                Server::m_relay(int clientFd)
         if (!messages.empty())
             messages.pop_front();
     }
-    // a map that has command function as values and the string command as key
 }
 
 // void                Server::m_setCommandFuncs(void)
@@ -747,11 +847,11 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_BOUNCE:
             this->m_send(clientFd, ":" + this->m_serverName + " 005 " + m_clients[clientFd].getNickname() + " :Try server 'DS9.GeekShed.net', port '6667'\r\n");
             break;
-        // case Replies::RPL_USERHOST : // causes BitchX segmentation fault
-        //     this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd].getNickname() + " :"\
-        //     + m_clients[extraArg].getNickname() + ((m_clients[extraArg].isServerOp()) ? "*" : "\0") + "=" \
-        //     + ((m_clients[extraArg].isAway()) ? "+" : "-") + m_clients[extraArg].getHostname() + "\r\n");
-        //     break;
+        case Replies::RPL_USERHOST : // causes BitchX segmentation fault
+            this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd].getNickname() + " :"\
+            + m_clients[extraArg].getNickname() + ((m_clients[extraArg].isServerOp()) ? "*" : "\0") + "=" \
+            + ((m_clients[extraArg].isAway()) ? "+" : "-") + m_clients[extraArg].getHostname() + "\r\n");
+            break;
         case Replies::ERR_NICKNAMEINUSE :\
             this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :Nickname is already in use hun\r\n");;
             break;
@@ -824,7 +924,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             break;
              // should change after refactoring
         case Replies::ERR_NOSUCHCHANNEL :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 403 <channel name> :No such channel\r\n");
+            this->m_send(clientFd, ":" + this->m_serverName + " 403 " + message + " :No such channel\r\n");
             break;
         case Replies::ERR_NORECIPIENT :\
             this->m_send(clientFd, ":" + this->m_serverName + " 411  :No recipient given " + m_clients[clientFd].getMessageQueue().front().getCmd()+ "\r\n");
@@ -862,6 +962,10 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::ERR_PASSWDMISMATCH:
             this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_PASSWDMISMATCH, this->m_clients[clientFd].getNickname()) + ' ' + ":Password incorrect\r\n");
             break;
+        case Replies::RPL_CHANNELMODEIS:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_CHANNELMODEIS, this->m_clients[clientFd].getNickname()) + ' ' + message + "\r\n");
+            break;
+        // case Replies::ERR_CHANOPRIVSNEEDED:
     }
 }
 
@@ -1296,7 +1400,7 @@ void                        Server::m_partCmd(Client &client)
     {
         if (!m_channelExists(*it_chan))
         {
-            m_reply(client.getFd(), Replies::ERR_NOSUCHCHANNEL, 0, "");
+            m_reply(client.getFd(), Replies::ERR_NOSUCHCHANNEL, 0, *it_chan);
             it_chan++;
             continue ;
         }
