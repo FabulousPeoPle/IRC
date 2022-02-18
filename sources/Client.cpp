@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/18 14:27:25 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 18:33:22 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,6 +94,11 @@ bool		Client::isUserAuth(void) const
 	return(_userAuth);
 }
 
+bool		Client::isPassAuth(void) const
+{
+	return(_passAuth);
+}
+
 bool		Client::isServerOp(void) const
 {
 	return(_isServerOp);
@@ -162,6 +167,11 @@ void	Client::setAwayMsg(std::string awayMessage)
 void	Client::setNickAuth()
 {
 	_nickAuth = true;
+}
+
+void	Client::setPassAuth()
+{
+	_passAuth = true;
 }
 
 void	Client::setUserAuth()

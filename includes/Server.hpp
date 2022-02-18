@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 16:18:09 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 18:37:25 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -318,6 +318,7 @@ class Server {
         
         void                            m_namesCmd_listCmd(Client & client, std::string cmd);
         void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
+        void                            m_passCmd(Client &client);
     
         const std::string               m_serverName;
         const std::string               m_port;
@@ -347,6 +348,8 @@ class Server {
         static std::string              m_possibleCommands[NUM_COMMANDS];
         // a vector containing all Channels available on the server
         std::map<std::string, Channel>  m_channels;
+        bool                            m_passProtected;
+        std::string                     m_password;
 };
 
 #endif

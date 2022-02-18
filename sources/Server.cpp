@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 16:19:48 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 18:46:22 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -774,7 +774,7 @@ bool    Server::m_checkNickSyntax(Message& message)
 
 bool    Server::m_checkStatusAuth(Client& client)
 {
-    if (client.isUserAuth() && client.isNickAuth())
+    if (client.isUserAuth() && client.isNickAuth() && (!m_passProtected || client.isPassAuth()))
     {
         #ifdef DEBUG
         std::cout << "Has authenticated correctly\n";
@@ -820,8 +820,12 @@ bool    Server::m_tryAuthentificate(Client& client)
                 client.getMessageQueue().pop_front();
             return (false);
         }
-        m_userCmd(client);
-        m_nickCmd(client);
+        if (msg.getCmd() == USER_COMMAND)
+            m_userCmd(client);
+        else if (msg.getCmd() == NICK_COMMAND)
+            m_nickCmd(client);
+        else if (msg.getCmd() == PASS_COMMAND)
+            m_passCmd(client);
         if (!client.getMessageQueue().empty())
             client.getMessageQueue().pop_front();
     }
@@ -1212,33 +1216,30 @@ void    Server::m_nickCmd(Client & client)
 {
     Message& msg = client.getMessageQueue().front();
     
-    if (msg.getCmd()== NICK_COMMAND && !client.isNickAuth())
+    #ifdef DEBUG
+    std::cout << "We got the nick command\n";
+    #endif
+    if (!m_checkNickSyntax(msg))
+        return ;
+    // ask about this
+    std::pair<std::map<std::string, int>::iterator , bool> nick =\
+    m_nicknames.insert(std::make_pair(msg.getArgs().front(), client.getFd()));
+    if (nick.second)
     {
-        #ifdef DEBUG
-        std::cout << "We got the nick command\n";
-        #endif
-        if (!m_checkNickSyntax(msg))
-            return ;
-        // ask about this
-        std::pair<std::map<std::string, int>::iterator , bool> nick =\
-        m_nicknames.insert(std::make_pair(msg.getArgs().front(), client.getFd()));
-        if (nick.second)
+        // TODO: find a better fix, segfault in this line if there are no arguments
+        // These two lines cause a segfault
+        // if (!client.getMessageQueue().empty())
+        //     client.getMessageQueue().pop_front();
+        if (msg.getArgs().size() >= 1)
         {
-            // TODO: find a better fix, segfault in this line if there are no arguments
-            // These two lines cause a segfault
-            // if (!client.getMessageQueue().empty())
-            //     client.getMessageQueue().pop_front();
-            if (msg.getArgs().size() >= 1)
-            {
-                client.setNickname(msg.getArgs().front());
-                client.setNickAuth();
-            }
-            // else
-            //     client.isNickAuth() = false;
+            client.setNickname(msg.getArgs().front());
+            client.setNickAuth();
         }
-        else
-            m_reply(client.getFd(), Replies::ERR_NICKNAMEINUSE, 0, "");
+        // else
+        //     client.isNickAuth() = false;
     }
+    else
+        m_reply(client.getFd(), Replies::ERR_NICKNAMEINUSE, 0, "");
 }
 
 void    Server::m_userCmd(Client & client)
@@ -1246,22 +1247,35 @@ void    Server::m_userCmd(Client & client)
     Message&    msg = client.getMessageQueue().front();
     std::string mode;
     
-    if (msg.getCmd()== USER_COMMAND)
+    #ifdef DEBUG
+    std::cout << "we got the user command\n";
+    #endif
+    if (client.isUserAuth())
+        m_reply(client.getFd(), Replies::ERR_ALREADYREGISTRED, 0, "");
+    else if (msg.getArgs().size() != 3)
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, 0, "");
+    else
     {
-        #ifdef DEBUG
-        std::cout << "we got the user command\n";
-        #endif
-        if (client.isUserAuth())
-            m_reply(client.getFd(), Replies::ERR_ALREADYREGISTRED, 0, "");
-        else if (msg.getArgs().size() != 3)
-            m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, 0, "");
-        else
-        {
-            client.setUsername(msg.getArgs()[0]);
-            mode = msg.getArgs()[1];
-            client.setRealname(msg.getLiteralMsg());
-            client.setUserAuth();
-        }
+        client.setUsername(msg.getArgs()[0]);
+        mode = msg.getArgs()[1];
+        client.setRealname(msg.getLiteralMsg());
+        client.setUserAuth();
+    }
+}
+
+void    Server::m_passCmd(Client &client)
+{
+    Message &msg = client.getMessageQueue().front();
+    std::vector<std::string> &args = msg.getArgs();
+    
+    if  (args.empty())
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, 0, "");
+    else if (client.isPassAuth())
+        m_reply(client.getFd(), Replies::ERR_ALREADYREGISTRED, 0, "");
+    else
+    {
+        if (m_passProtected && args.front() == m_password)
+            client.setPassAuth();
     }
 }
 
