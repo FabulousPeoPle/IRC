@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/16 12:48:57 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/18 15:44:30 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,6 +110,13 @@ namespace Replies
         RPL_NOTOPIC = 331,
         RPL_TOPIC = 332,
         /********************/
+        
+        ERR_CHANOPRIVSNEEDED = 482,
+        ERR_USERONCHANNEL = 443,
+        RPL_NAMREPLY = 353,
+        RPL_ENDOFNAMES = 366,
+        RPL_LIST = 321,
+        RPL_LISTEND = 323,
     };
 };
 
@@ -131,6 +138,8 @@ namespace Replies
 #define NOTICE_COMMAND      "NOTICE"
 #define PRIVMSG_COMMAND     "PRIVMSG"
 #define TOPIC_COMMAND "TOPIC"
+#define NAMES_COMMAND     "NAMES"
+#define LIST_COMMAND "LIST"
 
 #define NUM_COMMANDS 19
 
@@ -252,6 +261,8 @@ class Server {
         std::string                     m_composeMotd(std::ifstream& motdFile, std::string clientNick);
         std::string                     m_composeWhoisQuery(Client& QueryClient, std::string clientNickname, int replyCode);
         std::string                     m_composeRplTopic(Channel& channel);
+        std::string                     m_composeNames(std::string channelName);
+        std::string                     m_composeList(std::string channelName);
 
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
 
@@ -272,12 +283,17 @@ class Server {
         void                            m_partCmd(Client & client);
 
         void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs);
+        void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs, Message msg);
 
         void                            m_kickCmd(Client & client);
         
-        void                            m_namesCmd(Client & client);
+        void                            m_inviteCmd(Client & client);
+        
+        void                            m_namesCmd_listCmd(Client & client, std::string cmd);
+        void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
     
-        private:
+
+        
         const std::string               m_serverName;
         const std::string               m_port;
         // Maybe this is usless since we are always going to connect to the same thing

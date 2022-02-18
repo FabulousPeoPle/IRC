@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/15 20:19:02 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/17 18:29:27 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,7 +65,7 @@ private:
 	std::string					m_topic;
 	std::vector<int>			m_banned;
 	std::vector<int>			m_members;
-	// std::vector<std::string>	m_banned;
+	std::vector<int>			m_invited;
 	std::string					m_password;
 	std::uint32_t               modes; // need to give em default modes
 
@@ -79,6 +79,7 @@ public:
 	int					getMode(void) const;
 	std::vector<int> 	&getOps(void);
 	std::vector<int> 	&getMembers(void);
+	std::vector<int> 	&getInvited(void);
 	int			 		getType(void) const;
 	std::string			getTopic(void) const;
 	
@@ -90,11 +91,14 @@ public:
 	bool				isOp(int clientFd) const;
 	bool				checkPassword(std::string password);
 	void				addMember(int clientFd);
+	void				addInvited(int clientFd);
 	void				removeMember(int clientFd);
 	void				removeOp(int clientFd);
+	void				removeInvited(int clientFd);
 	void				addOp(int clientFd);
 	bool				isBanned(int clientFd) const;
 	bool				isMember(int clientFd) const;
+	bool				isInvited(int clientFd) const;
 	// std::string			m_composeMask(Client & client) const;
 	void					Ban(int clinetFd);
 
