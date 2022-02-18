@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/17 18:38:31 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 16:17:07 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 #ifndef CLIENT_HPP
@@ -137,8 +138,10 @@ class Client
 
         Client & operator=(Client const & rhs);
 
-
-        void                            partChannel(std::string channelName);
+    ///////////////
+    /// METHODS ///
+    ///////////////
+        void        partChannel(std::string channelName);
 };
 
 #endif

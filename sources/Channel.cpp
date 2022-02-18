@@ -59,6 +59,11 @@ std::vector<int> &Channel::getMembers(void)
 	return (this->m_members);
 }
 
+std::vector<int> &Channel::getInvited(void)
+{
+	return (this->m_invited);
+}
+
 void	Channel::setName(std::string name)
 {
 	m_name = name;
@@ -89,6 +94,11 @@ void	Channel::addOp(int clientFd)
 	m_operators.push_back(clientFd);
 }
 
+void	Channel::addInvited(int clientFd)
+{
+	m_operators.push_back(clientFd);
+}
+
 
 bool	Channel::checkPassword(std::string password)
 {
@@ -105,6 +115,11 @@ bool Channel::isOp(int clientFd) const
 bool Channel::isMember(int clientFd) const
 {
 	return (((std::find(m_members.begin(), m_members.end(), clientFd) != m_members.end()) ? true : false));
+}
+
+bool Channel::isInvited(int clientFd) const
+{
+	return (((std::find(m_invited.begin(), m_invited.end(), clientFd) != m_invited.end()) ? true : false));
 }
 
 // std::string	Channel::m_composeMask(Client & client) const
@@ -144,6 +159,19 @@ void	Channel::removeOp(int clientFd)
 	{
 		if (*it == clientFd)
 			m_operators.erase(it);
+		it++;
+	}
+}
+
+void	Channel::removeInvited(int clientFd)
+{
+	std::vector<int>::iterator it = m_invited.begin();
+	std::vector<int>::iterator end = m_invited.end();
+	
+	while (it != end)
+	{
+		if (*it == clientFd)
+			m_invited.erase(it);
 		it++;
 	}
 }

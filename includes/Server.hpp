@@ -6,11 +6,9 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 15:47:18 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 16:18:09 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
-
 
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
@@ -122,6 +120,12 @@ namespace Replies
         RPL_CHANNELMODEIS = 324,
         ERR_CHANOPRIVSNEEDED = 482,
         /********************/
+        
+        ERR_USERONCHANNEL = 443,
+        RPL_NAMREPLY = 353,
+        RPL_ENDOFNAMES = 366,
+        RPL_LIST = 321,
+        RPL_LISTEND = 323,
     };
 };
 
@@ -142,8 +146,10 @@ namespace Replies
 #define PART_COMMAND        "PART"
 #define NOTICE_COMMAND      "NOTICE"
 #define PRIVMSG_COMMAND     "PRIVMSG"
-#define TOPIC_COMMAND       "TOPIC"
 #define OPER_COMMAND        "OPER"
+#define TOPIC_COMMAND       "TOPIC"
+#define NAMES_COMMAND       "NAMES"
+#define LIST_COMMAND        "LIST"
 
 #define NUM_COMMANDS 20
 
@@ -273,6 +279,8 @@ class Server {
         std::string                     m_composeWhoisQuery(Client& QueryClient, std::string clientNickname, int replyCode);
         std::string                     m_composeRplTopic(Channel& channel);
         std::string                     m_composeChannelModes(std::string channelName);
+        std::string                     m_composeNames(std::string channelName);
+        std::string                     m_composeList(std::string channelName);
 
         std::vector<std::string>        m_extractTLDs(std::vector<std::string>& arguments, int start);
 
@@ -302,10 +310,14 @@ class Server {
         void                            m_partCmd(Client & client);
 
         void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs);
+        void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs, Message msg);
 
         void                            m_kickCmd(Client & client);
         
-        void                            m_namesCmd(Client & client);
+        void                            m_inviteCmd(Client & client);
+        
+        void                            m_namesCmd_listCmd(Client & client, std::string cmd);
+        void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
     
         const std::string               m_serverName;
         const std::string               m_port;

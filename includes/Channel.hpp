@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/18 15:30:01 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 16:17:38 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 #ifndef _CHANNEL_
@@ -64,7 +65,7 @@ private:
 	std::string					m_topic;
 	std::vector<int>			m_banned; // probably useless
 	std::vector<int>			m_members;
-	// std::vector<std::string>	m_banned;
+	std::vector<int>			m_invited;
 	std::string					m_password;
 	std::uint16_t               modes; // need to give em default modes
 
@@ -72,7 +73,6 @@ private:
 	std::vector<std::string>	m_exceptionBanMasks;
 	std::vector<std::string>	m_inviteMasks;
 
-	std::string					m_password;
 	int							m_userLimit;
 
 	
@@ -82,27 +82,32 @@ public:
 	Channel(int mode, int opFd, std::string name, char type, std::string password);
 	~Channel(void);
 
-	std::string 			getName(void) const;
-	std::string 			getPassword(void) const;
-	int						getMode(void) const;
-	std::vector<int> 		&getOps(void);
-	std::vector<int> 		&getMembers(void);
-	int			 			getType(void) const;
-	std::string				getTopic(void) const;
+
+	std::string 		getName(void) const;
+	std::string 		getPassword(void) const;
+	int					getMode(void) const;
+	std::vector<int> 	&getOps(void);
+	std::vector<int> 	&getMembers(void);
+	std::vector<int> 	&getInvited(void);
+	int			 		getType(void) const;
+	std::string			getTopic(void) const;
 	
 	void					setTopic(std::string topic);
 	void					setMode(int mode);
 	void					setName(std::string name);
 	void					setPassword(std::string password);
 	
-	bool					isOp(int clientFd) const;
-	bool					checkPassword(std::string password);
-	void					addMember(int clientFd);
-	void					removeMember(int clientFd);
-	void					removeOp(int clientFd);
-	void					addOp(int clientFd);
-	bool					isBanned(int clientFd) const;
-	bool					isMember(int clientFd) const;
+	bool				isOp(int clientFd) const;
+	bool				checkPassword(std::string password);
+	void				addMember(int clientFd);
+	void				addInvited(int clientFd);
+	void				removeMember(int clientFd);
+	void				removeOp(int clientFd);
+	void				removeInvited(int clientFd);
+	void				addOp(int clientFd);
+	bool				isBanned(int clientFd) const;
+	bool				isMember(int clientFd) const;
+	bool				isInvited(int clientFd) const;
 	// std::string			m_composeMask(Client & client) const;
 	void					Ban(int clinetFd);
 
