@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/18 16:17:07 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 20:05:39 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -135,6 +135,7 @@ class Client
         void		                    turnOffMode(int modeNum, std::string channelName);
         void                            pushChannel(std::string channelName, std::uint8_t modes);
         void                            popChannel(std::string channelName);
+        void                            manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex);
 
         Client & operator=(Client const & rhs);
 

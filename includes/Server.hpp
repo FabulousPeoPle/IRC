@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 16:18:09 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 20:08:24 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -284,14 +284,19 @@ class Server {
 
         std::vector<std::string>        m_extractTLDs(std::vector<std::string>& arguments, int start);
 
+        void                            m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex);
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
         bool                            m_isChannelPrefix(char c) const;
         bool                            m_isUser(Client& client) const;
         bool                            m_isMaskUserMatch(std::string nickname, std::string TLD);
-        bool                            m_isUserSpecificChannelMode(char c) const;
-        bool                            m_isAttributeSetter(char c) const;
-        bool                            m_isSimpleChannelMode(char c) const;
+        bool                            m_isUserSpecificChannelMode(char c) const; // user modes
+        bool                            m_isAttributeSetterMode(char c) const; //password and limit users
+        bool                            m_isSimpleChannelMode(char c) const; // turn on turn off mdoes
+        bool                            m_isMaskMode(char c) const; // the masking ones 
         bool                            m_isClientOper(Client& client, std::string channelName) const; // make variable const
+
+
+        void                            m_executeModes(std::vector<std::string> arguments, Channel& channel, Client& client);
 
         std::vector<std::string>        m_getClientsToMode(std::vector<std::string> arguments);
 

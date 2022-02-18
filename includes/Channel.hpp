@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/18 16:17:38 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 19:01:39 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,6 +55,7 @@ namespace ChannelModes
 		total
     };
 };
+//TODO: COPLIEN FORM
 class Channel
 {
 private:
@@ -66,21 +67,21 @@ private:
 	std::vector<int>			m_banned; // probably useless
 	std::vector<int>			m_members;
 	std::vector<int>			m_invited;
-	std::string					m_password;
 	std::uint16_t               modes; // need to give em default modes
 
 	std::vector<std::string>	m_banMasks;
 	std::vector<std::string>	m_exceptionBanMasks;
 	std::vector<std::string>	m_inviteMasks;
 
-	int							m_userLimit;
+	std::string					m_password; // initialized to ""
+	int							m_userLimit; // initialized to -1
 
 	
 
 public:
-	Channel(void);
-	Channel(int mode, int opFd, std::string name, char type, std::string password);
-	~Channel(void);
+						Channel(void);
+						Channel(int mode, int opFd, std::string name, char type, std::string password);
+						~Channel(void);
 
 
 	std::string 		getName(void) const;
@@ -117,6 +118,10 @@ public:
 
     void        			turnOnMode(int modeNum);
     void        			turnOffMode(int modeNum);
+
+	void					manageAttribute(char mode, char prefix,
+								std::vector<std::string> arguments, int& paramToUseIndex);
+	void					manageSimpleMode(char mode, char prefix);
 
 	static std::uint16_t	modeBitMasks[NUM_MODES_CHANNEL];
 	static std::string		potentialModes;

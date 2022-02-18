@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 16:19:48 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 20:12:11 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -360,6 +360,76 @@ bool            Server::m_isClientOper(Client& client, std::string channelName) 
             || client.getModeValue(ChannelModes::O_Creator, channelName));
 }
 
+bool            Server::m_isAttributeSetterMode(char c) const
+{
+    return (c == 'k' || c == 'l');
+}
+
+bool            Server::m_isUserSpecificChannelMode(char c) const
+{
+    return (c == 'o' || c == 'O' || c == 'v');
+}
+
+bool            Server::m_isSimpleChannelMode(char c) const
+{
+    switch (c)
+    {
+        case 'a':
+        case 'i':
+        case 'm':
+        case 'n':
+        case 'q':
+        case 'p':
+        case 's':
+        case 'r':
+        case 't':
+            return (true);
+        default:
+            return (false);
+    }
+}
+
+bool            Server::m_isMaskMode(char c) const
+{
+    return (c == 'b' || c == 'e' || c == 'I');
+}
+
+void            Server::m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex)
+{
+    if (arguments.size() < paramToUseIndex) // remember to reply not enough arguments
+    {
+        Client& client = m_clients[m_nicknames[arguments[paramToUseIndex]]];
+
+        if (prefix == '+')
+            client.turnOnMode(findMode(mode));
+        else if (prefix == '-')
+            client.turnOffMode(findMode(mode));
+    }
+}
+
+void            Server::m_executeModes(std::vector<std::string> arguments, Channel& channel, Client& client)
+{
+    std::string modes = arguments[2];
+    char prefix;
+    int     paramToUseIndex = 3;
+    if (modes[0] == '+' || modes[0] == '-')
+        prefix = modes[0];
+    for (int i = 1; i < modes.size() - 1; ++i)
+    {
+        if (m_isAttributeSetterMode(modes[i]))
+            channel.manageAttribute(modes[i], prefix, arguments, paramToUseIndex);
+        else if (m_isSimpleChannelMode(modes[i]))
+            channel.manageSimpleMode(modes[i], prefix);
+        else if (m_isUserSpecificChannelMode(modes[i]))
+            m_manageChannelModes(modes[i], prefix, arguments, paramToUseIndex);
+        else if (m_isMaskMode(modes[i]))
+            // extract mask TLD for later use
+        else
+            m_reply(client.getFd(), Replies::ERR_UMODEUNKNOWNFLAG, 0, "");
+
+    }
+}
+
 void            Server::m_channelModeCmd(Client& client, Message& message)
 {
     // TODO: a function that takes a mask and sees if a client mask looks like it
@@ -370,20 +440,19 @@ void            Server::m_channelModeCmd(Client& client, Message& message)
         m_reply(client.getFd(), Replies::ERR_NOSUCHCHANNEL, 0, arguments[1]);
         return ;
     }
-    if (!m_isClientOper(client, arguments[1]))
-    {
-        m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, 0, arguments[1]); // maybe change arguments[1] to channelName
-        return ;
-    }
     if (arguments.size() == 1)
     {
         m_reply(client.getFd(), Replies::RPL_CHANNELMODEIS, 0, m_composeChannelModes(arguments[1]));
         return ;
     }  // WHAT IF THE CLIENT IS NOT THE CHANNEL OPERATOR
+    if (!m_isClientOper(client, arguments[1]))
+    {
+        m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, 0, arguments[1]); // maybe change arguments[1] to channelName
+        return ;
+    }
     if (arguments.size() >= 2)// MODE CHAN_NAME MODES WHO
     {
-        // if (client._channelModes[arguments[1]]) // loop through modes
-        // std::vector<std::string> clientsToChange = m_getClientsToMode(arguments);//m_extractTLDs(arguments);
+        m_executeModes(arguments, m_channels[arguments[1]], client);
     }
     
     

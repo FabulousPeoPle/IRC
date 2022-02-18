@@ -217,6 +217,56 @@ bool		Channel::getModeValue(int modeNum) const
 	return (this->modeBitMasks[modeNum] & this->modes);
 }
 
+void					Channel::manageAttribute(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex)
+{
+	if (mode == 'k')
+	{
+		if (prefix == '-')
+			m_password = "";
+		else
+		{
+			if (arguments.size() < paramToUseIndex)
+			{
+				m_password = arguments[paramToUseIndex];
+				++paramToUseIndex;
+			}
+		}
+	}
+	else
+	{
+		if (prefix == '-')
+			m_userLimit = -1;
+		else
+		{
+			try
+			{
+				if (arguments.size() < paramToUseIndex)
+				{
+					m_userLimit = std::stoi(arguments[paramToUseIndex]);
+					++paramToUseIndex;
+				}
+			}
+			catch (std::exception& e)
+			{
+				std::cout << "Bad argument: " << e.what() << std::endl;
+				m_userLimit = -1;
+			}
+		}
+	}
+}
+
+void				Channel::manageSimpleMode(char c, char prefix)
+{
+	int modeNum = this->findMode(c);
+
+	if (prefix == '+')
+		this->turnOnMode(modeNum);
+	else
+		this->turnOffMode(modeNum);
+
+}
+
+
 std::uint16_t       Channel::modeBitMasks[NUM_MODES_CHANNEL] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6,
 																	1 << 7, 1 << 8};
 std::string         Channel::potentialModes = "aimnqpsrt";
