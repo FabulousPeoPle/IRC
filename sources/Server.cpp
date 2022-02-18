@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 15:50:32 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/18 16:07:54 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -353,7 +353,11 @@ bool            Server::m_isUserSpecificChannelMode(char c) const
     return (c == 'O' || c == 'o' || c == 'v');
 }
 
-
+bool            Server::m_isClientOper(Client& client, std::string channelName) const
+{
+    return (client.getModeValue(ChannelModes::o_OperatorPrivilege, channelName)
+            || client.getModeValue(ChannelModes::O_Creator, channelName))
+}
 
 void            Server::m_channelModeCmd(Client& client, Message& message)
 {
@@ -367,12 +371,13 @@ void            Server::m_channelModeCmd(Client& client, Message& message)
     }
     if (!m_isClientOper(client, arguments[1]))
     {
-        
+        m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, 0, arguments[1]); // maybe change arguments[1] to channelName
+        return ;
     }
     if (arguments.size() == 1)
     {
         m_reply(client.getFd(), Replies::RPL_CHANNELMODEIS, 0, m_composeChannelModes(arguments[1]));
-        return;
+        return ;
     }  // WHAT IF THE CLIENT IS NOT THE CHANNEL OPERATOR
     if (arguments.size() >= 2)// MODE CHAN_NAME MODES WHO
     {
@@ -965,7 +970,8 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_CHANNELMODEIS:
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_CHANNELMODEIS, this->m_clients[clientFd].getNickname()) + ' ' + message + "\r\n");
             break;
-        // case Replies::ERR_CHANOPRIVSNEEDED:
+        case Replies::ERR_CHANOPRIVSNEEDED:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " :You're not channel operator\r\n")
     }
 }
 
