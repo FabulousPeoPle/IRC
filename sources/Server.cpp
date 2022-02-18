@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 18:46:22 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/18 19:16:14 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -994,6 +994,9 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_LISTEND:
             this->m_send(clientFd, ":" + this->m_serverName + " 323 " + message +" End of LIST\r\n");
             break;
+        case Replies::ERR_NONICKNAMEGIVEN:
+            this->m_send(clientFd, ":" + this->m_serverName + " 431 :No nickname given\r\n");
+            break;
     }
 }
 
@@ -1215,28 +1218,21 @@ void    Server::m_isonCmd(Client & client)
 void    Server::m_nickCmd(Client & client)
 {
     Message& msg = client.getMessageQueue().front();
-    
-    #ifdef DEBUG
-    std::cout << "We got the nick command\n";
-    #endif
+
+    if (msg.getArgs().empty())
+    {
+        m_reply(client.getFd(), Replies::ERR_NONICKNAMEGIVEN, 0, "");
+        return ;
+    }
     if (!m_checkNickSyntax(msg))
         return ;
-    // ask about this
+        
     std::pair<std::map<std::string, int>::iterator , bool> nick =\
     m_nicknames.insert(std::make_pair(msg.getArgs().front(), client.getFd()));
-    if (nick.second)
+    if (nick.second && m_checkNickSyntax(msg))
     {
-        // TODO: find a better fix, segfault in this line if there are no arguments
-        // These two lines cause a segfault
-        // if (!client.getMessageQueue().empty())
-        //     client.getMessageQueue().pop_front();
-        if (msg.getArgs().size() >= 1)
-        {
-            client.setNickname(msg.getArgs().front());
-            client.setNickAuth();
-        }
-        // else
-        //     client.isNickAuth() = false;
+        client.setNickname(msg.getArgs().front());
+        client.setNickAuth();
     }
     else
         m_reply(client.getFd(), Replies::ERR_NICKNAMEINUSE, 0, "");
@@ -1247,9 +1243,6 @@ void    Server::m_userCmd(Client & client)
     Message&    msg = client.getMessageQueue().front();
     std::string mode;
     
-    #ifdef DEBUG
-    std::cout << "we got the user command\n";
-    #endif
     if (client.isUserAuth())
         m_reply(client.getFd(), Replies::ERR_ALREADYREGISTRED, 0, "");
     else if (msg.getArgs().size() != 3)

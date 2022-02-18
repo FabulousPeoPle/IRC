@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 18:37:25 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/18 19:04:38 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,6 +126,7 @@ namespace Replies
         RPL_ENDOFNAMES = 366,
         RPL_LIST = 321,
         RPL_LISTEND = 323,
+        ERR_NONICKNAMEGIVEN = 431
     };
 };
 
