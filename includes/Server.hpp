@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/19 13:50:44 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/19 17:42:01 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,7 +90,6 @@ namespace Replies
         RPL_LUSERCHANNELS = 254,
         RPL_LUSERME = 255,
         RPL_PINGREQUEST = 800,
-        //ERR_NOSUCHSERVER
         ERR_BANNEDFROMCHAN = 474,
         ERR_BADCHANNELKEY = 457,
         ERR_NOSUCHCHANNEL = 403,
@@ -129,6 +128,11 @@ namespace Replies
         RPL_ENDOFINVITELIST = 347,
         /********************/
         
+        /*****-WHO-**********/
+        RPL_WHOREPLY = 352,
+        RPL_ENDOFWHO = 369,
+        /********************/
+
         ERR_USERONCHANNEL = 443,
         RPL_NAMREPLY = 353,
         RPL_ENDOFNAMES = 366,
@@ -158,8 +162,9 @@ namespace Replies
 #define TOPIC_COMMAND       "TOPIC"
 #define NAMES_COMMAND       "NAMES"
 #define LIST_COMMAND        "LIST"
+#define WHO_COMMAND         "WHO"
 
-#define NUM_COMMANDS 20
+#define NUM_COMMANDS 21
 
 #define MOTD_LENGTH_LINE 80
 
@@ -265,6 +270,9 @@ class Server {
         bool                            m_checkNickSyntax(Message& message);
         void                            m_eraseClientPoll(int clientFd);
 
+        bool                            m_onlyOps(std::vector<std::string> arguments);
+
+
         void                            m_quitCmd(int clientFd, std::string quitMessage); // Needs a recheck
         // Need to know more about channel class
         void                            m_modeCmd(Client& client);
@@ -276,7 +284,10 @@ class Server {
         void                            m_whoisCmd(Client& client);
         void                            m_topicCmd(Client& client);
         void                            m_operCmd(Client& client);
+        void                            m_whoCmd(Client& client);
 
+        void                            m_listVisibleUsers(Client& client, bool onlyOps);
+        void                            m_listChannelUsers(Client& client, std::string arguments, bool onlyOps);
 
         void                            m_channelModeCmd(Client& client, Message& message);
         void                            m_userModeCmd(Client& client, Message& message);
@@ -299,12 +310,14 @@ class Server {
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
         bool                            m_isChannelPrefix(char c) const;
         bool                            m_isUser(Client& client) const;
-        bool                            m_isMaskUserMatch(std::string nickname, std::string TLD);
+        bool                            m_isMaskUserMatch(std::string nickname, std::string TLD); // TODO: should be more general
+        bool                            m_isMaskMatch(std::string str, std::string mask);
         bool                            m_isUserSpecificChannelMode(char c) const; // user modes
         bool                            m_isAttributeSetterMode(char c) const; //password and limit users
         bool                            m_isSimpleChannelMode(char c) const; // turn on turn off mdoes
         bool                            m_isMaskMode(char c) const; // the masking ones 
         bool                            m_isClientOper(Client& client, std::string channelName) const; // make variable const
+        bool                            m_isWildCardMask(std::string str) const;
 
         void                            m_listMasks(std::vector<std::string> maskList, char mode, Client& client, Channel& channel);
 

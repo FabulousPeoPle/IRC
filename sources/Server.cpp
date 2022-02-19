@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/19 13:51:29 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/19 17:53:15 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -348,11 +348,6 @@ bool            Server::m_isAttributeSetterMode(char c) const
     return (c == 'k' || c == 'l');
 }
 
-bool            Server::m_isUserSpecificChannelMode(char c) const
-{
-    return (c == 'o' || c == 'O' || c == 'v');
-}
-
 bool            Server::m_isSimpleChannelMode(char c) const
 {
     switch (c)
@@ -392,6 +387,7 @@ int            Server::m_manageChannelModes(char mode, char prefix, std::vector<
         else if (prefix == '-')
             client.turnOffMode(findMode(mode));
     }
+    return (0);
 }
 
 
@@ -402,13 +398,28 @@ std::vector<std::string>            Server::m_manageMaskMode(char mode, char pre
     if (prefix == '+')
     {
         if (arguments[paramToUseIndex].substr(0, 6) != "*!*@*.")
-            return ;
+            return (std::vector<std::string>());
         if (mode =='e')
-            channel.getExceptionBanMasks().push_back(arguments[paramToUseIndex].erase(0, 5));
+        {
+            if (arguments[paramToUseIndex] == "*!*@*")
+                channel.getExceptionBanMasks().push_back(arguments[paramToUseIndex]);
+            else
+                channel.getExceptionBanMasks().push_back(arguments[paramToUseIndex].erase(0, 5));
+        }
         else if (mode == 'b')
-            channel.getBanMasks().push_back(arguments[paramToUseIndex].erase(0, 5));
+        {
+            if (arguments[paramToUseIndex] == "*!*@*")
+                channel.getBanMasks().push_back(arguments[paramToUseIndex]);
+            else
+                channel.getBanMasks().push_back(arguments[paramToUseIndex].erase(0, 5));
+        }
         else if (mode == 'I')
-            channel.getInviteMasks().push_back(arguments[paramToUseIndex].erase(0, 5));
+        {
+            if (arguments[paramToUseIndex] == "*!*@*")
+                channel.getInviteMasks().push_back(arguments[paramToUseIndex]);
+            else
+                channel.getInviteMasks().push_back(arguments[paramToUseIndex].erase(0, 5));
+        }
     }
     else if (prefix == '-')
     {
@@ -490,11 +501,13 @@ void            Server::m_executeModes(std::vector<std::string> arguments, Chann
         else if (m_isSimpleChannelMode(modes[i]))
             channel.manageSimpleMode(modes[i], prefix);
         else if (m_isUserSpecificChannelMode(modes[i]) && modes[i] != 'O')
+        {
             if (m_manageChannelModes(modes[i], prefix, arguments, paramToUseIndex))
             {
                 m_reply(client.getFd(), Replies::ERR_USERNOTINCHANNEL, 0,
                                 m_composeUserNotInChannel(channel.getName(), client.getNickname()));
             }
+        }
         else if (m_isMaskMode(modes[i]))
         {
             std::vector<std::string> maskList =  m_manageMaskMode(modes[i], prefix, arguments, paramToUseIndex);
@@ -510,33 +523,29 @@ void            Server::m_executeModes(std::vector<std::string> arguments, Chann
             m_reply(client.getFd(), Replies::ERR_UMODEUNKNOWNFLAG, 0, "");
     }
 }
-
+//TODO: CHANGE MODES IN REPLY
 void            Server::m_channelModeCmd(Client& client, Message& message)
 {
     // TODO: a function that takes a mask and sees if a client mask looks like it
     std::vector<std::string> arguments = message.getArgs();
-
-    if (!m_channelExists(arguments[1]))
+    std::string channelName = arguments[0];
+    if (!m_channelExists(channelName))
     {
-        m_reply(client.getFd(), Replies::ERR_NOSUCHCHANNEL, 0, arguments[1]);
+        m_reply(client.getFd(), Replies::ERR_NOSUCHCHANNEL, 0, channelName);
         return ;
     }
     if (arguments.size() == 1)
     {
-        m_reply(client.getFd(), Replies::RPL_CHANNELMODEIS, 0, m_composeChannelModes(arguments[1]));
+        m_reply(client.getFd(), Replies::RPL_CHANNELMODEIS, 0, m_composeChannelModes(channelName));
         return ;
     }  // WHAT IF THE CLIENT IS NOT THE CHANNEL OPERATOR
     if (!m_isClientOper(client, arguments[1]))
     {
-        m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, 0, arguments[1]); // maybe change arguments[1] to channelName
+        m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, 0, channelName); // maybe change arguments[1] to channelName
         return ;
     }
     if (arguments.size() >= 2)// MODE CHAN_NAME MODES WHO
-    {
-        m_executeModes(arguments, m_channels[arguments[1]], client);
-    }
-    
-    
+        m_executeModes(arguments, m_channels[channelName], client);
 }
 
 void            Server::m_userModeCmd(Client& client, Message& message) // TODO: REFACTOR
@@ -592,13 +601,13 @@ void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMB
 {
     Message& message = client.getMessageQueue().front();
 
-    if (message.getArgs().size() < 2)
+    if (m_isChannelPrefix(message.getArgs()[0][0]))
+        m_channelModeCmd(client, message);
+    else if (message.getArgs().size() < 2)
     {
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, 0, ""); // NOT SURE ABOUT THIS
         return ;
     }
-    if (m_isChannelPrefix(message.getArgs()[0][0]))
-        m_channelModeCmd(client, message);
     else
         m_userModeCmd(client, message);
 }
@@ -803,6 +812,64 @@ void                Server::m_operCmd(Client& client)
 }
 
 
+int                 countChars(std::string str)
+{
+    int count = 0;
+
+    for (int i = 0; i < str.size(); ++i)
+    {
+        if (str[i] == '*')
+            ++count;
+    }
+    return (count);
+}
+
+bool                Server::m_isWildCardMask(std::string str) const
+{
+    if ((str[0] == '*' || str[str.size() - 1] == '*') && countChars(str) == 1);
+}
+
+bool                Server::m_onlyOps(std::vector<std::string> arguments)
+{
+    return (arguments.size() == 2 && arguments[1] == "o");
+}
+
+bool                Server::m_isMaskMatch(std::string str, std::string mask)
+{
+    if (mask == "*" || mask == "0" || mask.empty())
+        return (true);
+    if (mask[0] == '*')
+    {
+        return (str.erase(0, str.size() - mask.size() - 1) == mask.erase(0, 1));
+    }
+    else if (mask[mask.size() - 1] == '*')
+    {
+        return (str.erase(mask.size() - 1, str.size() - mask.size() - 1)
+                == mask.erase(mask.size() - 1, 1)); // recheck
+    }
+}
+
+void                Server::m_whoCmd(Client& client)
+{
+    Message& message = client.getMessageQueue().front();
+    std::vector<std::string> arguments = message.getArgs();
+    int argSize = arguments.size();
+    if (!argSize)
+        m_listVisibleUsers(client, m_onlyOps(arguments));
+    else
+    {
+        if (m_isChannelPrefix(arguments[0][0]))
+            m_listChannelUsers(client, arguments[0], m_onlyOps(arguments));
+        else if (m_isWildCardMask(arguments[0]))
+        {
+            m_listMatchMaskUsers(client, arguments[0], m_onlyOps(arguments));
+            m_listMatchMaskChannels(client, arguments[0], m_onlyOps(arguments));
+        }
+        else
+            m_whoUser(client, arguments[0], m_onlyOps(arguments)); // Might also take channel name?
+    }
+}
+
 void                Server::m_relay(int clientFd)
 {
     Client& client = this->m_clients[clientFd];
@@ -849,6 +916,8 @@ void                Server::m_relay(int clientFd)
             this->m_privMsgCmd_noticeCmd(m_clients[clientFd], (command == PRIVMSG_COMMAND) ? true : false);
         else if (command == OPER_COMMAND)
             this->m_operCmd(m_clients[clientFd]);
+        else if (command == WHO_COMMAND)
+            this->m_whoCmd(m_clients[clientFd]);
         else if (command.size())
             m_reply(clientFd, Replies::ERR_UNKNOWNCOMMAND, 0, command);
         if (!messages.empty())
@@ -1824,4 +1893,9 @@ void    Server::m_namesCmd_listCmd(Client & client, std::string cmd)
     }
 }
 
-std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS", "TOPIC", "JOIN", "PART", "KICK", "PRIVMSG", "NOTICE", "OPER"}; // TODO: UPDATE
+std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST",
+                                                            "QUIT", "ISON", "MODE", "PONG",
+                                                            "PING", "MOTD", "AWAY", "LUSERS",
+                                                            "WHOIS", "TOPIC", "JOIN", "PART",
+                                                            "KICK", "PRIVMSG", "NOTICE", "OPER",
+                                                            "WHO"}; // TODO: UPDATE
