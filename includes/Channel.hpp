@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/18 19:01:39 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/19 13:24:13 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,11 +69,13 @@ private:
 	std::vector<int>			m_invited;
 	std::uint16_t               modes; // need to give em default modes
 
+	std::string					m_creatorNick;
+
 	std::vector<std::string>	m_banMasks;
 	std::vector<std::string>	m_exceptionBanMasks;
 	std::vector<std::string>	m_inviteMasks;
 
-	std::string					m_password; // initialized to ""
+	std::string					m_password; // boolean
 	int							m_userLimit; // initialized to -1
 
 	
@@ -84,31 +86,39 @@ public:
 						~Channel(void);
 
 
-	std::string 		getName(void) const;
-	std::string 		getPassword(void) const;
-	int					getMode(void) const;
-	std::vector<int> 	&getOps(void);
-	std::vector<int> 	&getMembers(void);
-	std::vector<int> 	&getInvited(void);
-	int			 		getType(void) const;
-	std::string			getTopic(void) const;
+	std::vector<std::string>&	getBanMasks(void);
+	std::vector<std::string>&	getExceptionBanMasks(void);
+	std::vector<std::string>&	getInviteMasks(void);
+
+	std::string					getCreatorName(void) const;
+
 	
-	void					setTopic(std::string topic);
-	void					setMode(int mode);
-	void					setName(std::string name);
-	void					setPassword(std::string password);
+	std::string 				getName(void) const;
+	std::string 				getPassword(void) const;
+	int							getMode(void) const;
+	std::vector<int> 			&getOps(void);
+	std::vector<int> 			&getMembers(void);
+	std::vector<int> 			&getInvited(void);
+	int			 				getType(void) const;
+	std::string					getTopic(void) const;
 	
-	bool				isOp(int clientFd) const;
-	bool				checkPassword(std::string password);
-	void				addMember(int clientFd);
-	void				addInvited(int clientFd);
-	void				removeMember(int clientFd);
-	void				removeOp(int clientFd);
-	void				removeInvited(int clientFd);
-	void				addOp(int clientFd);
-	bool				isBanned(int clientFd) const;
-	bool				isMember(int clientFd) const;
-	bool				isInvited(int clientFd) const;
+	void						setTopic(std::string topic);
+	void						setMode(int mode);
+	void						setName(std::string name);
+	void						setPassword(std::string password);
+	void						setCreatorNick(std::string nickname);
+	
+	bool						isOp(int clientFd) const;
+	bool						checkPassword(std::string password);
+	void						addMember(int clientFd);
+	void						addInvited(int clientFd);
+	void						removeMember(int clientFd);
+	void						removeOp(int clientFd);
+	void						removeInvited(int clientFd);
+	void						addOp(int clientFd);
+	bool						isBanned(int clientFd) const;
+	bool						isMember(int clientFd) const;
+	bool						isInvited(int clientFd) const;
 	// std::string			m_composeMask(Client & client) const;
 	void					Ban(int clinetFd);
 

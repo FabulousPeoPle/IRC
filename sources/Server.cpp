@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 20:12:11 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/19 13:51:29 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -278,7 +278,7 @@ bool            Server::m_isAuthenticated(int clientFd)
 // TODO: check RPL_UMODEIS in other severs
 
 
-int     findMode(char c)
+int     findMode(char c) // ADD IS AS SERVER OR CLIENT FUNCTION
 {
     switch (c)
     {
@@ -302,23 +302,6 @@ int     findMode(char c)
 bool            Server::m_isChannelPrefix(char c) const
 {
     return (c == '#' || c == '&');
-}
-
-std::vector<std::string>     Server::m_extractTLDs(std::vector<std::string>& arguments, int start)
-{
-    std::vector<std::string>::iterator itb = arguments.begin() + start; // 2 is the start of the arguments that contain masks
-    std::vector<std::string>::iterator ite = arguments.end();
-
-    std::vector<std::string>            TLDs;
-    for (std::vector<std::string>::iterator it = itb; it != ite; ++it)
-    {
-        if (it->substr(0, 5) != "*!*@*") // Means there are no more masks
-            break;
-        std::string TLD = it->erase(0, 5);
-        if (TLD[0] == '.')
-            TLDs.push_back(TLD);
-    }
-    return (TLDs);
 }
 
 bool            Server::m_isMaskUserMatch(std::string nickname, std::string TLD) // DON'T EXTRACT TLD HERE
@@ -394,10 +377,14 @@ bool            Server::m_isMaskMode(char c) const
     return (c == 'b' || c == 'e' || c == 'I');
 }
 
-void            Server::m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex)
+int            Server::m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex)
 {
     if (arguments.size() < paramToUseIndex) // remember to reply not enough arguments
     {
+         // template for maps?
+        if (m_nicknames.find(arguments[paramToUseIndex]) == m_nicknames.end())
+                return (-1);
+
         Client& client = m_clients[m_nicknames[arguments[paramToUseIndex]]];
 
         if (prefix == '+')
@@ -407,26 +394,120 @@ void            Server::m_manageChannelModes(char mode, char prefix, std::vector
     }
 }
 
+
+std::vector<std::string>            Server::m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex)
+{
+    Channel& channel = m_channels[arguments[1]];
+
+    if (prefix == '+')
+    {
+        if (arguments[paramToUseIndex].substr(0, 6) != "*!*@*.")
+            return ;
+        if (mode =='e')
+            channel.getExceptionBanMasks().push_back(arguments[paramToUseIndex].erase(0, 5));
+        else if (mode == 'b')
+            channel.getBanMasks().push_back(arguments[paramToUseIndex].erase(0, 5));
+        else if (mode == 'I')
+            channel.getInviteMasks().push_back(arguments[paramToUseIndex].erase(0, 5));
+    }
+    else if (prefix == '-')
+    {
+        if (mode == 'e')
+            channel.getExceptionBanMasks().clear();
+        else if (mode == 'b')
+            channel.getBanMasks().clear();
+        else if (mode == 'I')
+            channel.getInviteMasks().clear();
+    }
+    else
+    {
+        std::vector<std::string> maskList;
+
+        if (mode == 'e')
+            maskList = channel.getBanMasks();
+        else if (mode == 'b')
+            maskList = channel.getExceptionBanMasks();
+        else if (mode == 'I')
+            maskList = channel.getInviteMasks();
+
+       return (maskList);
+    }
+    return (std::vector<std::string>());
+}
+
+void            Server::m_listMasks(std::vector<std::string> maskList, char mode, Client& client, Channel& channel)
+{
+    int replyCodeStart;
+    int replyCodeEnd;
+    std::string listType;  
+    switch (mode)
+    {
+        case 'b':
+            replyCodeStart = Replies::RPL_BANLIST;
+            replyCodeEnd = Replies::RPL_ENDOFBANLIST;
+            listType = "ban list";
+            break;
+        case 'e':
+            replyCodeStart = Replies::RPL_EXCEPTLIST;
+            replyCodeEnd = Replies::RPL_ENDOFEXCEPTLIST;
+            listType = "exception list";
+            break;
+        case 'I':
+            replyCodeStart = Replies::RPL_INVITELIST;
+            replyCodeEnd = Replies::RPL_ENDOFINVITELIST; 
+            listType = "invite list";
+            break;
+        default:
+            return;
+    }
+    for (int i = 0; i < maskList.size(); ++i)
+        m_reply(client.getFd(), replyCodeStart, 0, channel.getName() + ' ' + maskList[i]);
+    m_reply(client.getFd(), replyCodeEnd, 0, channel.getName() + " :End of " + listType);
+}
+
+std::string     Server::m_composeUserNotInChannel(std::string channelName, std::string clientName)
+{
+    return (clientName + ' ' + channelName + " :They aren't on that channel");
+}
+
 void            Server::m_executeModes(std::vector<std::string> arguments, Channel& channel, Client& client)
 {
     std::string modes = arguments[2];
-    char prefix;
-    int     paramToUseIndex = 3;
+    char        prefix = '\0';
+    int         paramToUseIndex = 3;
+    int         start = 0;
+
     if (modes[0] == '+' || modes[0] == '-')
+    {
         prefix = modes[0];
-    for (int i = 1; i < modes.size() - 1; ++i)
+        start = 1;
+    }
+
+    for (int i = start; i < modes.size() - 1; ++i)
     {
         if (m_isAttributeSetterMode(modes[i]))
             channel.manageAttribute(modes[i], prefix, arguments, paramToUseIndex);
         else if (m_isSimpleChannelMode(modes[i]))
             channel.manageSimpleMode(modes[i], prefix);
-        else if (m_isUserSpecificChannelMode(modes[i]))
-            m_manageChannelModes(modes[i], prefix, arguments, paramToUseIndex);
+        else if (m_isUserSpecificChannelMode(modes[i]) && modes[i] != 'O')
+            if (m_manageChannelModes(modes[i], prefix, arguments, paramToUseIndex))
+            {
+                m_reply(client.getFd(), Replies::ERR_USERNOTINCHANNEL, 0,
+                                m_composeUserNotInChannel(channel.getName(), client.getNickname()));
+            }
         else if (m_isMaskMode(modes[i]))
-            // extract mask TLD for later use
+        {
+            std::vector<std::string> maskList =  m_manageMaskMode(modes[i], prefix, arguments, paramToUseIndex);
+            if (maskList.empty())
+                continue;
+            else
+                m_listMasks(maskList, modes[i], client, channel);
+        }
+        else if (modes[i] == 'O')
+            m_reply(client.getFd(), Replies::RPL_UNIQOPIS, 0, channel.getName()
+                            + ' ' + channel.getCreatorName());
         else
             m_reply(client.getFd(), Replies::ERR_UMODEUNKNOWNFLAG, 0, "");
-
     }
 }
 
@@ -1059,6 +1140,30 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::RPL_LISTEND:
             this->m_send(clientFd, ":" + this->m_serverName + " 323 " + message +" End of LIST\r\n");
             break;
+        case Replies::ERR_USERNOTINCHANNEL:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
+            break;
+        case Replies::RPL_UNIQOPIS:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_UNIQOPIS, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
+            break;
+        case Replies::RPL_BANLIST:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_BANLIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
+            break;
+        case Replies::RPL_EXCEPTLIST:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_EXCEPTLIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
+            break;
+        case Replies::RPL_INVITELIST:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_INVITELIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
+            break;
+        case Replies::RPL_ENDOFBANLIST:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ENDOFBANLIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
+            break;
+        case Replies::RPL_ENDOFEXCEPTLIST:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ENDOFEXCEPTLIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
+            break;        
+        case Replies::RPL_ENDOFINVITELIST:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ENDOFINVITELIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
+            break; 
     }
 }
 
@@ -1416,6 +1521,7 @@ void                    Server::m_addChannel(int clientFd, std::string channelNa
     Channel newChannel(PEASEANT_MODES, clientFd, channelName, channelName.at(0), (passProtected ? password : ""));
     newChannel.addOp(clientFd);
     newChannel.addMember(clientFd);
+    newChannel.setCreatorNick(m_clients[clientFd].getNickname());
     m_channels.insert(m_channels.end(), std::pair<std::string, Channel>(channelName, newChannel));
     m_clients[clientFd].pushChannel(channelName, OWNER_MODES);
 }

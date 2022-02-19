@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 20:08:24 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/19 13:50:44 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,6 +119,14 @@ namespace Replies
         /****-MODE_CHANNEL-**/
         RPL_CHANNELMODEIS = 324,
         ERR_CHANOPRIVSNEEDED = 482,
+        ERR_USERNOTINCHANNEL = 441,
+        RPL_UNIQOPIS = 325,
+        RPL_BANLIST = 367,
+        RPL_INVITELIST = 346,
+        RPL_EXCEPTLIST = 348,
+        RPL_ENDOFEXCEPTLIST = 349,
+        RPL_ENDOFBANLIST = 368,
+        RPL_ENDOFINVITELIST = 347,
         /********************/
         
         ERR_USERONCHANNEL = 443,
@@ -281,10 +289,13 @@ class Server {
         std::string                     m_composeChannelModes(std::string channelName);
         std::string                     m_composeNames(std::string channelName);
         std::string                     m_composeList(std::string channelName);
+        std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);// const?
 
         std::vector<std::string>        m_extractTLDs(std::vector<std::string>& arguments, int start);
 
-        void                            m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex);
+        int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex); // turn arguments into references?
+        std::vector<std::string>        m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex);
+
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
         bool                            m_isChannelPrefix(char c) const;
         bool                            m_isUser(Client& client) const;
@@ -295,6 +306,7 @@ class Server {
         bool                            m_isMaskMode(char c) const; // the masking ones 
         bool                            m_isClientOper(Client& client, std::string channelName) const; // make variable const
 
+        void                            m_listMasks(std::vector<std::string> maskList, char mode, Client& client, Channel& channel);
 
         void                            m_executeModes(std::vector<std::string> arguments, Channel& channel, Client& client);
 

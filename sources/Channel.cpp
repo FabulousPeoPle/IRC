@@ -255,6 +255,31 @@ void					Channel::manageAttribute(char mode, char prefix, std::vector<std::strin
 	}
 }
 
+std::vector<std::string>&	Channel::getBanMasks(void)
+{
+	return (m_banMasks);
+}
+
+std::vector<std::string>&	Channel::getExceptionBanMasks(void)
+{
+	return (m_exceptionBanMasks);
+}
+
+std::vector<std::string>&	Channel::getInviteMasks(void)
+{
+	return (m_inviteMasks);
+}
+
+std::string			Channel::getCreatorName(void) const
+{
+	return (m_creatorNick);
+}
+
+void						Channel::setCreatorNick(std::string nickname)
+{
+	m_creatorNick = nickname;
+}
+
 void				Channel::manageSimpleMode(char c, char prefix)
 {
 	int modeNum = this->findMode(c);
