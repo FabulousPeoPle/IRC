@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/18 18:33:22 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/19 15:48:37 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -245,7 +245,10 @@ void		Client::partChannel(std::string name)
 	while (it != end)
 	{
 		if (*it == name)
+		{
 			_channels.erase(it);
+			break ;
+		}
 		it++;
 	}
 }

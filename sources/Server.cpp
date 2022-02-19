@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 19:16:14 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/19 16:52:42 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -401,7 +401,7 @@ void            Server::m_userModeCmd(Client& client, Message& message) // TODO:
     char prefix = message.getArgs()[1][0];
 
     modeChanges += prefix;
-    for (int j = 1; j < message.getArgs()[1].size(); ++j)
+    for (int j = 1; j < int(message.getArgs()[1].size()); ++j)
     {
         int modeNum = findMode(message.getArgs()[1][j]);
 
@@ -699,6 +699,8 @@ void                Server::m_relay(int clientFd)
             this->m_privMsgCmd_noticeCmd(m_clients[clientFd], (command == PRIVMSG_COMMAND) ? true : false);
         else if (command == OPER_COMMAND)
             this->m_operCmd(m_clients[clientFd]);
+        else if (command == JOIN_COMMAND)
+            this->m_joinCmd(m_clients[clientFd]);
         else if (command.size())
             m_reply(clientFd, Replies::ERR_UNKNOWNCOMMAND, 0, command);
         if (!messages.empty())
@@ -996,6 +998,9 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             break;
         case Replies::ERR_NONICKNAMEGIVEN:
             this->m_send(clientFd, ":" + this->m_serverName + " 431 :No nickname given\r\n");
+            break;
+        case Replies::ERR_INVITEONLYCHAN:
+            this->m_send(clientFd, ":" + this->m_serverName + " 473 " + message + " :Cannot join channel (+i)\r\n");
             break;
     }
 }
@@ -1329,7 +1334,7 @@ bool                    Server::m_grabChannelsNames(Message & msg, std::vector<s
 bool                    Server::m_channelExists(std::string channelName)
 {
     if (m_channels.find(channelName) != m_channels.end())
-        return (true);
+        return (true); 
     return (false);
 }
 
@@ -1337,9 +1342,12 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
 {
     Channel & chan = m_channels[channelName];
 
-    if (chan.isBanned(clientFd))
+    if (chan.isBanned(clientFd)) // needs to change to match with masks instead
         m_reply(clientFd, Replies::ERR_BANNEDFROMCHAN, 0, "");
-    if ((passProtected && !chan.checkPassword(password)) || (!passProtected && !chan.getPassword().empty()))
+    else if (m_channels[channelName].getModeValue(ChannelModes::i_inviteOnly) && !m_channels[channelName].isInvited(clientFd))
+        m_reply(clientFd, Replies::ERR_INVITEONLYCHAN, 0, channelName);
+    else if (((passProtected && !chan.checkPassword(password)) || (!passProtected && !chan.getPassword().empty()))
+            && !m_channels[channelName].isInvited(clientFd))
         m_reply(clientFd, Replies::ERR_BADCHANNELKEY, 0, "");
     else
     {
@@ -1366,21 +1374,31 @@ void                    Server::m_joinCmd(Client & client)
     bool                        passProtected;
     
     ////// TODO: syntax check
-    //grab the channels with their passes
-    m_grabChannelsNames(msg, chans, passes);
-    std::vector<std::string>::iterator it_chan = chans.begin();
-    std::vector<std::string>::iterator end_chan = chans.end();
-    std::vector<std::string>::iterator it_passes = passes.begin();
-    std::vector<std::string>::iterator end_passes = passes.end();
-
-    while (it_chan < end_chan)
+    if (msg.getArgs().empty())
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, 0, "");
+    if (msg.getArgs().size() == 1 && msg.getArgs().front() == "0")
+        m_partZero(client);
+    else
     {
-        if (it_passes == end_passes)
-            passProtected = false;
-        if (m_channelExists(*it_chan))
-            m_addClientToChan(client.getFd(), *it_chan, *it_passes, passProtected);
-        else
-            m_addChannel(client.getFd(), *it_chan, *it_passes, passProtected);
+        //grab the channels with their passes
+        m_grabChannelsNames(msg, chans, passes);
+        std::vector<std::string>::iterator it_chan = chans.begin();
+        std::vector<std::string>::iterator end_chan = chans.end();
+        std::vector<std::string>::iterator it_passes = passes.begin();
+        std::vector<std::string>::iterator end_passes = passes.end();
+
+        while (it_chan < end_chan)
+        {
+            if (it_passes == end_passes)
+                passProtected = false;
+            if (m_channelExists(*it_chan))
+                m_addClientToChan(client.getFd(), *it_chan, (passProtected)? *it_passes : "", passProtected);
+            else
+                m_addChannel(client.getFd(), *it_chan, (passProtected)? *it_passes : "", passProtected);
+            if (it_passes != end_passes)
+                it_passes++;
+            it_chan++;
+        }
     }
 }
 
@@ -1435,8 +1453,23 @@ void                        Server::m_partCmd(Client &client)
         m_channels[*it_chan].removeOp(client.getFd());
         client.partChannel(*it_chan);
         // this might be wrong its just a guess
-        m_privMsgCmd_noticeCmd(client, false, Message("PART " + *it_chan + " " + client.getNickname()));
-        
+        m_privMsgCmd_noticeCmd(client, Message("PART " + *it_chan + " " + client.getNickname()));
+        it_chan++;
+    }
+}
+
+void                        Server::m_partZero(Client &client)
+{
+    std::vector<std::string> & channelNames = client.getChannels();
+    std::vector<std::string>::iterator it_chan = channelNames.begin();
+    std::vector<std::string>::iterator end_chan = channelNames.end();
+    while (it_chan != end_chan)
+    {
+        m_channels[*it_chan].removeMember(client.getFd());
+        m_channels[*it_chan].removeOp(client.getFd());
+        client.partChannel(*it_chan);
+        // this might be wrong its just a guess
+        m_privMsgCmd_noticeCmd(client, Message("PART " + *it_chan + " " + client.getNickname()));
         it_chan++;
     }
 }
@@ -1491,7 +1524,7 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client, bool noti
 
 
 // an overload of the privmsg command
-void                    Server::m_privMsgCmd_noticeCmd(Client &client, bool notifs, Message msg) // this would be used by the server it self
+void                    Server::m_privMsgCmd_noticeCmd(Client &client, Message msg) // this would be used by the server it self
 {
     std::string target = msg.getArgs().front();
     if (target.at(0) == LOCAL_CHAN || target.at(0) == NETWORKWIDE_CHAN)
@@ -1539,7 +1572,7 @@ void            Server::m_kickCmd(Client &client)
                 m_channels[*it_chan].removeMember(m_nicknames[*it_nick]);
                 m_channels[*it_chan].removeOp(m_nicknames[*it_nick]);
                 m_clients[m_nicknames[*it_nick]].popChannel(*it_chan);
-                m_privMsgCmd_noticeCmd(client, false, Message("KICK " + *it_nick + " :" + client.getNickname()));
+                m_privMsgCmd_noticeCmd(client, Message("KICK " + *it_nick + " :" + client.getNickname()));
                 it_nick++;
             }
         }
@@ -1557,7 +1590,7 @@ void            Server::m_kickCmd(Client &client)
                 m_channels[*it_chan].removeMember(m_nicknames[*it_nick]);
                 m_channels[*it_chan].removeOp(m_nicknames[*it_nick]);
                 m_clients[m_nicknames[*it_nick]].popChannel(*it_chan);
-                m_privMsgCmd_noticeCmd(client, false, Message("KICK " + *it_nick + " :" + client.getNickname()));
+                m_privMsgCmd_noticeCmd(client, Message("KICK " + *it_nick + " :" + client.getNickname()));
             }
             else if (!m_channels[*it_chan].isMember(client.getFd()))
                 m_reply(client.getFd(), Replies::ERR_NOTONCHANNEL, 0, "");
@@ -1593,8 +1626,8 @@ void            Server::m_inviteCmd(Client &client)
         m_reply(client.getFd(), Replies::ERR_USERONCHANNEL, 0, "");
     else
     {
-        m_privMsgCmd_noticeCmd(client, false, Message("INVITE " + target + " :" + client.getNickname()));
-        m_privMsgCmd_noticeCmd(client, false, Message("INVITE " + client.getNickname() + " :" + client.getNickname()));
+        m_privMsgCmd_noticeCmd(client, Message("INVITE " + target + " :" + client.getNickname()));
+        m_privMsgCmd_noticeCmd(client, Message("INVITE " + client.getNickname() + " :" + client.getNickname()));
         m_channels[chanName].addInvited(m_nicknames[target]);
     }
 }

@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/18 19:04:38 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/19 15:53:35 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,7 +126,8 @@ namespace Replies
         RPL_ENDOFNAMES = 366,
         RPL_LIST = 321,
         RPL_LISTEND = 323,
-        ERR_NONICKNAMEGIVEN = 431
+        ERR_NONICKNAMEGIVEN = 431,
+        ERR_INVITEONLYCHAN = 473,
     };
 };
 
@@ -227,7 +228,6 @@ class Server {
     private:
 
         bool                            m_isAuthenticated(int clientFd);
-
         void                            m_managePoll(void);
         int                             m_manageServerEvent(void);
         void                            m_manageClientEvent(int pollIndex);
@@ -309,9 +309,10 @@ class Server {
         void                            m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected);
 
         void                            m_partCmd(Client & client);
+        void                            m_partZero(Client & client);
 
         void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs);
-        void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs, Message msg);
+        void                            m_privMsgCmd_noticeCmd(Client &client, Message msg);
 
         void                            m_kickCmd(Client & client);
         
@@ -323,14 +324,13 @@ class Server {
     
         const std::string               m_serverName;
         const std::string               m_port;
-        // Maybe this is usless since we are always going to connect to the same thing
         const std::string               m_hostname;
         const std::string               m_version;
         const int                       m_maxClients;
         t_addrinfo*                     m_servinfo;
         t_addrinfo                      m_hints;
         int                             m_athenticatedUserNum;
-        // in case we wanted to do it manually
+        // in case we wanted to do it manually // kinda useless now
         t_sockaddr_in                   m_addr_in;
         t_sockaddr_in6                  m_addr_in6;
         int                             m_sockfd;
@@ -340,14 +340,21 @@ class Server {
         int                             m_poll_count;
         std::vector<t_pollfd>           m_pfds;
         std::string                     m_operPassword;
-
+        ////////////////////////////////////////////////////
+        /// int : client fd , Client : the client object ///
+        ////////////////////////////////////////////////////
         std::map<int, Client>           m_clients;
         
-        // the key is the nickname itself and the value is the clientfd
+        ///////////////////////////////////////////////////////
+        /// std::string : client nickname , int : client fd ///
+        ///////////////////////////////////////////////////////
         std::map<std::string, int>      m_nicknames;
 
         static std::string              m_possibleCommands[NUM_COMMANDS];
-        // a vector containing all Channels available on the server
+    
+        /////////////////////////////////////////////////////////////////
+        /// std::string : channel name , Channel : the channel object ///
+        /////////////////////////////////////////////////////////////////
         std::map<std::string, Channel>  m_channels;
         bool                            m_passProtected;
         std::string                     m_password;

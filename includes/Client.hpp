@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/18 18:32:11 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/19 12:28:23 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -141,9 +141,9 @@ class Client
 
         Client & operator=(Client const & rhs);
 
-    ///////////////
-    /// METHODS ///
-    ///////////////
+        ///////////////
+        /// METHODS ///
+        ///////////////
         void        partChannel(std::string channelName);
 };
 
