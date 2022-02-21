@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/19 13:14:06 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/21 17:13:01 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 Client::Client(void) : _nickAuth(false), _userAuth(false), _isServerOp(false), _away(false), _authenticated(false)
 {
 	this->modes = 0;
+	this->lastJoinedChannel = "";
 	this->turnOnMode(UserModes::restricted);
 }
 
@@ -28,6 +29,7 @@ Client::Client(int sock_fd, struct sockaddr_storage addr, socklen_t len) : _sock
 _addr(addr), _addr_size(len), _nickAuth(false), _userAuth(false), _isServerOp(false), _away(false), _authenticated(false)
 {
 	this->modes = 0;
+	this->lastJoinedChannel = "";
 	this->turnOnMode(UserModes::restricted);
 }
 
@@ -265,11 +267,35 @@ void		Client::turnOnMode(int modeNum, std::string channelName)
 	this->_channelModes[channelName] |= this->modeBitMasks[modeNum];
 }
 
+int			Client::findMode(char mode) const
+{
+	switch (mode)
+    {
+        case 'O':
+			return (ChannelModes::O_Creator);
+		case 'o':
+			return (ChannelModes::o_OperatorPrivilege);
+		case 'v':
+			return (ChannelModes::v_voicePrivilege);
+        default:
+            return (-1);
+    }
+}
+
+
 bool		Client::getModeValue(int modeNum,  const std::string channelName)
 {
 	return (this->modeBitMasks[modeNum] & this->_channelModes[channelName]);
 }
 
+std::string                     Client::getLastJoinedChannel(void)
+{
+	if (this->lastJoinedChannel.empty())
+		return ("*");
+	return (this->lastJoinedChannel);
+}
+
+
 std::uint8_t        Client::modeBitMasks[NUM_MODES] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5};
 std::string         Client::potentialModes = "aiwros";
-std::string			Client::potentialChannelModes = "Oovb";
+std::string			Client::potentialChannelModes = "Oov";

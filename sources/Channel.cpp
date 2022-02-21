@@ -185,9 +185,9 @@ void		Channel::turnOnMode(int modeNum)
 	this->modes |= this->modeBitMasks[modeNum];
 }
 
-int 	    Channel::findMode(char c) const // TODO: TURN THE OTHER ONES TO CONST AS WELL
+int 	    Channel::findMode(char mode) const // TODO: TURN THE OTHER ONES TO CONST AS WELL
 {
-    switch (c)
+    switch (mode)
     {
         case 'a':
             return (ChannelModes::a_annonymous);
@@ -288,7 +288,6 @@ void				Channel::manageSimpleMode(char c, char prefix)
 		this->turnOnMode(modeNum);
 	else
 		this->turnOffMode(modeNum);
-
 }
 
 

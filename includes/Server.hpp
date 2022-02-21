@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/19 17:42:01 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/21 20:50:04 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,6 @@ namespace Replies
 {
     enum
     {
-
         /******-AUTHENTIFICATION-*******/
         RPL_WELCOME = 1,
         RPL_YOURHOST = 2,
@@ -84,11 +83,14 @@ namespace Replies
         RPL_UNAWAY = 305,
         ERR_NOTREGISTERED = 541,
         ERR_UNKNOWNCOMMAND = 421,
+
+        /*****-LUSERS-*******/
         RPL_LUSERCLIENT = 251,
         RPL_LUSEROP = 252,
         RPL_LUSERUNKNOWN = 253,
-        RPL_LUSERCHANNELS = 254,
         RPL_LUSERME = 255,
+        RPL_LUSERCHANNELS = 254,
+        /********************/
         RPL_PINGREQUEST = 800,
         ERR_BANNEDFROMCHAN = 474,
         ERR_BADCHANNELKEY = 457,
@@ -96,11 +98,14 @@ namespace Replies
         ERR_NORECIPIENT = 411,
         ERR_NOTEXTTOSEND = 412,
         ERR_TOOMANYTARGETS = 407,
+
         /******-WHOIS-*******/
         RPL_WHOISUSER = 311,
         RPL_WHOISSERVER = 312,
         RPL_ENDOFWHOIS = 318,
         ERR_NOSUCHNICK = 401,
+        RPL_WHOISOPERATOR = 313,
+        RPL_AWAY = 301,
         /********************/
 
         /******-TOPIC-*******/
@@ -128,10 +133,6 @@ namespace Replies
         RPL_ENDOFINVITELIST = 347,
         /********************/
         
-        /*****-WHO-**********/
-        RPL_WHOREPLY = 352,
-        RPL_ENDOFWHO = 369,
-        /********************/
 
         ERR_USERONCHANNEL = 443,
         RPL_NAMREPLY = 353,
@@ -164,7 +165,7 @@ namespace Replies
 #define LIST_COMMAND        "LIST"
 #define WHO_COMMAND         "WHO"
 
-#define NUM_COMMANDS 21
+#define NUM_COMMANDS 20
 
 #define MOTD_LENGTH_LINE 80
 
@@ -197,13 +198,14 @@ typedef struct      s_m_socketInfo
 // TODO: BIT masking for user modes
 class Server {
     public:
-        // typedef void (*commandFunc)(Client&);
+        typedef void (Server::*cmdFun)(Client&);
+
                                     // constructors are probably going to be useless
                                         Server(void);
                                         Server(std::string port, std::string hostname, std::string serverName, int maxClients);
                                         Server(const Server& serverRef);
                                         ~Server();
-                                        
+        void                            initializeCmdFuncs(void);
         Server&                         operator=(const Server& serverRef);
 
         std::string                     getPort(void) const;
@@ -273,7 +275,7 @@ class Server {
         bool                            m_onlyOps(std::vector<std::string> arguments);
 
 
-        void                            m_quitCmd(int clientFd, std::string quitMessage); // Needs a recheck
+        void                            m_quitCmd(Client& client); // Needs a recheck
         // Need to know more about channel class
         void                            m_modeCmd(Client& client);
         void                            m_motdCmd(Client& client);
@@ -305,19 +307,24 @@ class Server {
         std::vector<std::string>        m_extractTLDs(std::vector<std::string>& arguments, int start);
 
         int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex); // turn arguments into references?
-        std::vector<std::string>        m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex);
+        std::vector<std::string>        m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex);
+
+        void                            m_findNextMask(std::vector<std::string> arguments, int& paramToUseIndex);
+
+        std::string                     m_getTLD(std::string mask);
 
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
         bool                            m_isChannelPrefix(char c) const;
         bool                            m_isUser(Client& client) const;
         bool                            m_isMaskUserMatch(std::string nickname, std::string TLD); // TODO: should be more general
         bool                            m_isMaskMatch(std::string str, std::string mask);
+        bool                            m_isMask(std::string str);
         bool                            m_isUserSpecificChannelMode(char c) const; // user modes
         bool                            m_isAttributeSetterMode(char c) const; //password and limit users
         bool                            m_isSimpleChannelMode(char c) const; // turn on turn off mdoes
         bool                            m_isMaskMode(char c) const; // the masking ones 
         bool                            m_isClientOper(Client& client, std::string channelName) const; // make variable const
-        bool                            m_isWildCardMask(std::string str) const;
+        bool                            m_isWildCardMask(std::string str) const; // Used for who
 
         void                            m_listMasks(std::vector<std::string> maskList, char mode, Client& client, Channel& channel);
 
@@ -370,6 +377,7 @@ class Server {
         std::string                     m_operPassword;
 
         std::map<int, Client>           m_clients;
+        int                             m_numOps;
         
         // the key is the nickname itself and the value is the clientfd
         std::map<std::string, int>      m_nicknames;
@@ -377,6 +385,7 @@ class Server {
         static std::string              m_possibleCommands[NUM_COMMANDS];
         // a vector containing all Channels available on the server
         std::map<std::string, Channel>  m_channels;
+        std::map<std::string, cmdFun>   m_cmdFuncs;
 };
 
 #endif

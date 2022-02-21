@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/18 20:05:39 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/21 17:02:24 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,8 @@
 #include "Message.hpp"
 #include <cstdint>
 #include <cstring>
+
+#include "Channel.hpp"
 
 class Message;
 
@@ -60,6 +62,7 @@ class Client
     private:
         int                                 _sock_fd;
         struct sockaddr_storage             _addr;
+        std::string                         lastJoinedChannel;
         socklen_t                           _addr_size;
         std::string                         _nickname;
         std::string                         _username;
@@ -108,6 +111,8 @@ class Client
         bool                            isAuthComplete(void) const;
         bool                            getModeValue(int modeNum) const;
         bool		                    getModeValue(int modeNum, std::string channelName);
+        int                             findMode(char mode) const;
+        std::string                     getLastJoinedChannel(void);
 
         std::vector<std::string>        &getChannels(void);
         

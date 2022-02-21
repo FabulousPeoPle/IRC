@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/19 13:24:13 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/21 20:14:45 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,7 @@ namespace ChannelModes
     };
 };
 //TODO: COPLIEN FORM
+
 class Channel
 {
 private:
@@ -124,7 +125,7 @@ public:
 
 	bool        			getModeValue(int modeNum) const;
 
-	int 	    			findMode(char c) const;
+	int 	    			findMode(char mode) const;
 
     void        			turnOnMode(int modeNum);
     void        			turnOffMode(int modeNum);
