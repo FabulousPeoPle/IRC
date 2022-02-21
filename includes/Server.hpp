@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/19 15:53:35 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/21 19:27:16 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,6 +128,7 @@ namespace Replies
         RPL_LISTEND = 323,
         ERR_NONICKNAMEGIVEN = 431,
         ERR_INVITEONLYCHAN = 473,
+        ERR_CANNOTSENDTOCHAN = 404,
     };
 };
 
@@ -312,7 +313,7 @@ class Server {
         void                            m_partZero(Client & client);
 
         void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs);
-        void                            m_privMsgCmd_noticeCmd(Client &client, Message msg);
+        void                            m_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
 
         void                            m_kickCmd(Client & client);
         
@@ -321,6 +322,11 @@ class Server {
         void                            m_namesCmd_listCmd(Client & client, std::string cmd);
         void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
         void                            m_passCmd(Client &client);
+
+        std::string                     m_getTLD(std::string mask);
+        bool                            m_isMask(std::string mask);
+        bool                            m_isMaskMatch(std::string str, std::string mask);
+        std::vector<int>                m_grabClientsWithMask(std::string mask);
     
         const std::string               m_serverName;
         const std::string               m_port;
