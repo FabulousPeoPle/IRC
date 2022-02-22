@@ -127,15 +127,19 @@ bool Channel::isInvited(int clientFd) const
 // 	return (client._nickname + "!" + client._username + "@" + client._ip_address);
 // }
 
-bool Channel::isBanned(int clientFd) const
+bool Channel::isBanned(Client &client) const
 {
-	return (((std::find(m_banned.begin(), m_banned.end(), clientFd) != m_banned.end()) ? true : false));
+	std::vector<std::string>::const_iterator it = m_banMasks.begin();
+	std::vector<std::string>::const_iterator end = m_banMasks.end();
+	while (it != end)
+	{
+		if (m_isMaskUserMatch(client.getHostname(), *it))
+			return (true);
+		it++;
+	}
+	return (false);
 }
 
-void Channel::Ban(int clientFd)
-{
-	this->m_banned.push_back(clientFd);
-}
 
 void	Channel::removeMember(int clientFd)
 {

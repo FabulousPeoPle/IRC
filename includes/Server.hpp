@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/21 19:27:16 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/22 15:09:39 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,6 +147,7 @@ namespace Replies
 #define WHOIS_COMMAND       "WHOIS"
 #define JOIN_COMMAND        "JOIN"
 #define PART_COMMAND        "PART"
+#define KICK_COMMAND        "KICK"
 #define NOTICE_COMMAND      "NOTICE"
 #define PRIVMSG_COMMAND     "PRIVMSG"
 #define OPER_COMMAND        "OPER"
@@ -253,7 +254,7 @@ class Server {
         void                            m_debugAuthentificate(int clientFd);
         int                             m_send(int toFd, std::string message);
 
-        void                            m_reply(int clientFd, int replyCode, int extraArg, std::string message);
+        void                            m_reply(int clientFd, int replyCode, std::string message);
         void                            m_setCommandFuncs(void);
 
         bool                            m_checkNickSyntax(Message& message);

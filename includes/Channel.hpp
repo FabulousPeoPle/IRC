@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/21 15:36:12 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/22 17:40:08 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,7 +63,6 @@ private:
 	int							m_type; // the scope of the channel local/networkwide
 	std::vector<int>			m_operators; // this vector stores the clientfds of the ops
 	std::string					m_topic;
-	std::vector<int>			m_banned; // probably useless
 	std::vector<int>			m_members;
 	std::vector<int>			m_invited;
 	std::string					m_password;
@@ -105,11 +104,10 @@ public:
 	void				removeOp(int clientFd);
 	void				removeInvited(int clientFd);
 	void				addOp(int clientFd);
-	bool				isBanned(int clientFd) const;
+	bool				isBanned(Client &client) const;
 	bool				isMember(int clientFd) const;
 	bool				isInvited(int clientFd) const;
 	// std::string			m_composeMask(Client & client) const;
-	void					Ban(int clinetFd);
 
 	bool        			getModeValue(int modeNum) const;
 
@@ -117,6 +115,11 @@ public:
 
     void        			turnOnMode(int modeNum);
     void        			turnOffMode(int modeNum);
+	bool            		m_isMaskUserMatch(std::string hostname, std::string TLD) const // maybe it should be a friend function
+		{
+		    hostname = hostname.erase(0, hostname.size() - TLD.size());
+		    return (hostname == TLD || TLD.empty());
+		}
 
 	static std::uint16_t	modeBitMasks[NUM_MODES_CHANNEL];
 	static std::string		potentialModes;
