@@ -217,21 +217,19 @@ bool		Channel::getModeValue(int modeNum) const
 	return (this->modeBitMasks[modeNum] & this->modes);
 }
 
-void					Channel::manageAttribute(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex)
+int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string> arguments)
 {
 	if (mode == 'k')
 	{
 		if (prefix == '-')
-			m_password = "";
-		else
 		{
-			if (arguments.size() < paramToUseIndex)
-			{
-				m_password = arguments[paramToUseIndex];
-				++paramToUseIndex;
-			}
+			if (!m_password.empty())
+				if (arguments[2] == m_password)
+					m_password = "";
 		}
-	}
+		else
+			m_password = arguments[2];
+		}
 	else
 	{
 		if (prefix == '-')
@@ -240,19 +238,17 @@ void					Channel::manageAttribute(char mode, char prefix, std::vector<std::strin
 		{
 			try
 			{
-				if (arguments.size() < paramToUseIndex)
-				{
-					m_userLimit = std::stoi(arguments[paramToUseIndex]);
-					++paramToUseIndex;
-				}
+				m_userLimit = std::stoi(arguments[2]);
 			}
 			catch (std::exception& e)
 			{
 				std::cout << "Bad argument: " << e.what() << std::endl;
 				m_userLimit = -1;
+				return (-1);
 			}
 		}
 	}
+	return (0);
 }
 
 std::vector<std::string>&	Channel::getBanMasks(void)

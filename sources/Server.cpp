@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/21 20:50:29 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/22 17:58:25 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -391,21 +391,18 @@ bool            Server::m_isMaskMode(char c) const
     return (c == 'b' || c == 'e' || c == 'I');
 }
 
-int            Server::m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex)
+int            Server::m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments)
 {
-    if (arguments.size() < paramToUseIndex) // remember to reply not enough arguments
-    {
-         // template for maps?
-        if (m_nicknames.find(arguments[paramToUseIndex]) == m_nicknames.end())
-                return (-1);
+     // template for maps?
+    if (m_nicknames.find(arguments[2]) == m_nicknames.end())
+            return (-1);
 
-        Client& client = m_clients[m_nicknames[arguments[paramToUseIndex]]];
+    Client& client = m_clients[m_nicknames[arguments[2]]];
 
-        if (prefix == '+')
-            client.turnOnMode(client.findMode(mode), arguments[0]);
-        else if (prefix == '-')
-            client.turnOffMode(client.findMode(mode), arguments[0]);
-    }
+    if (prefix == '+')
+        client.turnOnMode(client.findMode(mode), arguments[0]);
+    else if (prefix == '-')
+        client.turnOffMode(client.findMode(mode), arguments[0]);
     return (0);
 }
 
@@ -426,7 +423,7 @@ void                                Server::m_findNextMask(std::vector<std::stri
 
 std::string                     Server::m_getTLD(std::string mask)
 {
-    if (mask == "*!*@*")
+    if (mask == "*")
         return ("*");
     return (mask.erase(0, 5));
 }
@@ -439,29 +436,37 @@ std::vector<std::string>            Server::m_manageMaskMode(char mode, char pre
         return (std::vector<std::string>());
     if (prefix == '+')
     {
-        m_findNextMask(arguments, paramToUseIndex);
-        if (paramToUseIndex >= arguments.size())
+        if (arguments[paramToUseIndex].substr(0, 6) != "*!*@*." && arguments[paramToUseIndex] != "*!*@*") // TODO: TEST
             return (std::vector<std::string>());
-        if (arguments[paramToUseIndex].substr(0, 6) != "*!*@*." && arguments[paramToUseIndex] != "*!*@*")
+        if (arguments[paramToUseIndex] == "*!*@*.")
             return (std::vector<std::string>());
         if (mode =='e') // TODO: REFACTOR??
         {
-            if (arguments[paramToUseIndex] == "*!*@*")
-                channel.getExceptionBanMasks().push_back(arguments[paramToUseIndex++]);
+            if (arguments[paramToUseIndex] == "*!*@*" || arguments[paramToUseIndex] == "0" || arguments[paramToUseIndex] == "*")
+            {
+                channel.getExceptionBanMasks().push_back("*");
+                ++paramToUseIndex;
+            }
             else
                 channel.getExceptionBanMasks().push_back(arguments[paramToUseIndex++].erase(0, 5));
         }
         else if (mode == 'b')
         {
-            if (arguments[paramToUseIndex] == "*!*@*")
-                channel.getBanMasks().push_back(arguments[paramToUseIndex++]);
+            if (arguments[paramToUseIndex] == "*!*@*" || arguments[paramToUseIndex] == "0" || arguments[paramToUseIndex] == "*")
+            {
+                channel.getBanMasks().push_back("*");
+                ++paramToUseIndex;
+            }
             else
                 channel.getBanMasks().push_back(arguments[paramToUseIndex++].erase(0, 5));
         }
         else if (mode == 'I')
         {
-            if (arguments[paramToUseIndex] == "*!*@*")
-                channel.getInviteMasks().push_back(arguments[paramToUseIndex++]);
+            if (arguments[paramToUseIndex] == "*!*@*" || arguments[paramToUseIndex] == "0" || arguments[paramToUseIndex] == "*")
+            {
+                channel.getInviteMasks().push_back("*");
+                ++paramToUseIndex;
+            }
             else
                 channel.getInviteMasks().push_back(arguments[paramToUseIndex++].erase(0, 5));
         }
@@ -528,9 +533,9 @@ std::string     Server::m_composeUserNotInChannel(std::string channelName, std::
 
 void            Server::m_executeModes(std::vector<std::string> arguments, Channel& channel, Client& client)
 {
-    std::string modes = arguments[2];
+    std::string modes = arguments[1];
     char        prefix = '\0';
-    int         paramToUseIndex = 3;
+    int         paramToUseIndex = 2;
     int         start = 0;
 
 
@@ -540,15 +545,19 @@ void            Server::m_executeModes(std::vector<std::string> arguments, Chann
         prefix = modes[0];
         start = 1;
     }
-    for (int i = start; i < modes.size() - 1; ++i)
+    std::cout << "this is the prefix: " << prefix << "\nthis is the start: " << start << std::endl;
+    for (int i = start; i < modes.size(); ++i)
     {
         if (m_isAttributeSetterMode(modes[i]))
-            channel.manageAttribute(modes[i], prefix, arguments, paramToUseIndex);
+        {
+            if (channel.manageAttribute(modes[i], prefix, arguments))
+                m_reply(client.getFd(), Replies::ERR_INTNEEDED, 0, arguments[2]);// TODO: IMPLEMENT THIS IN REPLY
+        }
         else if (m_isSimpleChannelMode(modes[i]))
             channel.manageSimpleMode(modes[i], prefix);
         else if (m_isUserSpecificChannelMode(modes[i]) && modes[i] != 'O')
         {
-            if (m_manageChannelModes(modes[i], prefix, arguments, paramToUseIndex))
+            if (m_manageChannelModes(modes[i], prefix, arguments))
             {
                 m_reply(client.getFd(), Replies::ERR_USERNOTINCHANNEL, 0,
                                 m_composeUserNotInChannel(channel.getName(), client.getNickname()));
@@ -562,17 +571,89 @@ void            Server::m_executeModes(std::vector<std::string> arguments, Chann
             else
                 m_listMasks(maskList, modes[i], client, channel);
         }
-        else if (modes[i] == 'O' && prefix == '\0')
+        else if (modes[i] == 'O')
             m_reply(client.getFd(), Replies::RPL_UNIQOPIS, 0, channel.getName()
                             + ' ' + channel.getCreatorName());
         else
             m_reply(client.getFd(), Replies::ERR_UMODEUNKNOWNFLAG, 0, "");
     }
 }
+
+bool            Server::m_areModesMasks(std::string modes)
+{
+    for (int i = 0; i < modes.size(); ++i)
+    {
+        if (!m_isMaskMode(modes[i]))
+            return (false);
+    }
+    return (true);
+}
+
+bool            Server::m_isModesSyntaxValid(std::vector<std::string> arguments)
+{
+    char    prefix = arguments[1][0];
+    int     attributeSetters = 0;
+    int     userModeSetters = 0;
+    int     chanModeSetters = 0;
+    int     maskSetters = 0;
+    int     argNum = arguments.size() - 2;
+
+    int start = 0;
+    std::string modes;
+    if (prefix == '+' || prefix == '-')
+        modes = arguments[1].erase(0, 1);
+    else
+        modes = arguments[1];
+    for (int i = start; i < modes.size(); ++i)
+    {
+        if (m_isAttributeSetterMode(modes[i]))
+            attributeSetters += 1;
+        else if (m_isSimpleChannelMode(modes[i]))
+            chanModeSetters += 1;
+        else if (m_isUserSpecificChannelMode(modes[i]))
+            userModeSetters += 1;
+        else if (m_isMaskMode(modes[i]))
+            maskSetters += 1;
+    }
+    if (prefix == '+' || prefix == '-')
+    {
+        if (attributeSetters + chanModeSetters + userModeSetters + maskSetters > 3)
+            return (false);
+        if ((attributeSetters && userModeSetters)
+            || (attributeSetters && maskSetters)
+            || (maskSetters && userModeSetters))
+            return (false);
+        if (attributeSetters > 1) // -kl bruh
+            return (false);
+        if (maskSetters && maskSetters != argNum)
+            return (false);
+        if (prefix == '-' && attributeSetters && arguments[1][0] == 'l' && argNum) // prefix relative
+            return (false);
+        if (attributeSetters && argNum != 1) // prefix relative
+            return (false);
+        if (userModeSetters && argNum != 1)
+            return (false);
+    }
+    else
+    {
+        std::cout << userModeSetters << " :this is usermodes\n";
+        if (attributeSetters)
+            return (false);
+        if (chanModeSetters)
+            return (false);
+        else if (userModeSetters > 1)
+            return (false);
+        if (userModeSetters == 1 && arguments[1].find('O') == std::string::npos)
+            return (false);
+    }
+    return (true);
+}
+
 //TODO: CHANGE MODES IN REPLY
 void            Server::m_channelModeCmd(Client& client, Message& message)
 {
     // TODO: a function that takes a mask and sees if a client mask looks like it
+
     std::vector<std::string> arguments = message.getArgs();
     std::string channelName = arguments[0];
     if (!m_channelExists(channelName))
@@ -585,13 +666,20 @@ void            Server::m_channelModeCmd(Client& client, Message& message)
         m_reply(client.getFd(), Replies::RPL_CHANNELMODEIS, 0, m_composeChannelModes(channelName));
         return ;
     }  // WHAT IF THE CLIENT IS NOT THE CHANNEL OPERATOR
-    if (!m_isClientOper(client, arguments[0]))
+    if (!m_isClientOper(client, arguments[0]) && !client.getModeValue(UserModes::oper)) 
     {
         m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, 0, channelName); // maybe change arguments[1] to channelName
         return ;
     }
     if (arguments.size() >= 2)// MODE CHAN_NAME MODES WHO
+    {
+        if (!m_isModesSyntaxValid(arguments))
+        {
+            m_reply(client.getFd(), Replies::ERR_WRONGCHANMODESYNTAX, 0, channelName); // maybe change arguments[1] to channelName
+            return ;
+        }
         m_executeModes(arguments, m_channels[channelName], client);
+    }
 }
 
 void            Server::m_userModeCmd(Client& client, Message& message) // TODO: REFACTOR
@@ -669,7 +757,7 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile, std::string c
     while (std::getline(motdFile, line))
     {
         if (!motd.empty())
-            motd += ":" + this->m_serverName + " 372 " + clientNick + " :-\t  " + line;
+            motd += ':' + this->m_serverName + " 372 " + clientNick + " :-\t  " + line;
         motd += '\n';
     }
     count = 0;
@@ -740,7 +828,7 @@ std::string                 Server::m_makeReplyHeader(int replyNum, std::string 
     std::string strReplyNum = std::to_string(replyNum);
     int         len = strReplyNum.size();
     std::string s = std::string(3 - len, '0');
-    std::string header = ":" + this->m_serverName + " " + s + strReplyNum + ' ' + nickname;
+    std::string header = ':' + this->m_serverName + ' ' + s + strReplyNum + ' ' + nickname;
     return (header);
 }
 
@@ -755,7 +843,7 @@ std::string                Server::m_composeWhoisQuery(Client& queryClient, std:
             return (m_makeReplyHeader(Replies::RPL_WHOISSERVER, clientNickname) + ' ' + queryClient.getNickname()
                                                     + ' ' + m_serverName + ": Morocco 1337 Server, Provided by 1337 students Powered by Itisalat Al Maghreb.");
         case Replies::RPL_AWAY:
-            return (m_makeReplyHeader(Replies::RPL_AWAY, clientNickname) + ' ' + queryClient.getNickname() + " " + queryClient.getAwayMsg());
+            return (m_makeReplyHeader(Replies::RPL_AWAY, clientNickname) + ' ' + queryClient.getNickname() + ' ' + queryClient.getAwayMsg());
         case Replies::RPL_WHOISOPERATOR:
             if (queryClient.getModeValue(UserModes::oper))
                 return (m_makeReplyHeader(Replies::RPL_WHOISOPERATOR, clientNickname) + ' ' + queryClient.getNickname() + " :is an IRC operator");
@@ -930,16 +1018,20 @@ void                Server::m_relay(int clientFd)
         // TODO: a map that has command function as values and the string command as key
         std::string command = message.getCmd();
 
-        // cmdFuncs.insert(std::make_pair("QUIT", &Server::m_quitCmd));
+        std::cout << command << " :this is the command\n";
         if (command == USER_COMMAND)
             m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, 0, ""); // not sure about this
         else if (command == PRIVMSG_COMMAND || command == NOTICE_COMMAND)
             this->m_privMsgCmd_noticeCmd(m_clients[clientFd], (command == PRIVMSG_COMMAND) ? true : false);
-        else
+        else if (command == QUIT_COMMAND)
+            m_quitCmd(m_clients[clientFd]);
+        else if (this->m_isValidCommand(command))
         {
             cmdFun fp = m_cmdFuncs[command];
             (this->*fp)(m_clients[clientFd]);
         }
+        else if (command.size())
+            m_reply(clientFd, Replies::ERR_UNKNOWNCOMMAND, 0, command);   
         if (!messages.empty())
             messages.pop_front();
     }
@@ -976,13 +1068,15 @@ void                Server::m_manageClientEvent(int pollIndex)
         if (this->m_manageRecv(buffer, this->m_pfds[pollIndex].fd))
         {
             if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
-                this->m_relay(this->m_pfds[pollIndex].fd);
+                this->m_relay(this->m_pfds[pollIndex].fd); // TODO: INSERT TRY AUTHENTIFICATE HERE
             else
             {
                 #ifdef DEBUG
                 std::cout << "client not authenticated" << std::endl;
                 #endif
                 this->m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
+                if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
+                    this->m_relay(this->m_pfds[pollIndex].fd);
             }
         }
     }
@@ -1053,7 +1147,7 @@ bool    Server::m_tryAuthentificate(Client& client)
         msg.parse();
         if (msg.getCmd() != NICK_COMMAND && msg.getCmd() != USER_COMMAND)
         {
-            if (this->m_isValidCommand(msg.getCmd())) // TODO: ANAS check if command is an acceptable command
+            if (this->m_isValidCommand(msg.getCmd()))
                 m_reply(client.getFd(), Replies::ERR_NOTREGISTERED, 0, "");
             if (!client.getMessageQueue().empty())
                 client.getMessageQueue().pop_front();
@@ -1078,105 +1172,105 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
     switch (replyCode)  // TODO: care for message syntax
     {
         case Replies::RPL_WELCOME :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 001 " + m_clients[clientFd].getNickname() + " :Welcome sunshine\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 001 " + m_clients[clientFd].getNickname() + " :Welcome sunshine\r\n");
             break;
         case Replies::RPL_YOURHOST:  // TODO: care for message syntax
-            this->m_send(clientFd, ":" + this->m_serverName + " 002 " + m_clients[clientFd].getNickname() + " :Your host is " + this->m_serverName + ", running version " + this->m_version + "\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 002 " + m_clients[clientFd].getNickname() + " :Your host is " + this->m_serverName + ", running version " + this->m_version + "\r\n");
             break;
         case Replies::RPL_CREATED:
-            this->m_send(clientFd, ":" + this->m_serverName + " 003 " + m_clients[clientFd].getNickname() + " :This server was created Sat Feb 12 2020 at 10:40:00 GMT\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 003 " + m_clients[clientFd].getNickname() + " :This server was created Sat Feb 12 2020 at 10:40:00 GMT\r\n");
             break;
         case Replies::RPL_MYINFO: // TODO: decide on the possible modes for channels and users
-            this->m_send(clientFd, ":" + this->m_serverName + " 004 " + m_clients[clientFd].getNickname() + " :" + this->m_serverName + " " + this->m_version + " " + "ao" + " " + "mtov\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 004 " + m_clients[clientFd].getNickname() + " :" + this->m_serverName + ' ' + this->m_version + ' ' + "ao" + ' ' + "mtov\r\n");
             break;
         case Replies::RPL_BOUNCE:
-            this->m_send(clientFd, ":" + this->m_serverName + " 005 " + m_clients[clientFd].getNickname() + " :Try server 'DS9.GeekShed.net', port '6667'\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 005 " + m_clients[clientFd].getNickname() + " :Try server 'DS9.GeekShed.net', port '6667'\r\n");
             break;
         case Replies::RPL_USERHOST : // causes BitchX segmentation fault
-            this->m_send(clientFd, ":" + this->m_serverName + " 302 " + m_clients[clientFd].getNickname() + " :"\
+            this->m_send(clientFd, ':' + this->m_serverName + " 302 " + m_clients[clientFd].getNickname() + " :"\
             + m_clients[extraArg].getNickname() + ((m_clients[extraArg].isServerOp()) ? "*" : "\0") + "=" \
             + ((m_clients[extraArg].isAway()) ? "+" : "-") + m_clients[extraArg].getHostname() + "\r\n");
             break;
         case Replies::ERR_NICKNAMEINUSE :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 433 * " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :Nickname is already in use hun\r\n");;
+            this->m_send(clientFd, ':' + this->m_serverName + " 433 * " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :Nickname is already in use hun\r\n");;
             break;
         case Replies::ERR_ERRONEUSNICKNAME :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 432 " + m_clients[clientFd].getNickname() + " :Erroneous nickname\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 432 " + m_clients[clientFd].getNickname() + " :Erroneous nickname\r\n");
             break;
         case Replies::ERR_NEEDMOREPARAMS :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 461 " + m_clients[clientFd].getMessageQueue().front().getCmd()+ " :Not enough parameters\r\n"); // needs the name of the command
+            this->m_send(clientFd, ':' + this->m_serverName + " 461 " + m_clients[clientFd].getMessageQueue().front().getCmd()+ " :Not enough parameters\r\n"); // needs the name of the command
             break;
         case Replies::ERR_ALREADYREGISTRED :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 462 :Unauthorized command (already registered)\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 462 :Unauthorized command (already registered)\r\n");
             break;
         case Replies::ERR_USERSDONTMATCH:
-            this->m_send(clientFd, ":" + this->m_serverName + " 446 :Cannot change mode for other users\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 446 :Cannot change mode for other users\r\n");
             break;
         case Replies::ERR_UMODEUNKNOWNFLAG:\
-            this->m_send(clientFd, ":" + this->m_serverName + " 501 :Unknown MODE flag\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 501 :Unknown MODE flag\r\n");
             break;
         case Replies::RPL_UMODEIS: // TODO: EXTRA CARE
-            this->m_send(clientFd, ":" + m_clients[clientFd].getNickname() + " MODE " + m_clients[clientFd].getNickname() + " :" + message + "\r\n"); // TODO: change +i to the correct value of modes
+            this->m_send(clientFd, ':' + m_clients[clientFd].getNickname() + " MODE " + m_clients[clientFd].getNickname() + " :" + message + "\r\n"); // TODO: change +i to the correct value of modes
             break;
         case Replies::ERR_NOMOTD :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 422 :MOTD File is missing\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 422 :MOTD File is missing\r\n");
             break;
         case Replies::RPL_MOTDSTART :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 375 " + m_clients[clientFd].getNickname() +  " :- " + this->m_serverName + " Message of the day -\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 375 " + m_clients[clientFd].getNickname() +  " :- " + this->m_serverName + " Message of the day -\r\n");
             break;
         case Replies::RPL_ENDOFMOTD :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 376 " + m_clients[clientFd].getNickname() + " :End of MOTD command\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 376 " + m_clients[clientFd].getNickname() + " :End of MOTD command\r\n");
             break;
         case Replies::RPL_MOTD: // TODO: DECIDE IF WE WANNA PRINT DATE AFTER EVERY LINE
-            this->m_send(clientFd, ":" + this->m_serverName + " 372 " + m_clients[clientFd].getNickname() + " :- " + message + "\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 372 " + m_clients[clientFd].getNickname() + " :- " + message + "\r\n");
             break;
         case Replies::RPL_NOWAWAY: // TODO: care for message syntax
-            this->m_send(clientFd, ":" + this->m_serverName + " 306 :You have been marked as being away\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 306 :You have been marked as being away\r\n");
             break;
         case Replies::RPL_UNAWAY:  // TODO: care for message syntax
-            this->m_send(clientFd, ":" + this->m_serverName + " 305 :You are no longer marked as being away\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 305 :You are no longer marked as being away\r\n");
             break;
         case Replies::ERR_NOTREGISTERED:  // TODO: care for message syntax
-            this->m_send(clientFd, ":" + this->m_serverName + " 451 :You have not registered\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 451 :You have not registered\r\n");
             break;
         case Replies::ERR_UNKNOWNCOMMAND:
-            this->m_send(clientFd, ":" + this->m_serverName + " 421 :" + message + " :Unknown command\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 421 :" + message + " :Unknown command\r\n");
             break;
         case Replies::RPL_LUSERCLIENT:
-            this->m_send(clientFd, ":" + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_athenticatedUserNum) + " user(s) on the server\r\n"); // TODO: STILL need to add number of services and the number of servers
+            this->m_send(clientFd, ':' + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_athenticatedUserNum) + " user(s) on the server\r\n"); // TODO: STILL need to add number of services and the number of servers
             break;
         case Replies::RPL_LUSERUNKNOWN:
-            this->m_send(clientFd, ":" + this->m_serverName + " 253 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_calculateUnknownConnections()) + " unknown connection(s)\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 253 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_calculateUnknownConnections()) + " unknown connection(s)\r\n");
             break;
         case Replies::RPL_LUSERME:
-            this->m_send(clientFd, ":" + this->m_serverName + " 255 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_calculateKnownConnections()) + " client(s)\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 255 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_calculateKnownConnections()) + " client(s)\r\n");
             break;
         case Replies::RPL_PINGREQUEST:
-            this->m_send(clientFd,":" + this->m_serverName + " PONG " + this->m_serverName + " :" + m_clients[clientFd].getNickname() + "\r\n");
+            this->m_send(clientFd,':' + this->m_serverName + " PONG " + this->m_serverName + " :" + m_clients[clientFd].getNickname() + "\r\n");
             break;
         // the next too need the channel name (to be concidered when refactoring)
         case Replies::ERR_BANNEDFROMCHAN :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 474 <channel name> :Cannot join channel (+b)\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 474 <channel name> :Cannot join channel (+b)\r\n");
             break;
         case Replies::ERR_BADCHANNELKEY :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 475 <channel name> :Cannot join channel (+k)\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 475 <channel name> :Cannot join channel (+k)\r\n");
             break;
              // should change after refactoring
         case Replies::ERR_NOSUCHCHANNEL :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 403 " + message + " :No such channel\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 403 " + message + " :No such channel\r\n");
             break;
         case Replies::ERR_NORECIPIENT :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 411  :No recipient given " + m_clients[clientFd].getMessageQueue().front().getCmd()+ "\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 411  :No recipient given " + m_clients[clientFd].getMessageQueue().front().getCmd()+ "\r\n");
             break;
         case Replies::ERR_NOTEXTTOSEND :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 412 :No text to send\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 412 :No text to send\r\n");
             break;
         case Replies::ERR_NOSUCHNICK :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 401 " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :No such nick/channel\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 401 " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :No such nick/channel\r\n");
             break;
             // needs to change
         case Replies::ERR_TOOMANYTARGETS :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 407 " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :too many recipients.\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 407 " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :too many recipients.\r\n");
             break;
         case Replies::RPL_WHOISUSER:
             this->m_send(clientFd, message + "\r\n");
@@ -1194,7 +1288,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             this->m_send(clientFd, message + "\r\n");
             break;
         case Replies::ERR_NOTONCHANNEL:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_NOTONCHANNEL, this->m_clients[clientFd].getNickname()) + " " + message + " :You're not on that channel\r\n");
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_NOTONCHANNEL, this->m_clients[clientFd].getNickname()) + ' ' + message + " :You're not on that channel\r\n");
             break;
         case Replies::RPL_TOPIC:
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_TOPIC, this->m_clients[clientFd].getNickname()) + ' ' + message + "\r\n");
@@ -1214,20 +1308,23 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
         case Replies::ERR_CHANOPRIVSNEEDED:
             this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " :You're not channel operator\r\n");
             break;
+        case Replies::ERR_WRONGCHANMODESYNTAX:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " USAGE: MODE <channel> *( ( '-' / '+' ) *<modes> *<modeparams> )\r\n");
+            break;
         case Replies::ERR_USERONCHANNEL:
-            this->m_send(clientFd, ":" + this->m_serverName + " 443 <user> <channel> :is already on channel\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 443 <user> <channel> :is already on channel\r\n");
             break;
         case Replies::RPL_NAMREPLY:
-            this->m_send(clientFd, ":" + this->m_serverName + " 353 " + message + "\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 353 " + message + "\r\n");
             break;
         case Replies::RPL_ENDOFNAMES:
-            this->m_send(clientFd, ":" + this->m_serverName + " 366 " + message +" :End of NAMES list\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 366 " + message +" :End of NAMES list\r\n");
             break;
         case Replies::RPL_LIST:
-            this->m_send(clientFd, ":" + this->m_serverName + " 321 " + message + "\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 321 " + message + "\r\n");
             break;
         case Replies::RPL_LISTEND:
-            this->m_send(clientFd, ":" + this->m_serverName + " 323 " + message +" End of LIST\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 323 " + message +" End of LIST\r\n");
             break;
         case Replies::ERR_USERNOTINCHANNEL:
             this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
@@ -1258,6 +1355,9 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             break;
         case Replies::RPL_LUSEROP:
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSEROP, this->m_clients[clientFd].getNickname()) + ' ' + std::to_string(m_numOps) + " :operator(s) online" + END_STRING);
+            break;
+        case Replies::ERR_INTNEEDED:
+            m_send(clientFd,  m_makeReplyHeader(Replies::ERR_INTNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " cannot be interpreted as an integer\r\n");
             break;
     }
 }
@@ -1324,7 +1424,7 @@ void            Server::m_managePoll(void)
 
 void    Server::m_debugAuthentificate(int clientFd)
 {
-    this->m_send(clientFd, ":" + this->m_serverName + " 001 ohachim :Welcome\r\n");
+    this->m_send(clientFd, ':' + this->m_serverName + " 001 ohachim :Welcome\r\n");
     this->m_clients[clientFd].setAuthComplete();
     if (this->m_clients[clientFd].getMessageQueue().empty())
         this->m_clients[clientFd].getMessageQueue().pop_front();
@@ -1529,16 +1629,16 @@ void                    Server::m_quitCmd(Client& client)
                                     + client.getNickname() + ")" + END_STRING;
 
     this->m_send(client.getFd(), messageToSend);
-    std::vector<std::string>::iterator it = client.getChannels().begin();
-    std::vector<std::string>::iterator end = client.getChannels().end();
-    while (it != end)
-    {
-        m_privMsgCmd_noticeCmd(client, false, Message("NOTICE " + *it + " : PART " + client.getNickname() + " " + client.getMessageQueue().front().getLiteralMsg().erase(0, 1)));
-        m_channels[*it].removeMember(client.getFd());
-        m_channels[*it].removeOp(client.getFd());
-        m_channels[*it].removeInvited(client.getFd());
-        it++;
-    }
+    // std::vector<std::string>::iterator it = client.getChannels().begin();
+    // std::vector<std::string>::iterator end = client.getChannels().end();
+    // while (it != end)
+    // {
+    //     m_privMsgCmd_noticeCmd(client, false, Message("NOTICE " + *it + " : PART " + client.getNickname() + ' ' + client.getMessageQueue().front().getLiteralMsg().erase(0, 1)));
+    //     m_channels[*it].removeMember(client.getFd());
+    //     m_channels[*it].removeOp(client.getFd());
+    //     m_channels[*it].removeInvited(client.getFd());
+    //     it++;
+    // }
     // should I cut the connection
     // stop listening to incoming events
     this->m_eraseClientPoll(client.getFd());
@@ -1617,6 +1717,7 @@ void                    Server::m_addChannel(int clientFd, std::string channelNa
 
 void                    Server::m_joinCmd(Client & client)
 {
+    return ;
     std::vector<std::string>    chans;
     std::vector<std::string>    passes;
     Message& msg = client.getMessageQueue().front();
@@ -1635,9 +1736,9 @@ void                    Server::m_joinCmd(Client & client)
         if (it_passes == end_passes)
             passProtected = false;
         if (m_channelExists(*it_chan))
-            m_addClientToChan(client.getFd(), *it_chan, *it_passes, passProtected);
+            m_addClientToChan(client.getFd(), *it_chan, (passProtected) ? *it_passes : "", passProtected);
         else
-            m_addChannel(client.getFd(), *it_chan, *it_passes, passProtected);
+            m_addChannel(client.getFd(), *it_chan, (passProtected) ? *it_passes : "", passProtected);
     }
 }
 
@@ -1692,7 +1793,7 @@ void                        Server::m_partCmd(Client &client)
         m_channels[*it_chan].removeOp(client.getFd());
         client.partChannel(*it_chan);
         // this might be wrong its just a guess
-        m_privMsgCmd_noticeCmd(client, false, Message("PART " + *it_chan + " " + client.getNickname()));
+        m_privMsgCmd_noticeCmd(client, false, Message("PART " + *it_chan + ' ' + client.getNickname()));
         
         it_chan++;
     }
@@ -1728,7 +1829,7 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client, bool noti
         std::vector<int>::iterator end = members.end();
         while (it != end)
         {
-            m_send(*it, ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
+            m_send(*it, ':' + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + ' ' + msg.getMsg());
             it++;
         }
     }
@@ -1742,7 +1843,7 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client, bool noti
             return ;
         }
         int clientFd = m_nicknames[target];
-        m_send(m_nicknames[target], ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
+        m_send(m_nicknames[target], ':' + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + ' ' + msg.getMsg());
     }
 }
 
@@ -1761,7 +1862,7 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client, bool noti
         std::vector<int>::iterator end = members.end();
         while (it != end)
         {
-            m_send(*it, ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
+            m_send(*it, ':' + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + ' ' + msg.getMsg());
             it++;
         }
     }
@@ -1769,7 +1870,7 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client, bool noti
     {
         std::map<std::string, int>::iterator it_user = m_nicknames.find(target);
         int clientFd = m_nicknames[target];
-        m_send(m_nicknames[target], ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
+        m_send(m_nicknames[target], ':' + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + ' ' + msg.getMsg());
     }
 }
 

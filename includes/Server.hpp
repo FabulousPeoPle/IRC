@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/21 20:50:04 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/22 17:56:10 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -131,6 +131,8 @@ namespace Replies
         RPL_ENDOFEXCEPTLIST = 349,
         RPL_ENDOFBANLIST = 368,
         RPL_ENDOFINVITELIST = 347,
+        ERR_INTNEEDED = 666,
+        ERR_WRONGCHANMODESYNTAX = 888,
         /********************/
         
 
@@ -269,6 +271,8 @@ class Server {
         void                            m_reply(int clientFd, int replyCode, int extraArg, std::string message);
         void                            m_setCommandFuncs(void);
 
+        bool                            m_isModesSyntaxValid(std::vector<std::string> arguments);
+
         bool                            m_checkNickSyntax(Message& message);
         void                            m_eraseClientPoll(int clientFd);
 
@@ -287,7 +291,7 @@ class Server {
         void                            m_topicCmd(Client& client);
         void                            m_operCmd(Client& client);
         void                            m_whoCmd(Client& client);
-
+        
         void                            m_listVisibleUsers(Client& client, bool onlyOps);
         void                            m_listChannelUsers(Client& client, std::string arguments, bool onlyOps);
 
@@ -306,13 +310,14 @@ class Server {
 
         std::vector<std::string>        m_extractTLDs(std::vector<std::string>& arguments, int start);
 
-        int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex); // turn arguments into references?
+        int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments); // turn arguments into references?
         std::vector<std::string>        m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex);
 
         void                            m_findNextMask(std::vector<std::string> arguments, int& paramToUseIndex);
 
         std::string                     m_getTLD(std::string mask);
 
+        bool                            m_areModesMasks(std::string modes);
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
         bool                            m_isChannelPrefix(char c) const;
         bool                            m_isUser(Client& client) const;

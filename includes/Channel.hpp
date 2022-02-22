@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/21 20:14:45 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/22 17:28:08 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -130,8 +130,8 @@ public:
     void        			turnOnMode(int modeNum);
     void        			turnOffMode(int modeNum);
 
-	void					manageAttribute(char mode, char prefix,
-								std::vector<std::string> arguments, int& paramToUseIndex);
+	int						manageAttribute(char mode, char prefix,
+								std::vector<std::string> arguments);
 	void					manageSimpleMode(char mode, char prefix);
 
 	static std::uint16_t	modeBitMasks[NUM_MODES_CHANNEL];
