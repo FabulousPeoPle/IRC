@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/19 16:52:42 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/22 18:39:31 by melalj           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -672,7 +672,8 @@ void                Server::m_relay(int clientFd)
         // TODO: replace with switch case
         // TODO: a map that has command function as values and the string command as key
         std::string command = message.getCmd();
-
+		
+		std::cout << "cmd " << command << std::endl;
         if (command == USERHOST_COMMAND)
             this->m_userhostCmd(m_clients[clientFd]);
         else if (command == USER_COMMAND)
@@ -746,6 +747,8 @@ void                Server::m_manageClientEvent(int pollIndex)
                 std::cout << "client not authenticated" << std::endl;
                 #endif
                 this->m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
+            	if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
+                	this->m_relay(this->m_pfds[pollIndex].fd);
             }
         }
     }
