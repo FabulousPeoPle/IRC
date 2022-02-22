@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+         #
+#    By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2021/10/05 12:47:22 by ohachim           #+#    #+#              #
-#    Updated: 2022/01/13 22:01:28 by ohachim          ###   ########.fr        #
+#    Updated: 2022/02/19 15:55:25 by azouiten         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@ CC = clang++
 
 SRC_PATH = sources
 
-SRC_NAME = main.cpp Server.cpp Client.cpp Message.cpp ServerGetters.cpp strToken.cpp
+SRC_NAME = main.cpp Server.cpp Client.cpp Message.cpp ServerGetters.cpp strToken.cpp Channel.cpp
 
 OBJ_PATH = obj
 
@@ -24,11 +24,11 @@ OBJ = $(addprefix $(OBJ_PATH)/, $(OBJ_NAME))
 
 INC = includes
 
-HEADER_NAME =
+HEADER_NAME = Client.hpp Message.hpp Server.hpp Channel.hpp
 
 HEADER = $(addprefix $(INC)/, $(HEADER_NAME))
 
-CFLAGS = # -Wall -Wextra -Werror
+# CFLAGS =  -Wall -Wextra -Werror
 
 TARGET = irc_server
 
@@ -41,8 +41,11 @@ $(OBJ_PATH)/%.o: $(SRC_PATH)/%.cpp $(HEADER)
 	@mkdir $(OBJ_PATH) 2> /dev/null || true
 	$(CC) $(CFLAGS) -I $(INC) -o $@ -c $<
 
+bot:
+	g++ sources/bot.cpp -o bot
 clean:
 	@rm -vf $(OBJ)
+	@rm -vf bot
 	@rmdir $(OBJ_PATH) 2> /dev/null || true
 
 fclean: clean

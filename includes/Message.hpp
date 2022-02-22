@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/12 17:09:53 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/16 13:16:01 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,26 +27,47 @@ typedef std::deque<std::string> t_strDQeue;
 
 class Message
 {
-public:
+private:
     t_strDQeue  _messageQueue;
     std::string message;
-    Client      *_client;
-    // bool        _completed;
     std::string command;
     std::string _literalMsg;
     std::vector<std::string> arguments;
-    // client class is still under construction
+
+public:
     
     Message(void);
     Message(Message const & src);
     Message(std::string message) {this->message = message;};
-    Message(std::string message, Client & client);
     ~Message(void);
 
-    Message & operator=(Message const & rhs);
-    void parse(void);
+    ///////////////
+    /// GETTERS ///
+    ///////////////
+    t_strDQeue  &getMsgQueue(void);
+    std::string getMsg(void) const;
+    std::string getCmd(void) const;
+    std::string getLiteralMsg(void) const;
+    std::vector<std::string>    &getArgs(void);
+    
+    ///////////////
+    /// SETTERS ///
+    ///////////////
+    void        pushMsgInQueue(std::string message);
+    void        popMsgFromQueue(std::string message);
+    void        setMsg(std::string message);
+
+    ///////////////
+    /// METHODS ///
+    ///////////////
+    void    parse(void);
     void    m_trim(char *str);
-    int  checkCommand(char *token);
+    int     checkCommand(char *token);
+
+    /////////////////
+    /// OPERATORS ///
+    /////////////////
+    Message & operator=(Message const & rhs);
 };
 
 

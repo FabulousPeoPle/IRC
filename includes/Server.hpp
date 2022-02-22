@@ -3,19 +3,19 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/13 21:50:02 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/21 19:27:16 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
 
 #include <sstream>
 #include <fstream>
+#include <iomanip>
 #include <cstdint>
 #include <string>
 #include <iostream>
@@ -38,6 +38,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <Channel.hpp>
 
 #define DEFAULT_HOSTNAME NULL
 #define DEFAULT_PORT "6667"
@@ -58,7 +59,15 @@ namespace Replies
 {
     enum
     {
+
+        /******-AUTHENTIFICATION-*******/
         RPL_WELCOME = 1,
+        RPL_YOURHOST = 2,
+        RPL_CREATED = 3,
+        RPL_MYINFO = 4,
+        RPL_BOUNCE = 5,
+        /*******************************/
+
         ERR_NICKNAMEINUSE = 433,
         ERR_ERRONEUSNICKNAME = 423,
         RPL_USERHOST = 302,
@@ -71,20 +80,81 @@ namespace Replies
         RPL_MOTD = 372,
         RPL_ENDOFMOTD = 376,
         ERR_NOMOTD = 422,
+        RPL_NOWAWAY = 306,
+        RPL_UNAWAY = 305,
+        ERR_NOTREGISTERED = 541,
+        ERR_UNKNOWNCOMMAND = 421,
+        RPL_LUSERCLIENT = 251,
+        RPL_LUSEROP = 252,
+        RPL_LUSERUNKNOWN = 253,
+        RPL_LUSERCHANNELS = 254,
+        RPL_LUSERME = 255,
+        RPL_PINGREQUEST = 800,
+        //ERR_NOSUCHSERVER
+        ERR_BANNEDFROMCHAN = 474,
+        ERR_BADCHANNELKEY = 457,
+        ERR_NOSUCHCHANNEL = 403,
+        ERR_NORECIPIENT = 411,
+        ERR_NOTEXTTOSEND = 412,
+        ERR_TOOMANYTARGETS = 407,
+        /******-WHOIS-*******/
+        RPL_WHOISUSER = 311,
+        RPL_WHOISSERVER = 312,
+        RPL_ENDOFWHOIS = 318,
+        ERR_NOSUCHNICK = 401,
+        /********************/
+
+        /******-TOPIC-*******/
+        ERR_NOTONCHANNEL = 442,
+        RPL_NOTOPIC = 331,
+        RPL_TOPIC = 332,
+        /********************/
+
+        /******-OPER-********/
+        RPL_YOUREOPER = 381,
+        ERR_NOOPERHOST = 491,
+        ERR_PASSWDMISMATCH = 464,
+        /********************/
+
+        /****-MODE_CHANNEL-**/
+        RPL_CHANNELMODEIS = 324,
+        ERR_CHANOPRIVSNEEDED = 482,
+        /********************/
+        
+        ERR_USERONCHANNEL = 443,
+        RPL_NAMREPLY = 353,
+        RPL_ENDOFNAMES = 366,
+        RPL_LIST = 321,
+        RPL_LISTEND = 323,
+        ERR_NONICKNAMEGIVEN = 431,
+        ERR_INVITEONLYCHAN = 473,
+        ERR_CANNOTSENDTOCHAN = 404,
     };
 };
 
+#define USER_COMMAND        "USER"
+#define NICK_COMMAND        "NICK"
+#define PASS_COMMAND        "PASS"
+#define USERHOST_COMMAND    "USERHOST"
+#define QUIT_COMMAND        "QUIT"
+#define ISON_COMMAND        "ISON"
+#define MODE_COMMAND        "MODE"
+#define PONG_COMMAND        "PONG" // yeet
+#define PING_COMMAND        "PING" // yeet
+#define MOTD_COMMAND        "MOTD"
+#define AWAY_COMMAND        "AWAY"
+#define LUSERS_COMMAND      "LUSERS"
+#define WHOIS_COMMAND       "WHOIS"
+#define JOIN_COMMAND        "JOIN"
+#define PART_COMMAND        "PART"
+#define NOTICE_COMMAND      "NOTICE"
+#define PRIVMSG_COMMAND     "PRIVMSG"
+#define OPER_COMMAND        "OPER"
+#define TOPIC_COMMAND       "TOPIC"
+#define NAMES_COMMAND       "NAMES"
+#define LIST_COMMAND        "LIST"
 
-#define USER_COMMAND "USER"
-#define NICK_COMMAND "NICK"
-#define PASS_COMMAND "PASS"
-#define USERHOST_COMMAND "USERHOST"
-#define QUIT_COMMAND "QUIT"
-#define ISON_COMMAND "ISON"
-#define MODE_COMMAND "MODE"
-#define PONG_COMMAND "PONG"
-#define PING_COMMAND "PING"
-#define MOTD_COMMAND "MOTD"
+#define NUM_COMMANDS 20
 
 #define MOTD_LENGTH_LINE 80
 
@@ -100,6 +170,7 @@ std::string strToken(std::string str);
 
 class Client;
 class Message;
+class Channel;
 class Server;
 // Add this one to client class.
 typedef struct      s_m_socketInfo 
@@ -119,9 +190,10 @@ class Server {
         // typedef void (*commandFunc)(Client&);
                                     // constructors are probably going to be useless
                                         Server(void);
-                                        Server(std::string port, std::string hostname, std::string serverName);
+                                        Server(std::string port, std::string hostname, std::string serverName, int maxClients);
                                         Server(const Server& serverRef);
                                         ~Server();
+                                        
         Server&                         operator=(const Server& serverRef);
 
         std::string                     getPort(void) const;
@@ -132,9 +204,13 @@ class Server {
         t_sockaddr_in6                  getAddr_in6(void) const;
         t_sockaddr_in                   getAddr_in(void) const;
 
+
+        std::string                     convertToHostname(t_sockaddr_storage& remoteAddr, int sock_fd);
+
         //  Might wanna set protection for multiple IP adresses
 
         std::string                     getServName(void) const;
+
         int                             setServerInfo(void);
         void                            setServerHints(int family, int sockType, int flags);
 
@@ -144,6 +220,7 @@ class Server {
         int                             setSockfd_in(void);
         int                             setSockfd_in6(void);
 
+        void                            setOperPassword(std::string password); // server password is bo7do
 
         int                             listen(void);
 
@@ -152,7 +229,6 @@ class Server {
     private:
 
         bool                            m_isAuthenticated(int clientFd);
-
         void                            m_managePoll(void);
         int                             m_manageServerEvent(void);
         void                            m_manageClientEvent(int pollIndex);
@@ -183,40 +259,111 @@ class Server {
         bool                            m_checkNickSyntax(Message& message);
         void                            m_eraseClientPoll(int clientFd);
 
-        void                            m_quitCmd(int clientFd, std::string quitMessage);
+        void                            m_quitCmd(int clientFd, std::string quitMessage); // Needs a recheck
         // Need to know more about channel class
-        // void                            m_join(int channelNum);
         void                            m_modeCmd(Client& client);
         void                            m_motdCmd(Client& client);
-        void                            m_pingCmd(Client& client){}; // TODO: Need to test with BITCHX
-        void                            m_pongCmd(Client& client){};
+        void                            m_awayCmd(Client& client);
+        void                            m_pingCmd(Client& client); // TODO: Need to test with BITCHX
+        void                            m_pongCmd(Client& client);
+        void                            m_lusersCmd(Client& client);
+        void                            m_whoisCmd(Client& client);
+        void                            m_topicCmd(Client& client);
+        void                            m_operCmd(Client& client);
 
 
-        std::string                     m_composeMotd(std::ifstream& motdFile);
+        void                            m_channelModeCmd(Client& client, Message& message);
+        void                            m_userModeCmd(Client& client, Message& message);
 
+        std::string                     m_makeReplyHeader(int replyNum, std::string nickname);
 
+        std::string                     m_composeMotd(std::ifstream& motdFile, std::string clientNick);
+        std::string                     m_composeWhoisQuery(Client& QueryClient, std::string clientNickname, int replyCode);
+        std::string                     m_composeRplTopic(Channel& channel);
+        std::string                     m_composeChannelModes(std::string channelName);
+        std::string                     m_composeNames(std::string channelName);
+        std::string                     m_composeList(std::string channelName);
+
+        std::vector<std::string>        m_extractTLDs(std::vector<std::string>& arguments, int start);
+
+        bool                            m_isValidCommand(std::string potentialCommand); // should be const
+        bool                            m_isChannelPrefix(char c) const;
+        bool                            m_isUser(Client& client) const;
+        bool                            m_isMaskUserMatch(std::string nickname, std::string TLD);
+        bool                            m_isUserSpecificChannelMode(char c) const;
+        bool                            m_isAttributeSetter(char c) const;
+        bool                            m_isSimpleChannelMode(char c) const;
+        bool                            m_isClientOper(Client& client, std::string channelName) const; // make variable const
+
+        std::vector<std::string>        m_getClientsToMode(std::vector<std::string> arguments);
+
+        int                             m_calculateOperators(void);
+        int                             m_calculateUnknownConnections(void);
+        int                             m_calculateKnownConnections(void);
+
+        
+        void                            m_joinCmd(Client & client);
+        bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes);
+        bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans);
+        bool                            m_channelExists(std::string);
+        void                            m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected);
+        void                            m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected);
+
+        void                            m_partCmd(Client & client);
+        void                            m_partZero(Client & client);
+
+        void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs);
+        void                            m_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
+
+        void                            m_kickCmd(Client & client);
+        
+        void                            m_inviteCmd(Client & client);
+        
+        void                            m_namesCmd_listCmd(Client & client, std::string cmd);
+        void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
+        void                            m_passCmd(Client &client);
+
+        std::string                     m_getTLD(std::string mask);
+        bool                            m_isMask(std::string mask);
+        bool                            m_isMaskMatch(std::string str, std::string mask);
+        std::vector<int>                m_grabClientsWithMask(std::string mask);
+    
         const std::string               m_serverName;
         const std::string               m_port;
-        // Maybe this is usless since we are always going to connect to the same thing
         const std::string               m_hostname;
+        const std::string               m_version;
+        const int                       m_maxClients;
         t_addrinfo*                     m_servinfo;
         t_addrinfo                      m_hints;
-        // in case we wanted to do it manually
+        int                             m_athenticatedUserNum;
+        // in case we wanted to do it manually // kinda useless now
         t_sockaddr_in                   m_addr_in;
         t_sockaddr_in6                  m_addr_in6;
-        
         int                             m_sockfd;
         // this might be totally usless
         t_socketInfo                    m_socketInfo;
 
         int                             m_poll_count;
         std::vector<t_pollfd>           m_pfds;
-
+        std::string                     m_operPassword;
+        ////////////////////////////////////////////////////
+        /// int : client fd , Client : the client object ///
+        ////////////////////////////////////////////////////
         std::map<int, Client>           m_clients;
         
-        // the key is the nickname itself and the value is the clientfd
+        ///////////////////////////////////////////////////////
+        /// std::string : client nickname , int : client fd ///
+        ///////////////////////////////////////////////////////
         std::map<std::string, int>      m_nicknames;
 
+        static std::string              m_possibleCommands[NUM_COMMANDS];
+    
+        /////////////////////////////////////////////////////////////////
+        /// std::string : channel name , Channel : the channel object ///
+        /////////////////////////////////////////////////////////////////
+        std::map<std::string, Channel>  m_channels;
+        bool                            m_passProtected;
+        std::string                     m_password;
 };
 
 #endif

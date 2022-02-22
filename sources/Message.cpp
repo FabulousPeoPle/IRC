@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/11 16:35:51 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/16 13:10:31 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,12 +21,6 @@ Message::Message(Message const & src): _literalMsg("")
         *this = src;
 }
 
-Message::Message(std::string message, Client & client) : _client(&client), _literalMsg("")
-{
-    this->message = message;
-    // should i call the parse function in here? is that a good thing to do?
-}
-
 Message & Message::operator=(Message const & rhs)
 {
     // discuss norm to remove one of these
@@ -34,6 +28,57 @@ Message & Message::operator=(Message const & rhs)
     command = rhs.command;
     arguments = rhs.arguments;
     return (*this);
+}
+
+t_strDQeue  &Message::getMsgQueue(void)
+{
+    return (_messageQueue);
+}
+
+std::string Message::getMsg(void) const
+{
+    return (message);
+}
+
+std::string Message::getCmd(void) const
+{
+    return (command);
+}
+
+std::string Message::getLiteralMsg(void) const
+{
+    return (_literalMsg);
+}
+
+std::vector<std::string>    &Message::getArgs(void)
+{
+    return (arguments);
+}
+
+void    Message::pushMsgInQueue(std::string message)
+{
+    _messageQueue.push_back(message);
+}
+
+void    Message::popMsgFromQueue(std::string message)
+{
+    t_strDQeue::iterator it = _messageQueue.begin();
+	t_strDQeue::iterator end = _messageQueue.end();
+
+	while (it != end)
+	{
+		if (*it == message)
+		{
+			_messageQueue.erase(it);
+			break ;
+		}
+		it++;
+	}
+}
+
+void    Message::setMsg(std::string message)
+{
+    this->message = message;
 }
 
 int  Message::checkCommand(char *token)
@@ -56,7 +101,7 @@ void Message::m_trim(char *str)
         end[0] = '\0';
 }
 
-// needs a quick redo
+// needs a quick redo // maybe not
 void Message::parse(void)
 {
     char *token = NULL;
