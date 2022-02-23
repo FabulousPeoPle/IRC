@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/23 14:59:43 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 19:24:31 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,7 @@ public:
 	std::vector<int> 			&getMembers(void);
 	std::vector<int> 			&getInvited(void);
 	int			 				getType(void) const;
-	std::string&					getTopic(void);
+	std::string&				getTopic(void);
 	
 	void						setTopic(std::string topic);
 	void						setMode(int mode);

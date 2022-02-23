@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/23 16:47:56 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 17:22:08 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1199,7 +1199,7 @@ void    Server::m_reply(int clientFd, int replyCode, int extraArg, std::string m
             this->m_send(clientFd, ':' + this->m_serverName + " 004 " + m_clients[clientFd].getNickname() + " :" + this->m_serverName + ' ' + this->m_version + ' ' + "ao" + ' ' + "mtov\r\n");
             break;
         case Replies::RPL_BOUNCE:
-            this->m_send(clientFd, ':' + this->m_serverName + " 005 " + m_clients[clientFd].getNickname() + " :Try server 'DS9.GeekShed.net', port '6667'\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 005 " + m_clients[clientFd].getNickname() + " :Sir t9awed hna 'DS9.GeekShed.net', port '6667'\r\n");
             break;
         case Replies::RPL_USERHOST : // causes BitchX segmentation fault
             this->m_send(clientFd, ':' + this->m_serverName + " 302 " + m_clients[clientFd].getNickname() + " :"\

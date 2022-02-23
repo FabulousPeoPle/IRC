@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:54 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/22 12:44:19 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 17:18:27 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     
     (void)argc;
     (void)argv;
-    Server myServer("6667", "", "FabulousPP", 150);
+    Server myServer("6667", "", "FabulousPP", 1);
 
     myServer.initializeCmdFuncs();
     myServer.setOperPassword("meh");
