@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/22 15:09:39 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/23 19:03:03 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -272,7 +272,18 @@ class Server {
         void                            m_topicCmd(Client& client);
         void                            m_operCmd(Client& client);
 
-
+        template <typename T>
+        void    printVector(T &vector, std::string name)
+        {
+            typename T::iterator it = vector.begin();
+            typename T::iterator end = vector.end();
+            std::cout << "printing vector " << name << std::endl;
+            while (it != end)
+            {
+                std::cout << "|" << *it << "|" << std::endl;
+                it++;
+            }
+        }
         void                            m_channelModeCmd(Client& client, Message& message);
         void                            m_userModeCmd(Client& client, Message& message);
 

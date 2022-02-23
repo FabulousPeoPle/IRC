@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/22 17:40:08 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/23 17:46:29 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -123,6 +123,19 @@ public:
 
 	static std::uint16_t	modeBitMasks[NUM_MODES_CHANNEL];
 	static std::string		potentialModes;
+
+	template <typename T>
+        void    printVector(T &vector)
+        {
+            typename T::iterator it = vector.begin();
+            typename T::iterator end = vector.end();
+            std::cout << "printing vector\n";
+            while (it != end)
+            {
+                std::cout << "|" << *it << "|" << std::endl;
+                it++;
+            }
+        }
 };
 
 #endif

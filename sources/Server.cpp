@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/22 18:05:49 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/23 19:23:32 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1394,6 +1394,7 @@ void                    Server::m_addChannel(int clientFd, std::string channelNa
     m_clients[clientFd].pushChannel(channelName, OWNER_MODES);
     m_clients[clientFd].turnOnMode(ChannelModes::O_Creator, channelName);
     m_clients[clientFd].turnOnMode(ChannelModes::o_OperatorPrivilege, channelName);
+    newChannel.getMembers();
     m_privMsgCmd_noticeCmd(m_clients[clientFd], Message(": " + channelName + " channel has been created by " + m_clients[clientFd].getNickname()), channelName);
 }
 
@@ -1541,11 +1542,9 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client, bool noti
     std::string target = msg.getArgs().front();
     if (target.at(0) == LOCAL_CHAN || target.at(0) == NETWORKWIDE_CHAN)
     {
-        std::cout << "section 0\n";
         std::map<std::string, Channel>::iterator it_chan = m_channels.find(target);
         if (it_chan == m_channels.end() && !m_isMask(target.erase(0, 1)))
         {
-            std::cout << "layer 0\n";
             if (notifs)
                 m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, "");
             return ;
@@ -1553,23 +1552,20 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client, bool noti
         else if ((it_chan != m_channels.end() && m_channels[target].getModeValue(ChannelModes::n_noOutsideMessage) && !m_channels[target].isMember(client.getFd() && !client.getModeValue(UserModes::oper)))
          || (it_chan != m_channels.end() && m_channels[target].getModeValue(ChannelModes::m_moderated) && !client.getModeValue(ChannelModes::v_voicePrivilege) && !m_channels[target].isOp(client.getFd()) && !client.getModeValue(UserModes::oper)))
         {
-            std::cout << "layer 1\n";
             m_reply(client.getFd(), Replies::ERR_CANNOTSENDTOCHAN, target);
             return ;
         }
         else if (it_chan != m_channels.end() && it_chan->second.getModeValue(ChannelModes::a_annonymous))
             isAnonymous = true;
-        std::cout << "section 1\n";
-        std::vector<int> members;
-        if (m_isMask(target.erase(0, 1)))
-            std::vector<int> members = m_grabClientsWithMask(target.erase(0, 1));
-        else
-            std::vector<int> &members = m_channels[target].getMembers();
+        std::vector<int> mem;
+        std::string mask = target;
+        if (m_isMask(mask.erase(0, 1)))
+            mem = m_grabClientsWithMask(mask.erase(0, 1));
+        std::vector<int> &members = (m_isMask(mask.erase(0, 1))) ? mem : m_channels[target].getMembers();
         std::vector<int>::iterator it = members.begin();
         std::vector<int>::iterator end = members.end();
         while (it != end)
         {
-            std::cout << "sending\n";
             if (isAnonymous)
                 m_send(*it, ":anonymous!anonymous@anonymous " + msg.getMsg());
             else
@@ -1628,19 +1624,25 @@ void            Server::m_kickCmd(Client &client)
         return ;
     }
     std::vector<std::string>::iterator it_chan = chans.begin();
-    std::vector<std::string>::iterator end_chan = chans.begin();
+    std::vector<std::string>::iterator end_chan = chans.end();
     std::vector<std::string>::iterator it_nick = nicks.begin();
-    std::vector<std::string>::iterator end_nick = nicks.begin();
+    std::vector<std::string>::iterator end_nick = nicks.end();
+    printVector(chans, "channels");
+    printVector(nicks, "nicks");
+    std::cout << "sector 0\n";
     if (chans.size() == 1)
     {
+        std::cout << "sector 1\n";
         if (m_channels[*it_chan].isOp(client.getFd()))
         {
+            std::cout << "sector 2\n";
             while (it_nick != end_nick)
             {
+                std::cout << "kicking\n";
                 m_channels[*it_chan].removeMember(m_nicknames[*it_nick]);
                 m_channels[*it_chan].removeOp(m_nicknames[*it_nick]);
                 m_clients[m_nicknames[*it_nick]].popChannel(*it_chan);
-                m_privMsgCmd_noticeCmd(client, Message("KICK :" + client.getNickname()), *it_nick);
+                m_privMsgCmd_noticeCmd(client, Message("KICK : " + client.getNickname()), *it_nick);
                 it_nick++;
             }
         }
