@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/23 14:59:11 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 16:47:56 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,6 +147,7 @@ int             Server::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, s
         perror("bind");
         return (-2);
     }
+    fcntl(this->m_sockfd, F_SETFL, O_NONBLOCK);
     return (0);
 }
 
@@ -276,6 +277,7 @@ int            Server::m_manageServerEvent(void)
     }
     if (this->m_clients.size() < this->m_maxClients)
     {
+        fcntl(newFd, F_SETFL, O_NONBLOCK);
         this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
         this->m_clients[newFd].setHostname(this->convertToHostname(remoteAddr, newFd));
         this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
@@ -1066,10 +1068,12 @@ void                Server::m_manageClientEvent(int pollIndex)
             std::cout << "Client disconnected.\n";
         else
             perror("recv: ");
-        this->m_nicknames.erase(m_clients[this->m_pfds[pollIndex].fd].getNickname());
+
+        int    badFd = this->m_pfds[pollIndex].fd;
+        this->m_nicknames.erase(m_clients[badFd].getNickname());
+        m_clients.erase(badFd);
         this->m_pfds.erase(this->m_pfds.begin() + pollIndex);
-        m_clients.erase(this->m_pfds[pollIndex].fd);
-        close(this->m_pfds[pollIndex].fd);
+        close(badFd);
     }
     else
     {
@@ -1426,7 +1430,7 @@ void            Server::m_managePoll(void)
 
             } // if client socket
             else
-                this->m_manageClientEvent(i); 
+                this->m_manageClientEvent(i);
             this->m_poll_count--;
         }
         i++;
@@ -1634,22 +1638,21 @@ void    Server::m_userCmd(Client & client)
 // TODO: QUIT FROM CHANNELS
 void                    Server::m_quitCmd(Client& client) 
 {
-
     std::string messageToSend = "ERROR: Closing Link: " + client.getUsername() + "(" 
                                 + client.getMessageQueue().front().getLiteralMsg().erase(0, 1) + ") " + client.getHostname() + " (Quit: "
                                     + client.getNickname() + ")" + END_STRING;
 
     this->m_send(client.getFd(), messageToSend);
-    // std::vector<std::string>::iterator it = client.getChannels().begin();
-    // std::vector<std::string>::iterator end = client.getChannels().end();
-    // while (it != end)
-    // {
-    //     m_privMsgCmd_noticeCmd(client, false, Message("NOTICE " + *it + " : PART " + client.getNickname() + ' ' + client.getMessageQueue().front().getLiteralMsg().erase(0, 1)));
-    //     m_channels[*it].removeMember(client.getFd());
-    //     m_channels[*it].removeOp(client.getFd());
-    //     m_channels[*it].removeInvited(client.getFd());
-    //     it++;
-    // }
+    std::vector<std::string>::iterator it = client.getChannels().begin();
+    std::vector<std::string>::iterator end = client.getChannels().end();
+    while (it != end)
+    {
+        m_privMsgCmd_noticeCmd(client, false, Message("NOTICE " + *it + " : PART " + client.getNickname() + ' ' + client.getMessageQueue().front().getLiteralMsg().erase(0, 1)));
+        m_channels[*it].removeMember(client.getFd());
+        m_channels[*it].removeOp(client.getFd());
+        m_channels[*it].removeInvited(client.getFd());
+        it++;
+    }
     // should I cut the connection
     // stop listening to incoming events
     this->m_eraseClientPoll(client.getFd());
