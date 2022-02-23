@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/21 17:13:01 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 19:27:55 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #include "Client.hpp"
 
@@ -96,6 +97,11 @@ bool		Client::isUserAuth(void) const
 	return(_userAuth);
 }
 
+bool		Client::isPassAuth(void) const
+{
+	return(_passAuth);
+}
+
 bool		Client::isServerOp(void) const
 {
 	return(_isServerOp);
@@ -164,6 +170,11 @@ void	Client::setAwayMsg(std::string awayMessage)
 void	Client::setNickAuth()
 {
 	_nickAuth = true;
+}
+
+void	Client::setPassAuth()
+{
+	_passAuth = true;
 }
 
 void	Client::setUserAuth()
@@ -237,7 +248,10 @@ void		Client::partChannel(std::string name)
 	while (it != end)
 	{
 		if (*it == name)
+		{
 			_channels.erase(it);
+			break ;
+		}
 		it++;
 	}
 }

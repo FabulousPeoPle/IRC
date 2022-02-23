@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/23 19:24:31 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 19:26:59 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 
@@ -65,7 +66,6 @@ private:
 	int							m_type; // the scope of the channel local/networkwide
 	std::vector<int>			m_operators; // this vector stores the clientfds of the ops
 	std::string					m_topic;
-	std::vector<int>			m_banned; // probably useless
 	std::vector<int>			m_members;
 	std::vector<int>			m_invited;
 	std::uint16_t               modes; // need to give em default modes
@@ -109,33 +109,49 @@ public:
 	void						setPassword(std::string password);
 	void						setCreatorNick(std::string nickname);
 	
-	bool						isOp(int clientFd) const;
-	bool						checkPassword(std::string password);
-	void						addMember(int clientFd);
-	void						addInvited(int clientFd);
-	void						removeMember(int clientFd);
-	void						removeOp(int clientFd);
-	void						removeInvited(int clientFd);
-	void						addOp(int clientFd);
-	bool						isBanned(int clientFd) const;
-	bool						isMember(int clientFd) const;
-	bool						isInvited(int clientFd) const;
-	// std::string				m_composeMask(Client & client) const;
-	void						Ban(int clinetFd);
+	bool				isOp(int clientFd) const;
+	bool				checkPassword(std::string password);
+	void				addMember(int clientFd);
+	void				addInvited(int clientFd);
+	void				removeMember(int clientFd);
+	void				removeOp(int clientFd);
+	void				removeInvited(int clientFd);
+	void				addOp(int clientFd);
+	bool				isBanned(Client &client) const;
+	bool				isMember(int clientFd) const;
+	bool				isInvited(int clientFd) const;
+	// std::string			m_composeMask(Client & client) const;
 
-	bool        				getModeValue(int modeNum) const;
+	bool        			getModeValue(int modeNum) const;
 
-	int 	    				findMode(char mode) const;
-
-    void        				turnOnMode(int modeNum);
-    void        				turnOffMode(int modeNum);
+	int 	    			findMode(char c) const;
 
 	int							manageAttribute(char mode, char prefix,
 								std::vector<std::string> arguments);
 	void						manageSimpleMode(char mode, char prefix);
+    void        			turnOnMode(int modeNum);
+    void        			turnOffMode(int modeNum);
+	bool            		m_isMaskUserMatch(std::string hostname, std::string TLD) const // maybe it should be a friend function
+		{
+		    hostname = hostname.erase(0, hostname.size() - TLD.size());
+		    return (hostname == TLD || TLD.empty());
+		}
 
-	static std::uint16_t		modeBitMasks[NUM_MODES_CHANNEL];
-	static std::string			potentialModes;
+	static std::uint16_t	modeBitMasks[NUM_MODES_CHANNEL];
+	static std::string		potentialModes;
+
+	template <typename T>
+        void    printVector(T &vector)
+        {
+            typename T::iterator it = vector.begin();
+            typename T::iterator end = vector.end();
+            std::cout << "printing vector\n";
+            while (it != end)
+            {
+                std::cout << "|" << *it << "|" << std::endl;
+                it++;
+            }
+        }
 };
 
 #endif

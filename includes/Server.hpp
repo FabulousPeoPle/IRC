@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/22 17:56:10 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 20:17:36 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
@@ -141,6 +142,9 @@ namespace Replies
         RPL_ENDOFNAMES = 366,
         RPL_LIST = 321,
         RPL_LISTEND = 323,
+        ERR_NONICKNAMEGIVEN = 431,
+        ERR_INVITEONLYCHAN = 473,
+        ERR_CANNOTSENDTOCHAN = 404,
     };
 };
 
@@ -159,6 +163,7 @@ namespace Replies
 #define WHOIS_COMMAND       "WHOIS"
 #define JOIN_COMMAND        "JOIN"
 #define PART_COMMAND        "PART"
+#define KICK_COMMAND        "KICK"
 #define NOTICE_COMMAND      "NOTICE"
 #define PRIVMSG_COMMAND     "PRIVMSG"
 #define OPER_COMMAND        "OPER"
@@ -166,6 +171,8 @@ namespace Replies
 #define NAMES_COMMAND       "NAMES"
 #define LIST_COMMAND        "LIST"
 #define WHO_COMMAND         "WHO"
+#define KICK_COMMAND        "KICK"
+#define INVITE_COMMAND      "INVITE"
 
 #define NUM_COMMANDS 20
 
@@ -243,7 +250,6 @@ class Server {
     private:
 
         bool                            m_isAuthenticated(int clientFd);
-
         void                            m_managePoll(void);
         int                             m_manageServerEvent(void);
         void                            m_manageClientEvent(int pollIndex);
@@ -268,7 +274,7 @@ class Server {
         void                            m_debugAuthentificate(int clientFd);
         int                             m_send(int toFd, std::string message);
 
-        void                            m_reply(int clientFd, int replyCode, int extraArg, std::string message);
+        void                            m_reply(int clientFd, int replyCode, std::string message);
         void                            m_setCommandFuncs(void);
 
         bool                            m_isModesSyntaxValid(std::vector<std::string> arguments);
@@ -292,11 +298,21 @@ class Server {
         void                            m_operCmd(Client& client);
         void                            m_whoCmd(Client& client);
         
-        void                            m_listVisibleUsers(Client& client, bool onlyOps);
-        void                            m_listChannelUsers(Client& client, std::string arguments, bool onlyOps);
-
-        void                            m_channelModeCmd(Client& client, Message& message);
         void                            m_userModeCmd(Client& client, Message& message);
+
+        template <typename T>
+        void    printVector(T &vector, std::string name)
+        {
+            typename T::iterator it = vector.begin();
+            typename T::iterator end = vector.end();
+            std::cout << "printing vector " << name << std::endl;
+            while (it != end)
+            {
+                std::cout << "|" << *it << "|" << std::endl;
+                it++;
+            }
+        }
+        void                            m_channelModeCmd(Client& client, Message& message);
 
         std::string                     m_makeReplyHeader(int replyNum, std::string nickname);
 
@@ -315,14 +331,12 @@ class Server {
 
         void                            m_findNextMask(std::vector<std::string> arguments, int& paramToUseIndex);
 
-        std::string                     m_getTLD(std::string mask);
 
         bool                            m_areModesMasks(std::string modes);
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
         bool                            m_isChannelPrefix(char c) const;
         bool                            m_isUser(Client& client) const;
         bool                            m_isMaskUserMatch(std::string nickname, std::string TLD); // TODO: should be more general
-        bool                            m_isMaskMatch(std::string str, std::string mask);
         bool                            m_isMask(std::string str);
         bool                            m_isUserSpecificChannelMode(char c) const; // user modes
         bool                            m_isAttributeSetterMode(char c) const; //password and limit users
@@ -350,27 +364,32 @@ class Server {
         void                            m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected);
 
         void                            m_partCmd(Client & client);
+        void                            m_partZero(Client & client);
 
-        void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs);
-        void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs, Message msg);
+        void                            m_privMsgCmd_noticeCmd(Client &client);
+        void                            m_p_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
 
         void                            m_kickCmd(Client & client);
         
         void                            m_inviteCmd(Client & client);
         
-        void                            m_namesCmd_listCmd(Client & client, std::string cmd);
+        void                            m_namesCmd_listCmd(Client & client);
+        void                            m_p_namesCmd_listCmd(Client & client, std::string cmd); // still not implemented
         void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
+        void                            m_passCmd(Client &client);
+
+        std::string                     m_getTLD(std::string mask);
+        std::vector<int>                m_grabClientsWithMask(std::string mask);
     
         const std::string               m_serverName;
         const std::string               m_port;
-        // Maybe this is usless since we are always going to connect to the same thing
         const std::string               m_hostname;
         const std::string               m_version;
         const int                       m_maxClients;
         t_addrinfo*                     m_servinfo;
         t_addrinfo                      m_hints;
         int                             m_athenticatedUserNum;
-        // in case we wanted to do it manually
+        // in case we wanted to do it manually // kinda useless now
         t_sockaddr_in                   m_addr_in;
         t_sockaddr_in6                  m_addr_in6;
         int                             m_sockfd;
@@ -380,17 +399,26 @@ class Server {
         int                             m_poll_count;
         std::vector<t_pollfd>           m_pfds;
         std::string                     m_operPassword;
-
+        ////////////////////////////////////////////////////
+        /// int : client fd , Client : the client object ///
+        ////////////////////////////////////////////////////
         std::map<int, Client>           m_clients;
         int                             m_numOps;
         
-        // the key is the nickname itself and the value is the clientfd
+        ///////////////////////////////////////////////////////
+        /// std::string : client nickname , int : client fd ///
+        ///////////////////////////////////////////////////////
         std::map<std::string, int>      m_nicknames;
 
         static std::string              m_possibleCommands[NUM_COMMANDS];
-        // a vector containing all Channels available on the server
+    
+        /////////////////////////////////////////////////////////////////
+        /// std::string : channel name , Channel : the channel object ///
+        /////////////////////////////////////////////////////////////////
         std::map<std::string, Channel>  m_channels;
         std::map<std::string, cmdFun>   m_cmdFuncs;
+        bool                            m_passProtected;
+        std::string                     m_password;
 };
 
 #endif

@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/21 17:02:24 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 19:27:03 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 
@@ -72,6 +73,7 @@ class Client
         std::string                         _realname;
         bool                                _nickAuth;
         bool                                _userAuth;
+        bool                                _passAuth;
         bool                                _isServerOp;
         bool                                _away;
         bool                                _authenticated;
@@ -106,6 +108,7 @@ class Client
         std::string                     getAwayMsg(void) const;
         bool                            isNickAuth(void) const;
         bool                            isUserAuth(void) const;
+        bool                            isPassAuth(void) const;
         bool                            isServerOp(void) const;
         bool                            isAway(void) const;
         bool                            isAuthComplete(void) const;
@@ -131,6 +134,7 @@ class Client
         void                            setAwayMsg(std::string awayMsg);
         void                            setNickAuth(void);
         void                            setUserAuth(void);
+        void                            setPassAuth(void);
         void                            setAsServerOp(void);
         void                            setAway(void);
         void                            setAuthComplete(void);
@@ -144,9 +148,9 @@ class Client
 
         Client & operator=(Client const & rhs);
 
-    ///////////////
-    /// METHODS ///
-    ///////////////
+        ///////////////
+        /// METHODS ///
+        ///////////////
         void        partChannel(std::string channelName);
 };
 
