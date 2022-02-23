@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/22 17:28:08 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 14:59:43 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,7 @@ public:
 	std::vector<int> 			&getMembers(void);
 	std::vector<int> 			&getInvited(void);
 	int			 				getType(void) const;
-	std::string					getTopic(void) const;
+	std::string&					getTopic(void);
 	
 	void						setTopic(std::string topic);
 	void						setMode(int mode);
@@ -120,22 +120,22 @@ public:
 	bool						isBanned(int clientFd) const;
 	bool						isMember(int clientFd) const;
 	bool						isInvited(int clientFd) const;
-	// std::string			m_composeMask(Client & client) const;
-	void					Ban(int clinetFd);
+	// std::string				m_composeMask(Client & client) const;
+	void						Ban(int clinetFd);
 
-	bool        			getModeValue(int modeNum) const;
+	bool        				getModeValue(int modeNum) const;
 
-	int 	    			findMode(char mode) const;
+	int 	    				findMode(char mode) const;
 
-    void        			turnOnMode(int modeNum);
-    void        			turnOffMode(int modeNum);
+    void        				turnOnMode(int modeNum);
+    void        				turnOffMode(int modeNum);
 
-	int						manageAttribute(char mode, char prefix,
+	int							manageAttribute(char mode, char prefix,
 								std::vector<std::string> arguments);
-	void					manageSimpleMode(char mode, char prefix);
+	void						manageSimpleMode(char mode, char prefix);
 
-	static std::uint16_t	modeBitMasks[NUM_MODES_CHANNEL];
-	static std::string		potentialModes;
+	static std::uint16_t		modeBitMasks[NUM_MODES_CHANNEL];
+	static std::string			potentialModes;
 };
 
 #endif

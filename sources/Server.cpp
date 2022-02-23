@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/22 17:58:25 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 14:59:11 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -904,32 +904,43 @@ void                Server::m_topicCmd(Client& client)
 {
     Message& message = client.getMessageQueue().front();
 
-    if (message.getArgs().empty())
+    std::vector<std::string> arguments = message.getArgs();
+    if (arguments.empty())
     {
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, 0, "");
         return ;
     }
     std::vector<std::string> &channels = client.getChannels();
-    if (std::find(channels.begin(), channels.end(), message.getArgs()[0]) == channels.end())
+    if (std::find(channels.begin(), channels.end(), arguments[0]) == channels.end())
     {
-        m_reply(client.getFd(), Replies::ERR_NOTONCHANNEL, 0, message.getArgs()[0]);
+        m_reply(client.getFd(), Replies::ERR_NOTONCHANNEL, 0, arguments[0]);
         return ;
     }
 
-    if (message.getArgs().size() == 1) // there is only one argument, channel name
+    if (arguments.size() == 1) // there is only one argument, channel name
     {
-        if (m_channels[message.getArgs()[0]].getTopic().empty()) // checking if topic is empty
+        if (m_channels[arguments[0]].getTopic().empty()) // checking if topic is empty
         {
-            m_reply(client.getFd(), Replies::RPL_NOTOPIC, 0, message.getArgs()[0]);
+            m_reply(client.getFd(), Replies::RPL_NOTOPIC, 0, arguments[0]);
             return;
         }
         m_reply(client.getFd(), Replies::RPL_TOPIC, 0,
-            m_composeRplTopic(m_channels[message.getArgs()[0]])); // there is a topic
+            m_composeRplTopic(m_channels[arguments[0]])); // there is a topic
         return;
     }
+    if (arguments.size() == 2)
+    {
+        Channel& channel = m_channels[arguments[0]];
 
-   // TODO: STILL NEED TO IMPLEMENT TOPIC CHANGING STUFF. 
-    
+        if (channel.getModeValue(ChannelModes::t_topicOperatorOnly))
+        {
+            if (client.getModeValue(ChannelModes::o_OperatorPrivilege, arguments[0])
+                    || client.getModeValue(ChannelModes::O_Creator, arguments[0]))
+                channel.getTopic() = arguments[1];
+        }
+        else
+            channel.getTopic() = arguments[1];
+    }    
 }
 
 void                Server::m_operCmd(Client& client)

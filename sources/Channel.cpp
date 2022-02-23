@@ -34,7 +34,7 @@ std::string  Channel::getPassword(void) const
 	return (this->m_password);
 }
 
-std::string  Channel::getTopic(void) const
+std::string&  Channel::getTopic(void)
 {
 	return (this->m_topic);
 }
