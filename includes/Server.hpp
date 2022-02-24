@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/24 17:53:05 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/24 19:31:38 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -246,6 +246,8 @@ class Server {
         int                             listen(void);
 
         int                             startServer(void);
+        void                            setServPassword(std::string password);
+
 
     private:
 
@@ -367,7 +369,7 @@ class Server {
 
         void                            m_privMsgCmd_noticeCmd(Client &client);
         void                            m_p_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
-
+        
         void                            m_kickCmd(Client & client);
         
         void                            m_inviteCmd(Client & client);

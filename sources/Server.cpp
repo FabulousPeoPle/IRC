@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/24 18:47:22 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/24 19:34:27 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,6 +79,16 @@ Server::Server(std::string port, std::string hostname, std::string name, int max
     this->m_sockfd = -1;
     this->m_poll_count = 0;
     m_numOps = 0;
+    try
+    {
+        std::stoi(port);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        std::exit(1);
+    }
+    
     memset(&(this->m_socketInfo), 0, sizeof(this->m_socketInfo));
     memset(&(this->m_hints), 0, sizeof(this->m_hints));
     memset(&(this->m_addr_in), 0, sizeof(this->m_addr_in));
@@ -1050,6 +1060,13 @@ void                Server::m_manageClientEvent(int pollIndex)
     }
 }
 
+void     Server::setServPassword(std::string password)
+{
+    m_passProtected = true;
+    m_password = password;
+}
+
+
 bool    Server::m_checkNickSyntax(Message& message)
 {
     if (message.getArgs().empty())
@@ -1678,6 +1695,8 @@ bool                    Server::m_channelExists(std::string channelName)
 void                    Server::m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected)
 {
     Channel & chan = m_channels[channelName];
+    std::cout << password << " :this is the password given\n";
+    std::cout << chan.getPassword() << " :this is the chan pass\n";
     if (chan.isInMaskVector(m_clients[clientFd], chan.getBanMasks())
             && !chan.isInMaskVector(m_clients[clientFd], chan.getExceptionBanMasks()))
         m_reply(clientFd, Replies::ERR_BANNEDFROMCHAN, channelName);
@@ -1685,8 +1704,7 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
             && !chan.isInMaskVector(m_clients[clientFd], chan.getInviteMasks()))
         m_reply(clientFd, Replies::ERR_INVITEONLYCHAN, channelName);
     else if (((passProtected && !chan.checkPassword(password))
-            || (!passProtected && !chan.getPassword().empty()))
-            && !chan.isInMaskVector(m_clients[clientFd], chan.getInviteMasks()))
+            || (!passProtected && !chan.getPassword().empty())))
         m_reply(clientFd, Replies::ERR_BADCHANNELKEY, channelName);
     else if (chan.isMember(clientFd))
         m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, "");
@@ -1709,7 +1727,9 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
 
 void                    Server::m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected)
 {
-    Channel newChannel(PEASEANT_MODES, clientFd, channelName, channelName.at(0), (passProtected ? password : ""));
+    Channel newChannel(PEASEANT_MODES, clientFd, channelName, channelName.at(0), password);
+
+    std::cout << "is the pass protected: " << passProtected << "pass: " << password << std::endl;
     if (passProtected)
         newChannel.setPassword(password);
     newChannel.addMember(clientFd);
@@ -1726,7 +1746,7 @@ void                    Server::m_joinCmd(Client & client)
     std::vector<std::string>    chans;
     std::vector<std::string>    passes;
     Message& msg = client.getMessageQueue().front();
-    bool                        passProtected;
+    bool                        passProtected = true;
     
     ////// TODO: syntax check
     if (msg.getArgs().empty())
@@ -1746,6 +1766,8 @@ void                    Server::m_joinCmd(Client & client)
         {
             if (it_passes == end_passes)
                 passProtected = false;
+            else
+                std::cout << "pass from vector :" << *it_passes << std::endl;
             if (m_channelExists(*it_chan))
                 m_addClientToChan(client.getFd(), *it_chan, (passProtected)? *it_passes : "", passProtected);
             else
