@@ -52,42 +52,42 @@ Channel::~Channel(void)
 
 std::string  Channel::getName(void) const
 {
-	return (this->m_name);
+	return (m_name);
 }
 
 std::string  Channel::getPassword(void) const
 {
-	return (this->m_password);
+	return (m_password);
 }
 
 std::string&  Channel::getTopic(void)
 {
-	return (this->m_topic);
+	return (m_topic);
 }
 
 int  Channel::getMode(void) const
 {
-	return (this->m_mode);
+	return (m_mode);
 }
 
 int  Channel::getType(void) const
 {
-	return (this->m_type);
+	return (m_type);
 }
 
 std::vector<int> &Channel::getOps(void)
 {
-	return (this->m_operators);
+	return (m_operators);
 }
 
 std::vector<int> &Channel::getMembers(void)
 {
-	return (this->m_members);
+	return (m_members);
 }
 
 std::vector<int> &Channel::getInvited(void)
 {
-	return (this->m_invited);
+	return (m_invited);
 }
 
 void	Channel::setName(std::string name)
@@ -200,7 +200,10 @@ void	Channel::removeMember(int clientFd)
 	while (it != end)
 	{
 		if (*it == clientFd)
+		{
 			m_members.erase(it);
+			break;
+		}
 		it++;
 	}
 }
@@ -213,7 +216,10 @@ void	Channel::removeOp(int clientFd)
 	while (it != end)
 	{
 		if (*it == clientFd)
+		{
 			m_operators.erase(it);
+			break;
+		}
 		it++;
 	}
 }
