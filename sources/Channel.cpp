@@ -13,12 +13,14 @@
 
 #include "Channel.hpp"
 
-Channel::Channel(void) : m_topic("") {}
+Channel::Channel(void) : m_topic(""), m_userLimit(-1), m_password("") {}
 
 Channel::Channel(int mode, int opFd, std::string name, char type, std::string password) : m_name(name), m_mode(mode), m_type(type), m_password(password)
 {
-	this->m_operators.push_back(opFd);
-	this->m_topic = "";
+	m_operators.push_back(opFd);
+	m_topic = "";
+	m_password = "";
+	m_userLimit = -1;
 }
 
 Channel::Channel(const Channel& channelRef)
@@ -28,7 +30,6 @@ Channel::Channel(const Channel& channelRef)
 
 Channel&	Channel::operator==(const Channel& channelRef)
 {
-	std::cout << "Was this even called\n";
 	m_name = channelRef.m_name;
 	m_mode = channelRef.m_mode;
 	m_type = channelRef.m_type;
@@ -160,14 +161,17 @@ std::string	Channel::m_extractTLD(std::string mask)
 		return (mask.erase(0, 5));
 }
 
-bool Channel::isBanned(Client &client)
+int Channel::m_getUserLimit(void) const
 {
-	std::vector<std::string>::const_iterator it = m_banMasks.begin();
-	std::vector<std::string>::const_iterator end = m_banMasks.end();
-	std::cout << m_banMasks.size() << " :size of the ban\n";
+	return (m_userLimit);
+}
+
+bool Channel::isInMaskVector(Client &client, std::vector<std::string>& maskVector)
+{
+	std::vector<std::string>::const_iterator it = maskVector.begin();
+	std::vector<std::string>::const_iterator end = maskVector.end();
 	while (it != end)
 	{
-		std::cout << "this is the mask: " << *it << " and this is the user: " << client.getHostname() << std::endl;
 		if (m_isMaskUserMatch(client.getHostname(), m_extractTLD(*it)))
 			return (true);
 		it++;
@@ -175,6 +179,18 @@ bool Channel::isBanned(Client &client)
 	return (false);
 }
 
+bool Channel::isBanned(Client &client)
+{
+	std::vector<std::string>::const_iterator it = m_banMasks.begin();
+	std::vector<std::string>::const_iterator end = m_banMasks.end();
+	while (it != end)
+	{
+		if (m_isMaskUserMatch(client.getHostname(), m_extractTLD(*it)))
+			return (true);
+		it++;
+	}
+	return (false);
+}
 
 void	Channel::removeMember(int clientFd)
 {

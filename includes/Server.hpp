@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/24 12:34:33 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/24 17:53:05 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,7 +136,7 @@ namespace Replies
         ERR_WRONGCHANMODESYNTAX = 888,
         /********************/
         
-
+        ERR_CHANUSERLIMIT = 777,
         ERR_USERONCHANNEL = 443,
         RPL_NAMREPLY = 353,
         RPL_ENDOFNAMES = 366,
@@ -324,7 +324,6 @@ class Server {
         std::string                     m_composeList(std::string channelName);
         std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);// const?
 
-        std::vector<std::string>        m_extractTLDs(std::vector<std::string>& arguments, int start);
 
         int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments); // turn arguments into references?
         std::vector<std::string>        m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex);

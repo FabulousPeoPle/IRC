@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/24 16:03:40 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/24 17:58:22 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -302,9 +302,6 @@ bool            Server::m_isAuthenticated(int clientFd)
     return (this->m_clients[clientFd].isAuthComplete());
 }
 
-// TODO: check RPL_UMODEIS in other severs
-
-
 int     findMode(char c) // ADD IS AS SERVER OR CLIENT FUNCTION
 {
     switch (c)
@@ -532,7 +529,7 @@ void            Server::m_executeModes(std::vector<std::string> arguments, Chann
         if (m_isAttributeSetterMode(modes[i]))
         {
             if (channel.manageAttribute(modes[i], prefix, arguments))
-                m_reply(client.getFd(), Replies::ERR_INTNEEDED, arguments[2]);// TODO: IMPLEMENT THIS IN REPLY
+                m_reply(client.getFd(), Replies::ERR_INTNEEDED, arguments[2]);
         }
         else if (m_isSimpleChannelMode(modes[i]))
             channel.manageSimpleMode(modes[i], prefix);
@@ -632,8 +629,6 @@ bool            Server::m_isModesSyntaxValid(std::vector<std::string> arguments)
 //TODO: CHANGE MODES IN REPLY
 void            Server::m_channelModeCmd(Client& client, Message& message)
 {
-    // TODO: a function that takes a mask and sees if a client mask looks like it
-
     std::vector<std::string> arguments = message.getArgs();
     std::string channelName = arguments[0];
     if (!m_channelExists(channelName))
@@ -759,8 +754,7 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile, std::string c
 }
 
 
-// TODO: Would be nice if we add the servername and command code in every line
-void                Server::m_motdCmd(Client& client) // We will assume that there is no target, considering it's server to server communication
+void                Server::m_motdCmd(Client& client)
 {
     std::ifstream motd("motd.txt");
 
@@ -774,7 +768,7 @@ void                Server::m_motdCmd(Client& client) // We will assume that the
     m_reply(client.getFd(), Replies::RPL_ENDOFMOTD, "");
 }
 
-void                Server::m_awayCmd(Client& client) // SHOULD WORK TOGETHER WITH PRIVMSG
+void                Server::m_awayCmd(Client& client) // TODO: SHOULD WORK TOGETHER WITH PRIVMSG to send messgae in channels the user is in?
 {
     Message& message = client.getMessageQueue().front();
 
@@ -1345,6 +1339,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
             break;
         case Replies::RPL_NOTOPIC:
             this->m_send(clientFd,m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + ' ' + message + " :No topic set\r\n");
+            break;
     }
 }
 
@@ -1681,16 +1676,24 @@ bool                    Server::m_channelExists(std::string channelName)
 void                    Server::m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected)
 {
     Channel & chan = m_channels[channelName];
-
-    if (chan.isBanned(m_clients[clientFd]))
+    if (chan.isInMaskVector(m_clients[clientFd], chan.getBanMasks())
+            && !chan.isInMaskVector(m_clients[clientFd], chan.getExceptionBanMasks()))
         m_reply(clientFd, Replies::ERR_BANNEDFROMCHAN, channelName);
-    else if (m_channels[channelName].getModeValue(ChannelModes::i_inviteOnly) && !m_channels[channelName].isInvited(clientFd))
+    else if (m_channels[channelName].getModeValue(ChannelModes::i_inviteOnly)
+            && !chan.isInMaskVector(m_clients[clientFd], chan.getInviteMasks()))
         m_reply(clientFd, Replies::ERR_INVITEONLYCHAN, channelName);
-    else if (((passProtected && !chan.checkPassword(password)) || (!passProtected && !chan.getPassword().empty()))
-            && !m_channels[channelName].isInvited(clientFd))
+    else if (((passProtected && !chan.checkPassword(password))
+            || (!passProtected && !chan.getPassword().empty()))
+            && !chan.isInMaskVector(m_clients[clientFd], chan.getInviteMasks()))
         m_reply(clientFd, Replies::ERR_BADCHANNELKEY, channelName);
     else
     {
+        // TODO: check the limit on the channel
+        if (chan.getMembers().size() == chan.m_getUserLimit())
+        {
+            m_reply(clientFd, Replies::ERR_CHANUSERLIMIT, channelName);
+            return;
+        }
         chan.addMember(clientFd);
         m_clients[clientFd].pushChannel(channelName, PEASEANT_MODES);
         m_reply(clientFd, Replies::RPL_TOPIC, m_composeRplTopic(m_channels[channelName]));
@@ -1986,9 +1989,6 @@ void            Server::m_kickCmd(Client &client)
         }
     }
 }
-// }
-// TODO: REMOVE EXTRA SPACES FROM NICKS IF THERE ARE ANY
-// TODO: maybe make so that the last parameter isn't necessart
 
 void            Server::m_inviteCmd(Client &client)
 {
@@ -2100,4 +2100,8 @@ void    Server::m_namesCmd_listCmd(Client & client)
     }
 }
 
-std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST", "QUIT", "ISON", "MODE", "PONG", "PING", "MOTD", "AWAY", "LUSERS", "WHOIS", "TOPIC", "JOIN", "PART", "KICK", "PRIVMSG", "NOTICE", "OPER"}; // TODO: UPDATE
+std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST",
+                                                            "QUIT", "ISON", "MODE", "PONG",
+                                                            "PING", "MOTD", "AWAY", "LUSERS",
+                                                            "WHOIS", "TOPIC", "JOIN", "PART",
+                                                            "KICK", "PRIVMSG", "NOTICE", "OPER"};
