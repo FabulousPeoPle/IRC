@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/23 19:26:59 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/24 15:30:18 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,13 +79,15 @@ private:
 	std::string					m_password; // boolean
 	int							m_userLimit; // initialized to -1
 
-	
+	std::string				m_extractTLD(std::string mask);
 
 public:
 						Channel(void);
 						Channel(int mode, int opFd, std::string name, char type, std::string password);
+						Channel(const Channel& channelRef);
 						~Channel(void);
 
+	Channel&			operator==(const Channel& channelRef);
 
 	std::vector<std::string>&	getBanMasks(void);
 	std::vector<std::string>&	getExceptionBanMasks(void);
@@ -117,7 +119,7 @@ public:
 	void				removeOp(int clientFd);
 	void				removeInvited(int clientFd);
 	void				addOp(int clientFd);
-	bool				isBanned(Client &client) const;
+	bool				isBanned(Client &client);
 	bool				isMember(int clientFd) const;
 	bool				isInvited(int clientFd) const;
 	// std::string			m_composeMask(Client & client) const;
@@ -126,6 +128,7 @@ public:
 
 	int 	    			findMode(char c) const;
 
+	void				m_addToChanVector(std::vector<std::string>& dst, std::string src);
 	int							manageAttribute(char mode, char prefix,
 								std::vector<std::string> arguments);
 	void						manageSimpleMode(char mode, char prefix);

@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/23 20:16:58 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/24 16:03:40 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -429,48 +429,21 @@ std::string                     Server::m_getTLD(std::string mask)
     return (mask.erase(0, 5));
 }
 
+
+
 std::vector<std::string>            Server::m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex)
 {
-    Channel& channel = m_channels[arguments[1]];
+    Channel& channel = m_channels[arguments[0]];
 
-    if (paramToUseIndex >= arguments.size())
-        return (std::vector<std::string>());
     if (prefix == '+')
     {
-        if (arguments[paramToUseIndex].substr(0, 6) != "*!*@*." && arguments[paramToUseIndex] != "*!*@*") // TODO: TEST
-            return (std::vector<std::string>());
-        if (arguments[paramToUseIndex] == "*!*@*.")
-            return (std::vector<std::string>());
-        if (mode =='e') // TODO: REFACTOR??
-        {
-            if (arguments[paramToUseIndex] == "*!*@*" || arguments[paramToUseIndex] == "0" || arguments[paramToUseIndex] == "*")
-            {
-                channel.getExceptionBanMasks().push_back("*");
-                ++paramToUseIndex;
-            }
-            else
-                channel.getExceptionBanMasks().push_back(arguments[paramToUseIndex++].erase(0, 5));
-        }
+        if (mode =='e')
+            channel.m_addToChanVector(channel.getExceptionBanMasks(), arguments[paramToUseIndex]);
         else if (mode == 'b')
-        {
-            if (arguments[paramToUseIndex] == "*!*@*" || arguments[paramToUseIndex] == "0" || arguments[paramToUseIndex] == "*")
-            {
-                channel.getBanMasks().push_back("*");
-                ++paramToUseIndex;
-            }
-            else
-                channel.getBanMasks().push_back(arguments[paramToUseIndex++].erase(0, 5));
-        }
+            channel.m_addToChanVector(channel.getBanMasks(), arguments[paramToUseIndex]);
         else if (mode == 'I')
-        {
-            if (arguments[paramToUseIndex] == "*!*@*" || arguments[paramToUseIndex] == "0" || arguments[paramToUseIndex] == "*")
-            {
-                channel.getInviteMasks().push_back("*");
-                ++paramToUseIndex;
-            }
-            else
-                channel.getInviteMasks().push_back(arguments[paramToUseIndex++].erase(0, 5));
-        }
+            channel.m_addToChanVector(channel.getInviteMasks(), arguments[paramToUseIndex]);
+        ++paramToUseIndex;
     }
     else if (prefix == '-')
     {
@@ -484,11 +457,11 @@ std::vector<std::string>            Server::m_manageMaskMode(char mode, char pre
     else
     {
         std::vector<std::string> maskList;
-
+        
         if (mode == 'e')
-            maskList = channel.getBanMasks();
-        else if (mode == 'b')
             maskList = channel.getExceptionBanMasks();
+        else if (mode == 'b')
+            maskList = channel.getBanMasks();
         else if (mode == 'I')
             maskList = channel.getInviteMasks();
 
@@ -523,7 +496,15 @@ void            Server::m_listMasks(std::vector<std::string> maskList, char mode
             return;
     }
     for (int i = 0; i < maskList.size(); ++i)
-        m_reply(client.getFd(), replyCodeStart, channel.getName() + ' ' + maskList[i]);
+    {
+        std::string mask;
+        
+        if (maskList[i] == "*")
+            mask = "*!*@*";
+        else
+            mask = "*!*@*" + maskList[i];
+        m_reply(client.getFd(), replyCodeStart, channel.getName() + ' ' + mask);
+    }
     m_reply(client.getFd(), replyCodeEnd, channel.getName() + " :End of " + listType);
 }
 
@@ -546,7 +527,6 @@ void            Server::m_executeModes(std::vector<std::string> arguments, Chann
         prefix = modes[0];
         start = 1;
     }
-    std::cout << "this is the prefix: " << prefix << "\nthis is the start: " << start << std::endl;
     for (int i = start; i < modes.size(); ++i)
     {
         if (m_isAttributeSetterMode(modes[i]))
@@ -566,10 +546,8 @@ void            Server::m_executeModes(std::vector<std::string> arguments, Chann
         }
         else if (m_isMaskMode(modes[i]))
         {
-            std::vector<std::string> maskList =  m_manageMaskMode(modes[i], prefix, arguments, paramToUseIndex);
-            if (maskList.empty())
-                continue;
-            else
+            std::vector<std::string> maskList = m_manageMaskMode(modes[i], prefix, arguments, paramToUseIndex);
+            if (prefix == '\0')
                 m_listMasks(maskList, modes[i], client, channel);
         }
         else if (modes[i] == 'O')
@@ -626,7 +604,9 @@ bool            Server::m_isModesSyntaxValid(std::vector<std::string> arguments)
             return (false);
         if (attributeSetters > 1) // -kl bruh
             return (false);
-        if (maskSetters && maskSetters != argNum)
+        if (prefix == '+' && maskSetters && maskSetters != argNum)
+            return (false);
+        if (prefix == '-' && maskSetters && argNum) // untestd
             return (false);
         if (prefix == '-' && attributeSetters && arguments[1][0] == 'l' && argNum) // prefix relative
             return (false);
@@ -637,7 +617,6 @@ bool            Server::m_isModesSyntaxValid(std::vector<std::string> arguments)
     }
     else
     {
-        std::cout << userModeSetters << " :this is usermodes\n";
         if (attributeSetters)
             return (false);
         if (chanModeSetters)
@@ -897,7 +876,7 @@ void                Server::m_whoisCmd(Client& client)
 
 std::string         Server::m_composeRplTopic(Channel& channel)
 {
-    return (channel.getName() + ':' + channel.getTopic());
+    return (channel.getName() + " :" + channel.getTopic());
 }
 
 void                Server::m_topicCmd(Client& client)
@@ -936,6 +915,8 @@ void                Server::m_topicCmd(Client& client)
             if (client.getModeValue(ChannelModes::o_OperatorPrivilege, arguments[0])
                     || client.getModeValue(ChannelModes::O_Creator, arguments[0]))
                 channel.getTopic() = arguments[1];
+            else
+                m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, arguments[0]);
         }
         else
             channel.getTopic() = arguments[1];
@@ -1012,7 +993,6 @@ void                Server::m_relay(int clientFd)
         // TODO: a map that has command function as values and the string command as key
         std::string command = message.getCmd();
 
-        std::cout << "This is the command: " << command << std::endl;
 
         if (command == USER_COMMAND)
             m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, ""); // not sure about this
@@ -1363,6 +1343,8 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
         case Replies::ERR_CANNOTSENDTOCHAN:
             this->m_send(clientFd, ":" + this->m_serverName + " 404 " + message + " :Cannot send to channel\r\n");
             break;
+        case Replies::RPL_NOTOPIC:
+            this->m_send(clientFd,m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + ' ' + message + " :No topic set\r\n");
     }
 }
 

@@ -21,6 +21,31 @@ Channel::Channel(int mode, int opFd, std::string name, char type, std::string pa
 	this->m_topic = "";
 }
 
+Channel::Channel(const Channel& channelRef)
+{
+	*this = channelRef;
+}
+
+Channel&	Channel::operator==(const Channel& channelRef)
+{
+	std::cout << "Was this even called\n";
+	m_name = channelRef.m_name;
+	m_mode = channelRef.m_mode;
+	m_type = channelRef.m_type;
+	m_operators = channelRef.m_operators;
+	m_topic = channelRef.m_topic;
+	m_members = channelRef.m_members;
+	m_invited = channelRef.m_invited;
+	modes = channelRef.modes;
+	m_banMasks = channelRef.m_banMasks;
+	m_exceptionBanMasks = channelRef.m_exceptionBanMasks;
+	m_inviteMasks = channelRef.m_inviteMasks;
+	m_password = channelRef.m_password;
+	m_userLimit = channelRef.m_userLimit;
+	m_creatorNick = "URMOM";
+	return (*this);
+}
+
 Channel::~Channel(void)
 {}
 
@@ -127,13 +152,23 @@ bool Channel::isInvited(int clientFd) const
 // 	return (client._nickname + "!" + client._username + "@" + client._ip_address);
 // }
 
-bool Channel::isBanned(Client &client) const
+std::string	Channel::m_extractTLD(std::string mask)
+{
+	if (mask == "*")
+		return ("");
+	else
+		return (mask.erase(0, 5));
+}
+
+bool Channel::isBanned(Client &client)
 {
 	std::vector<std::string>::const_iterator it = m_banMasks.begin();
 	std::vector<std::string>::const_iterator end = m_banMasks.end();
+	std::cout << m_banMasks.size() << " :size of the ban\n";
 	while (it != end)
 	{
-		if (m_isMaskUserMatch(client.getHostname(), *it))
+		std::cout << "this is the mask: " << *it << " and this is the user: " << client.getHostname() << std::endl;
+		if (m_isMaskUserMatch(client.getHostname(), m_extractTLD(*it)))
 			return (true);
 		it++;
 	}
@@ -221,6 +256,14 @@ bool		Channel::getModeValue(int modeNum) const
 	return (this->modeBitMasks[modeNum] & this->modes);
 }
 
+void                                Channel::m_addToChanVector(std::vector<std::string>& dst, std::string src)
+{
+    if (src == "*!*@*" || src == "0" || src == "*")
+		dst.push_back("*");
+    else
+        dst.push_back(src.erase(0, 5));
+}
+
 int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string> arguments)
 {
 	if (mode == 'k')
@@ -232,7 +275,10 @@ int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string
 					m_password = "";
 		}
 		else
+		{
 			m_password = arguments[2];
+			std::cout << "This is the password: " << m_password << std::endl;
+		}
 		}
 	else
 	{
