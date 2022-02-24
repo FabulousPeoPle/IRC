@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/16 13:10:31 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/24 18:05:37 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,14 +114,14 @@ void Message::parse(void)
         _literalMsg = std::string(literalMessage);
         literalMessage[0] = '\0';
     }
-    token = strtok(msg, " ");
+    token = strtok(msg, " ,");
     while (token && !checkCommand(token))
-        token = strtok(NULL, " ");
+        token = strtok(NULL, ", ");
     if (token)
         command = token;
     while (token)
     {
-        token = strtok(NULL, " ");
+        token = strtok(NULL, ", ");
         if (token)
             arguments.push_back(token);
     }
