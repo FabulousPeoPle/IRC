@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/24 17:58:22 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/24 18:06:33 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1689,7 +1689,7 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
     else
     {
         // TODO: check the limit on the channel
-        if (chan.getMembers().size() == chan.m_getUserLimit())
+        if (chan.getMembers().size() == chan.m_getUserLimit()) // initialized with -1 in channel constructor
         {
             m_reply(clientFd, Replies::ERR_CHANUSERLIMIT, channelName);
             return;
