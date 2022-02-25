@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/25 17:06:46 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/25 17:31:37 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,8 +21,6 @@
 // #define DEBUG_USERHOST
 
 // TODO: NICK NEEDS TO CHECK FOR NUMBER OF PARAMETERS
-// TODO: LITERAL MESSAGE DOESN'T NECESSARILY CONTAIN ':'
-// TODO: turn on channel creator when creating channel? what did we do before
 
 char* strdup(const char *s);
 
@@ -719,11 +717,11 @@ void            Server::m_userModeCmd(Client& client, Message& message) // TODO:
         m_reply(client.getFd(), Replies::RPL_UMODEIS, modeChanges);
 }
 
-void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMBERS
+void            Server::m_modeCmd(Client& client)
 {
     Message& message = client.getMessageQueue().front();
-
-    if (m_isChannelPrefix(message.getArgs()[0][0]))
+    std::string channelName = message.getArgs()[0];
+    if (m_isChannelPrefix(channelName[0]))
         m_channelModeCmd(client, message);
     else if (message.getArgs().size() < 2)
     {
@@ -781,7 +779,7 @@ void                Server::m_motdCmd(Client& client)
     m_reply(client.getFd(), Replies::RPL_ENDOFMOTD, "");
 }
 
-void                Server::m_awayCmd(Client& client) // TODO: SHOULD WORK TOGETHER WITH PRIVMSG to send messgae in channels the user is in?
+void                Server::m_awayCmd(Client& client)
 {
     Message& message = client.getMessageQueue().front();
 
@@ -794,6 +792,11 @@ void                Server::m_awayCmd(Client& client) // TODO: SHOULD WORK TOGET
     else
     {
         client.setAwayMsg("");
+        if (!client.getModeValue(UserModes::away))
+        {
+            m_reply(client.getFd(), Replies::ERR_NOTAWAY, "");
+            return ;
+        }
         client.turnOffMode(UserModes::away);
         m_reply(client.getFd(), Replies::RPL_UNAWAY, ""); // what if the user was never away
     }
@@ -897,7 +900,7 @@ void                Server::m_topicCmd(Client& client)
         return ;
     }
     std::vector<std::string> &channels = client.getChannels();
-    if (std::find(channels.begin(), channels.end(), arguments[0]) == channels.end()) // TODO: wrong reply?
+    if (std::find(channels.begin(), channels.end(), arguments[0]) == channels.end())
     {
         m_reply(client.getFd(), Replies::ERR_NOTONCHANNEL, arguments[0]);
         return ;
@@ -1137,19 +1140,22 @@ bool    Server::m_tryAuthentificate(Client& client)
         Message& msg = client.getMessageQueue().front();
 
         msg.parse();
-        if (msg.getCmd() != NICK_COMMAND && msg.getCmd() != USER_COMMAND)
+
+        std::string command = msg.getCmd();
+        
+        if (command != NICK_COMMAND && command != USER_COMMAND && command != PASS_COMMAND)
         {
-            if (this->m_isValidCommand(msg.getCmd()))
+            if (this->m_isValidCommand(command))
                 m_reply(client.getFd(), Replies::ERR_NOTREGISTERED, "");
             if (!client.getMessageQueue().empty())
                 client.getMessageQueue().pop_front();
             return (false);
         }
-        if (msg.getCmd() == USER_COMMAND)
+        if (command == USER_COMMAND)
             m_userCmd(client);
-        else if (msg.getCmd() == NICK_COMMAND)
+        else if (command == NICK_COMMAND)
             m_nickCmd(client);
-        else if (msg.getCmd() == PASS_COMMAND)
+        else if (command == PASS_COMMAND)
             m_passCmd(client);
         if (!client.getMessageQueue().empty())
             client.getMessageQueue().pop_front();
@@ -1363,7 +1369,10 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
             this->m_send(clientFd, ":" + this->m_serverName + " 404 " + message + " :Cannot send to channel\r\n");
             break;
         case Replies::RPL_NOTOPIC:
-            this->m_send(clientFd,m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + ' ' + message + " :No topic set\r\n");
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + ' ' + message + " :No topic set\r\n");
+            break;
+        case Replies::ERR_NOTAWAY:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + " :Not away\r\n");
             break;
     }
 }
