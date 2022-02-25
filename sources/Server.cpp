@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/24 18:47:22 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/25 19:36:26 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,7 @@ void    Server::initializeCmdFuncs(void)
     this->m_cmdFuncs.insert(std::make_pair(LIST_COMMAND, &Server::m_namesCmd_listCmd));
     this->m_cmdFuncs.insert(std::make_pair(PRIVMSG_COMMAND, &Server::m_privMsgCmd_noticeCmd));
     this->m_cmdFuncs.insert(std::make_pair(NOTICE_COMMAND, &Server::m_privMsgCmd_noticeCmd));
+    this->m_cmdFuncs.insert(std::make_pair(NICK_COMMAND, &Server::m_nickCmd));
 }
 
 Server::~Server(void)
@@ -656,6 +657,7 @@ void            Server::m_channelModeCmd(Client& client, Message& message)
         }
         m_executeModes(arguments, m_channels[channelName], client);
     }
+    // m_p_privMsgCmd_noticeCmd(client, Message("MODE change blabla"), channelname);
 }
 
 void            Server::m_userModeCmd(Client& client, Message& message) // TODO: REFACTOR
@@ -989,8 +991,8 @@ void                Server::m_relay(int clientFd)
         std::string command = message.getCmd();
 
 
-        if (command == USER_COMMAND)
-            m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, ""); // not sure about this
+        if (command == USER_COMMAND || command == PASS_COMMAND)
+            m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, command); // not sure about this
         else if (this->m_isValidCommand(command))
         {
             cmdFun fp = m_cmdFuncs[command];
@@ -1050,6 +1052,17 @@ void                Server::m_manageClientEvent(int pollIndex)
     }
 }
 
+bool    m_isAlphaNum(char c) // TODO: fix this shit // maybe this should be seperated
+{
+    return (isalnum(c));
+}
+
+bool Server::m_nickIsValid(std::string &str)
+{
+    
+    return (!(std::find_if(str.begin(), str.end(), m_isAlphaNum) == str.end()));
+}
+
 bool    Server::m_checkNickSyntax(Message& message)
 {
     if (message.getArgs().empty())
@@ -1063,7 +1076,7 @@ bool    Server::m_checkNickSyntax(Message& message)
     int len = nick.length();
     
     // pending research on the restrictions demanded
-    if (len > 9 || len < 1 || nick == "anonymous")
+    if (len > 9 || len < 1 || nick == "anonymous" || !m_nickIsValid(nick))
     {
         #ifdef DEBUG_USERHOST
         std::cout << "wrong length u cunt!\n";
@@ -1171,7 +1184,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
             this->m_send(clientFd, ':' + this->m_serverName + " 461 " + m_clients[clientFd].getMessageQueue().front().getCmd()+ " :Not enough parameters\r\n"); // needs the name of the command
             break;
         case Replies::ERR_ALREADYREGISTRED :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 462 :Unauthorized command (already registered)\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 462 " + message + " :Unauthorized command (already registered)\r\n");
             break;
         case Replies::ERR_USERSDONTMATCH:
             this->m_send(clientFd, ':' + this->m_serverName + " 446 :Cannot change mode for other users\r\n");
@@ -1551,24 +1564,23 @@ void    Server::m_nickCmd(Client & client)
     Message& msg = client.getMessageQueue().front();
 
     if (msg.getArgs().empty())
-    {
         m_reply(client.getFd(), Replies::ERR_NONICKNAMEGIVEN,"");
-        return ;
-    }
-    if (!m_checkNickSyntax(msg))
-    {
+    else if (!m_checkNickSyntax(msg))
         m_reply(client.getFd(), Replies::ERR_ERRONEUSNICKNAME, msg.getArgs().front());
-        return ;
-    }
-    std::pair<std::map<std::string, int>::iterator , bool> nick =\
-    m_nicknames.insert(std::make_pair(msg.getArgs().front(), client.getFd()));
-    if (nick.second && m_checkNickSyntax(msg))
+    else 
     {
-        client.setNickname(msg.getArgs().front());
-        client.setNickAuth();
+        std::pair<std::map<std::string, int>::iterator , bool> nick =\
+        m_nicknames.insert(std::make_pair(msg.getArgs().front(), client.getFd()));
+        if (nick.second)
+        {
+            if (client.isAuthComplete())
+                m_nicknames.erase(client.getNickname());
+            client.setNickname(msg.getArgs().front());
+            client.setNickAuth();
+        }
+        else
+            m_reply(client.getFd(), Replies::ERR_NICKNAMEINUSE, "");
     }
-    else
-        m_reply(client.getFd(), Replies::ERR_NICKNAMEINUSE, "");
 }
 
 void    Server::m_userCmd(Client & client)
@@ -1577,7 +1589,7 @@ void    Server::m_userCmd(Client & client)
     std::string mode;
     
     if (client.isUserAuth())
-        m_reply(client.getFd(), Replies::ERR_ALREADYREGISTRED, "");
+        m_reply(client.getFd(), Replies::ERR_ALREADYREGISTRED, msg.getCmd());
     else if (msg.getArgs().size() != 3)
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
     else
@@ -1597,7 +1609,7 @@ void    Server::m_passCmd(Client &client)
     if  (args.empty())
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
     else if (client.isPassAuth())
-        m_reply(client.getFd(), Replies::ERR_ALREADYREGISTRED, "");
+        m_reply(client.getFd(), Replies::ERR_ALREADYREGISTRED, msg.getCmd());
     else
     {
         if (m_passProtected && args.front() == m_password)
@@ -1685,11 +1697,10 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
             && !chan.isInMaskVector(m_clients[clientFd], chan.getInviteMasks()))
         m_reply(clientFd, Replies::ERR_INVITEONLYCHAN, channelName);
     else if (((passProtected && !chan.checkPassword(password))
-            || (!passProtected && !chan.getPassword().empty()))
-            && !chan.isInMaskVector(m_clients[clientFd], chan.getInviteMasks()))
+            || (!passProtected && !chan.getPassword().empty())))
         m_reply(clientFd, Replies::ERR_BADCHANNELKEY, channelName);
     else if (chan.isMember(clientFd))
-        m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, "");
+        m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, JOIN_COMMAND);
     else
     {
         // TODO: check the limit on the channel
@@ -1710,8 +1721,8 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
 void                    Server::m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected)
 {
     Channel newChannel(PEASEANT_MODES, clientFd, channelName, channelName.at(0), (passProtected ? password : ""));
-    if (passProtected)
-        newChannel.setPassword(password);
+    // if (passProtected)
+    //     newChannel.setPassword(password);
     newChannel.addMember(clientFd);
     newChannel.setCreatorNick(m_clients[clientFd].getNickname());
     m_channels.insert(m_channels.end(), std::pair<std::string, Channel>(channelName, newChannel));
@@ -1719,6 +1730,8 @@ void                    Server::m_addChannel(int clientFd, std::string channelNa
     m_clients[clientFd].turnOnMode(ChannelModes::O_Creator, channelName);
     m_clients[clientFd].turnOnMode(ChannelModes::o_OperatorPrivilege, channelName);
     m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message(": " + channelName + " channel has been created by " + m_clients[clientFd].getNickname()), channelName);
+    m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message(": " + channelName + " supported commands : INVITE, PART, KICK, MODE, NAMES, LIST "), channelName);
+    m_p_namesCmd_listCmd(m_clients[clientFd], channelName, NAMES_COMMAND);
 }
 
 void                    Server::m_joinCmd(Client & client)
@@ -2112,6 +2125,32 @@ void    Server::m_namesCmd_listCmd(Client & client)
             m_reply(client.getFd(), Replies::RPL_LISTEND, *it_chan);
         }
         it_chan++;
+    }
+}
+
+void    Server::m_p_namesCmd_listCmd(Client & client, std::string target, std::string cmd)
+{
+    
+    std::cout << "sector 0 " << m_channels[target].getModeValue(ChannelModes::p_private) << " " << m_channels[target].getModeValue(ChannelModes::s_secret) << std::endl;
+    if (cmd == NAMES_COMMAND && !m_channels[target].getModeValue(ChannelModes::p_private)\
+    && !m_channels[target].getModeValue(ChannelModes::s_secret))
+    {
+        std::cout << "sector 1\n";
+        if (!m_channels[target].getModeValue(ChannelModes::a_annonymous))
+            m_reply(client.getFd(), Replies::RPL_NAMREPLY, m_composeNames(target));
+        else
+            m_reply(client.getFd(), Replies::RPL_NAMREPLY, " anonymous channel ");
+        m_reply(client.getFd(), Replies::RPL_ENDOFNAMES, target);
+    }
+    else if (cmd == LIST_COMMAND && !m_channels[target].getModeValue(ChannelModes::p_private)\
+    && !m_channels[target].getModeValue(ChannelModes::s_secret))
+    {
+        std::cout << "sector 2\n";
+        if (!m_channels[target].getModeValue(ChannelModes::a_annonymous))
+            m_reply(client.getFd(), Replies::RPL_LIST, m_composeList(target));
+        else
+            m_reply(client.getFd(), Replies::RPL_LIST, " anonymous channel ");
+        m_reply(client.getFd(), Replies::RPL_LISTEND, target);
     }
 }
 

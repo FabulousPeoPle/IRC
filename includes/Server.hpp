@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/24 17:53:05 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/25 19:27:32 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,7 +48,7 @@
 
 #define BUFFER_SIZE 512
 
-
+// #define ILLEGALE_CHARS_NICK "#&*@.,;:\"\'"
 
 #define END_STRING "\r\n"
 
@@ -373,12 +373,13 @@ class Server {
         void                            m_inviteCmd(Client & client);
         
         void                            m_namesCmd_listCmd(Client & client);
-        void                            m_p_namesCmd_listCmd(Client & client, std::string cmd); // still not implemented
+        void                            m_p_namesCmd_listCmd(Client & client,std::string target, std::string cmd); // still not implemented
         void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
         void                            m_passCmd(Client &client);
 
         std::string                     m_getTLD(std::string mask);
         std::vector<int>                m_grabClientsWithMask(std::string mask);
+        bool                            m_nickIsValid(std::string &str);
     
         const std::string               m_serverName;
         const std::string               m_port;

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Message.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/22 19:22:48 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/25 19:56:27 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,7 +28,6 @@ typedef std::deque<std::string> t_strDQeue;
 class Message
 {
 private:
-    t_strDQeue  _messageQueue;
     std::string message;
     std::string command;
     std::string _literalMsg;
@@ -44,7 +43,6 @@ public:
     ///////////////
     /// GETTERS ///
     ///////////////
-    t_strDQeue  &getMsgQueue(void);
     std::string getMsg(void) const;
     std::string getCmd(void) const;
     std::string getLiteralMsg(void) const;
@@ -53,8 +51,6 @@ public:
     ///////////////
     /// SETTERS ///
     ///////////////
-    void        pushMsgInQueue(std::string message);
-    void        popMsgFromQueue(std::string message);
     void        setMsg(std::string message);
 
     ///////////////

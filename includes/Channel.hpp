@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/24 16:19:27 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/25 12:01:02 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@
 //IDK IF THIS IS HOW WE ARE HANDLING THIS, THIS IS JUST SO I CAN WORK ON THE JOIN COMMAND 
 
 #define NUM_MODES_CHANNEL 9
+#define NEW_CHAN_MODES 0
 
 class Client;
 

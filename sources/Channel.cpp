@@ -19,8 +19,8 @@ Channel::Channel(int mode, int opFd, std::string name, char type, std::string pa
 {
 	m_operators.push_back(opFd);
 	m_topic = "";
-	m_password = "";
 	m_userLimit = -1;
+	modes = NEW_CHAN_MODES;
 }
 
 Channel::Channel(const Channel& channelRef)
