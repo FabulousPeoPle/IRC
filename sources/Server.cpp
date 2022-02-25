@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/25 16:22:45 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/25 17:06:46 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,6 +79,7 @@ Server::Server(std::string port, std::string hostname, std::string name, int max
     this->m_sockfd = -1;
     this->m_poll_count = 0;
     m_numOps = 0;
+    
     try
     {
         std::stoi(port);
@@ -152,14 +153,14 @@ int             Server::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, s
         return (-1);
     }
     // allowing a port to be reused, unless there is a socket already listening to the port
-    // if (setsockopt(this->m_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
-    // {
-    //     perror("setsocketopt");
-    //     // is freeing necessary before exit()?
-    //     if (this->m_servinfo)
-    //         freeaddrinfo(this->m_servinfo);
-    //     exit(1);
-    // }
+    if (setsockopt(this->m_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
+    {
+        perror("setsocketopt");
+        // is freeing necessary before exit()?
+        if (this->m_servinfo)
+            freeaddrinfo(this->m_servinfo);
+        exit(1);
+    }
     if ((bind(this->m_sockfd, addr, addrlen)))
     {
         perror("bind");
