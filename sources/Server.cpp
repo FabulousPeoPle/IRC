@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/25 17:31:37 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/25 18:58:03 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -722,7 +722,7 @@ void            Server::m_modeCmd(Client& client)
     Message& message = client.getMessageQueue().front();
     std::string channelName = message.getArgs()[0];
     if (m_isChannelPrefix(channelName[0]))
-        m_channelModeCmd(client, message);
+        m_channelModeCmd(client, message); // send to all users the changes modes
     else if (message.getArgs().size() < 2)
     {
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, ""); // NOT SURE ABOUT THIS
@@ -983,7 +983,7 @@ bool                Server::m_onlyOps(std::vector<std::string> arguments)
 
 typedef void (Server::*cmdFun)(Client&);
 
-void                Server::m_relay(int clientFd)
+void                Server::m_relay(int clientFd) // segfault when sending nick
 {
     Client& client = this->m_clients[clientFd];
     t_messageDQeue& messages = client.getMessageQueue();
@@ -997,16 +997,14 @@ void                Server::m_relay(int clientFd)
         std::cout << message.getCmd()<< " this is the command\n";
         #endif
         
-        // This two lines might be deleting our message
-        // if (!messages.empty())
-        // TODO: replace with switch case
-        // TODO: a map that has command function as values and the string command as key
         std::string command = message.getCmd();
-
 
         if (command == USER_COMMAND)
             m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, ""); // not sure about this
-        else if (this->m_isValidCommand(command))
+        else if (this->m_isValidCommand(command)
+                && command != NICK_COMMAND
+                && command != PASS_COMMAND
+                && command != USER_COMMAND)
         {
             cmdFun fp = m_cmdFuncs[command];
             (this->*fp)(m_clients[clientFd]);
@@ -1164,7 +1162,7 @@ bool    Server::m_tryAuthentificate(Client& client)
 }
 // heavy refactor
 
-void    Server::m_reply(int clientFd, int replyCode, std::string message) // TODO:: change this so that it can take a string argument, needed for MODE reply
+void    Server::m_reply(int clientFd, int replyCode, std::string message)
 {
     #ifdef DEBUG_USERHOST
     std::cout << m_clients[clientFd].getNickname() << "|\n";
@@ -1209,7 +1207,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
         case Replies::ERR_UMODEUNKNOWNFLAG:\
             this->m_send(clientFd, ':' + this->m_serverName + " 501 :Unknown MODE flag\r\n");
             break;
-        case Replies::RPL_UMODEIS: // TODO: EXTRA CARE
+        case Replies::RPL_UMODEIS:
             this->m_send(clientFd, ':' + m_clients[clientFd].getNickname() + " MODE " + m_clients[clientFd].getNickname() + " :" + message + "\r\n"); // TODO: change +i to the correct value of modes
             break;
         case Replies::ERR_NOMOTD :\
@@ -1221,7 +1219,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
         case Replies::RPL_ENDOFMOTD :\
             this->m_send(clientFd, ':' + this->m_serverName + " 376 " + m_clients[clientFd].getNickname() + " :End of MOTD command\r\n");
             break;
-        case Replies::RPL_MOTD: // TODO: DECIDE IF WE WANNA PRINT DATE AFTER EVERY LINE
+        case Replies::RPL_MOTD:
             this->m_send(clientFd, ':' + this->m_serverName + " 372 " + m_clients[clientFd].getNickname() + " :- " + message + "\r\n");
             break;
         case Replies::RPL_NOWAWAY: // TODO: care for message syntax
@@ -1237,7 +1235,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
             this->m_send(clientFd, ':' + this->m_serverName + " 421 :" + message + " :Unknown command\r\n");
             break;
         case Replies::RPL_LUSERCLIENT:
-            this->m_send(clientFd, ':' + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_athenticatedUserNum) + " user(s) on the server\r\n"); // TODO: STILL need to add number of services and the number of servers
+            this->m_send(clientFd, ':' + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_athenticatedUserNum) + " user(s) on the server\r\n");
             break;
         case Replies::RPL_LUSERUNKNOWN:
             this->m_send(clientFd, ':' + this->m_serverName + " 253 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_calculateUnknownConnections()) + " unknown connection(s)\r\n");
@@ -1638,7 +1636,11 @@ void    Server::m_passCmd(Client &client)
     }
 }
 
-// TODO: needs tweaks, mainly a hostname, a string of the address, and an if else depending on if a message was left or not
+std::string             Server::m_constructMask(Client& client)
+{
+    return (':' + client.getNickname() + "!~" + client.getUsername() + '@' + client.getHostname());
+}
+
 // TODO: QUIT FROM CHANNELS
 void                    Server::m_quitCmd(Client& client) 
 {
@@ -1651,7 +1653,7 @@ void                    Server::m_quitCmd(Client& client)
     std::vector<std::string>::iterator end = client.getChannels().end();
     while (it != end)
     {
-        m_p_privMsgCmd_noticeCmd(client, Message(" PART " + client.getNickname() + ' ' + client.getMessageQueue().front().getLiteralMsg().erase(0, 1)), *it);
+        m_p_privMsgCmd_noticeCmd(client, Message(m_constructMask(client) + " QUIT :Quit: "  + client.getNickname()), *it);
         m_channels[*it].removeMember(client.getFd());
         m_channels[*it].removeOp(client.getFd());
         m_channels[*it].removeInvited(client.getFd());
