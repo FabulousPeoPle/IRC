@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:54 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/17 13:06:16 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/23 20:07:05 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,11 +24,14 @@ char* strdup(const char *s)
     return (d);
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
     
-    Server myServer("6667", "", "FabulousPP", 150);
+    (void)argc;
+    (void)argv;
+    Server myServer("6667", "", "FabulousPP", 20);
 
+    myServer.initializeCmdFuncs();
     myServer.setOperPassword("meh");
     std::cout << "Server name: " << myServer.getServName() << std::endl;
     

@@ -3,12 +3,13 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/19 12:28:23 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/23 19:27:03 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 
@@ -23,6 +24,8 @@
 #include "Message.hpp"
 #include <cstdint>
 #include <cstring>
+
+#include "Channel.hpp"
 
 class Message;
 
@@ -60,6 +63,7 @@ class Client
     private:
         int                                 _sock_fd;
         struct sockaddr_storage             _addr;
+        std::string                         lastJoinedChannel;
         socklen_t                           _addr_size;
         std::string                         _nickname;
         std::string                         _username;
@@ -110,6 +114,8 @@ class Client
         bool                            isAuthComplete(void) const;
         bool                            getModeValue(int modeNum) const;
         bool		                    getModeValue(int modeNum, std::string channelName);
+        int                             findMode(char mode) const;
+        std::string                     getLastJoinedChannel(void);
 
         std::vector<std::string>        &getChannels(void);
         
@@ -138,6 +144,7 @@ class Client
         void		                    turnOffMode(int modeNum, std::string channelName);
         void                            pushChannel(std::string channelName, std::uint8_t modes);
         void                            popChannel(std::string channelName);
+        void                            manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex);
 
         Client & operator=(Client const & rhs);
 

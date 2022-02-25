@@ -3,12 +3,13 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/21 19:27:16 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/23 20:17:36 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #ifndef _SERVER_HPP_
 # define _SERVER_HPP_
@@ -59,7 +60,6 @@ namespace Replies
 {
     enum
     {
-
         /******-AUTHENTIFICATION-*******/
         RPL_WELCOME = 1,
         RPL_YOURHOST = 2,
@@ -84,24 +84,29 @@ namespace Replies
         RPL_UNAWAY = 305,
         ERR_NOTREGISTERED = 541,
         ERR_UNKNOWNCOMMAND = 421,
+
+        /*****-LUSERS-*******/
         RPL_LUSERCLIENT = 251,
         RPL_LUSEROP = 252,
         RPL_LUSERUNKNOWN = 253,
-        RPL_LUSERCHANNELS = 254,
         RPL_LUSERME = 255,
+        RPL_LUSERCHANNELS = 254,
+        /********************/
         RPL_PINGREQUEST = 800,
-        //ERR_NOSUCHSERVER
         ERR_BANNEDFROMCHAN = 474,
         ERR_BADCHANNELKEY = 457,
         ERR_NOSUCHCHANNEL = 403,
         ERR_NORECIPIENT = 411,
         ERR_NOTEXTTOSEND = 412,
         ERR_TOOMANYTARGETS = 407,
+
         /******-WHOIS-*******/
         RPL_WHOISUSER = 311,
         RPL_WHOISSERVER = 312,
         RPL_ENDOFWHOIS = 318,
         ERR_NOSUCHNICK = 401,
+        RPL_WHOISOPERATOR = 313,
+        RPL_AWAY = 301,
         /********************/
 
         /******-TOPIC-*******/
@@ -119,8 +124,19 @@ namespace Replies
         /****-MODE_CHANNEL-**/
         RPL_CHANNELMODEIS = 324,
         ERR_CHANOPRIVSNEEDED = 482,
+        ERR_USERNOTINCHANNEL = 441,
+        RPL_UNIQOPIS = 325,
+        RPL_BANLIST = 367,
+        RPL_INVITELIST = 346,
+        RPL_EXCEPTLIST = 348,
+        RPL_ENDOFEXCEPTLIST = 349,
+        RPL_ENDOFBANLIST = 368,
+        RPL_ENDOFINVITELIST = 347,
+        ERR_INTNEEDED = 666,
+        ERR_WRONGCHANMODESYNTAX = 888,
         /********************/
         
+
         ERR_USERONCHANNEL = 443,
         RPL_NAMREPLY = 353,
         RPL_ENDOFNAMES = 366,
@@ -147,12 +163,16 @@ namespace Replies
 #define WHOIS_COMMAND       "WHOIS"
 #define JOIN_COMMAND        "JOIN"
 #define PART_COMMAND        "PART"
+#define KICK_COMMAND        "KICK"
 #define NOTICE_COMMAND      "NOTICE"
 #define PRIVMSG_COMMAND     "PRIVMSG"
 #define OPER_COMMAND        "OPER"
 #define TOPIC_COMMAND       "TOPIC"
 #define NAMES_COMMAND       "NAMES"
 #define LIST_COMMAND        "LIST"
+#define WHO_COMMAND         "WHO"
+#define KICK_COMMAND        "KICK"
+#define INVITE_COMMAND      "INVITE"
 
 #define NUM_COMMANDS 20
 
@@ -187,13 +207,14 @@ typedef struct      s_m_socketInfo
 // TODO: BIT masking for user modes
 class Server {
     public:
-        // typedef void (*commandFunc)(Client&);
+        typedef void (Server::*cmdFun)(Client&);
+
                                     // constructors are probably going to be useless
                                         Server(void);
                                         Server(std::string port, std::string hostname, std::string serverName, int maxClients);
                                         Server(const Server& serverRef);
                                         ~Server();
-                                        
+        void                            initializeCmdFuncs(void);
         Server&                         operator=(const Server& serverRef);
 
         std::string                     getPort(void) const;
@@ -253,13 +274,18 @@ class Server {
         void                            m_debugAuthentificate(int clientFd);
         int                             m_send(int toFd, std::string message);
 
-        void                            m_reply(int clientFd, int replyCode, int extraArg, std::string message);
+        void                            m_reply(int clientFd, int replyCode, std::string message);
         void                            m_setCommandFuncs(void);
+
+        bool                            m_isModesSyntaxValid(std::vector<std::string> arguments);
 
         bool                            m_checkNickSyntax(Message& message);
         void                            m_eraseClientPoll(int clientFd);
 
-        void                            m_quitCmd(int clientFd, std::string quitMessage); // Needs a recheck
+        bool                            m_onlyOps(std::vector<std::string> arguments);
+
+
+        void                            m_quitCmd(Client& client); // Needs a recheck
         // Need to know more about channel class
         void                            m_modeCmd(Client& client);
         void                            m_motdCmd(Client& client);
@@ -270,10 +296,23 @@ class Server {
         void                            m_whoisCmd(Client& client);
         void                            m_topicCmd(Client& client);
         void                            m_operCmd(Client& client);
-
-
-        void                            m_channelModeCmd(Client& client, Message& message);
+        void                            m_whoCmd(Client& client);
+        
         void                            m_userModeCmd(Client& client, Message& message);
+
+        template <typename T>
+        void    printVector(T &vector, std::string name)
+        {
+            typename T::iterator it = vector.begin();
+            typename T::iterator end = vector.end();
+            std::cout << "printing vector " << name << std::endl;
+            while (it != end)
+            {
+                std::cout << "|" << *it << "|" << std::endl;
+                it++;
+            }
+        }
+        void                            m_channelModeCmd(Client& client, Message& message);
 
         std::string                     m_makeReplyHeader(int replyNum, std::string nickname);
 
@@ -283,17 +322,32 @@ class Server {
         std::string                     m_composeChannelModes(std::string channelName);
         std::string                     m_composeNames(std::string channelName);
         std::string                     m_composeList(std::string channelName);
+        std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);// const?
 
         std::vector<std::string>        m_extractTLDs(std::vector<std::string>& arguments, int start);
 
+        int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments); // turn arguments into references?
+        std::vector<std::string>        m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex);
+
+        void                            m_findNextMask(std::vector<std::string> arguments, int& paramToUseIndex);
+
+
+        bool                            m_areModesMasks(std::string modes);
         bool                            m_isValidCommand(std::string potentialCommand); // should be const
         bool                            m_isChannelPrefix(char c) const;
         bool                            m_isUser(Client& client) const;
-        bool                            m_isMaskUserMatch(std::string nickname, std::string TLD);
-        bool                            m_isUserSpecificChannelMode(char c) const;
-        bool                            m_isAttributeSetter(char c) const;
-        bool                            m_isSimpleChannelMode(char c) const;
+        bool                            m_isMaskUserMatch(std::string nickname, std::string TLD); // TODO: should be more general
+        bool                            m_isMask(std::string str);
+        bool                            m_isUserSpecificChannelMode(char c) const; // user modes
+        bool                            m_isAttributeSetterMode(char c) const; //password and limit users
+        bool                            m_isSimpleChannelMode(char c) const; // turn on turn off mdoes
+        bool                            m_isMaskMode(char c) const; // the masking ones 
         bool                            m_isClientOper(Client& client, std::string channelName) const; // make variable const
+        bool                            m_isWildCardMask(std::string str) const; // Used for who
+
+        void                            m_listMasks(std::vector<std::string> maskList, char mode, Client& client, Channel& channel);
+
+        void                            m_executeModes(std::vector<std::string> arguments, Channel& channel, Client& client);
 
         std::vector<std::string>        m_getClientsToMode(std::vector<std::string> arguments);
 
@@ -312,20 +366,19 @@ class Server {
         void                            m_partCmd(Client & client);
         void                            m_partZero(Client & client);
 
-        void                            m_privMsgCmd_noticeCmd(Client &client, bool notifs);
-        void                            m_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
+        void                            m_privMsgCmd_noticeCmd(Client &client);
+        void                            m_p_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
 
         void                            m_kickCmd(Client & client);
         
         void                            m_inviteCmd(Client & client);
         
-        void                            m_namesCmd_listCmd(Client & client, std::string cmd);
+        void                            m_namesCmd_listCmd(Client & client);
+        void                            m_p_namesCmd_listCmd(Client & client, std::string cmd); // still not implemented
         void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
         void                            m_passCmd(Client &client);
 
         std::string                     m_getTLD(std::string mask);
-        bool                            m_isMask(std::string mask);
-        bool                            m_isMaskMatch(std::string str, std::string mask);
         std::vector<int>                m_grabClientsWithMask(std::string mask);
     
         const std::string               m_serverName;
@@ -350,6 +403,7 @@ class Server {
         /// int : client fd , Client : the client object ///
         ////////////////////////////////////////////////////
         std::map<int, Client>           m_clients;
+        int                             m_numOps;
         
         ///////////////////////////////////////////////////////
         /// std::string : client nickname , int : client fd ///
@@ -362,6 +416,7 @@ class Server {
         /// std::string : channel name , Channel : the channel object ///
         /////////////////////////////////////////////////////////////////
         std::map<std::string, Channel>  m_channels;
+        std::map<std::string, cmdFun>   m_cmdFuncs;
         bool                            m_passProtected;
         std::string                     m_password;
 };

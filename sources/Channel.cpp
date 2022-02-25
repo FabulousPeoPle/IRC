@@ -34,7 +34,7 @@ std::string  Channel::getPassword(void) const
 	return (this->m_password);
 }
 
-std::string  Channel::getTopic(void) const
+std::string&  Channel::getTopic(void)
 {
 	return (this->m_topic);
 }
@@ -127,15 +127,19 @@ bool Channel::isInvited(int clientFd) const
 // 	return (client._nickname + "!" + client._username + "@" + client._ip_address);
 // }
 
-bool Channel::isBanned(int clientFd) const
+bool Channel::isBanned(Client &client) const
 {
-	return (((std::find(m_banned.begin(), m_banned.end(), clientFd) != m_banned.end()) ? true : false));
+	std::vector<std::string>::const_iterator it = m_banMasks.begin();
+	std::vector<std::string>::const_iterator end = m_banMasks.end();
+	while (it != end)
+	{
+		if (m_isMaskUserMatch(client.getHostname(), *it))
+			return (true);
+		it++;
+	}
+	return (false);
 }
 
-void Channel::Ban(int clientFd)
-{
-	this->m_banned.push_back(clientFd);
-}
 
 void	Channel::removeMember(int clientFd)
 {
@@ -185,9 +189,9 @@ void		Channel::turnOnMode(int modeNum)
 	this->modes |= this->modeBitMasks[modeNum];
 }
 
-int 	    Channel::findMode(char c) const // TODO: TURN THE OTHER ONES TO CONST AS WELL
+int 	    Channel::findMode(char mode) const // TODO: TURN THE OTHER ONES TO CONST AS WELL
 {
-    switch (c)
+    switch (mode)
     {
         case 'a':
             return (ChannelModes::a_annonymous);
@@ -216,6 +220,76 @@ bool		Channel::getModeValue(int modeNum) const
 {
 	return (this->modeBitMasks[modeNum] & this->modes);
 }
+
+int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string> arguments)
+{
+	if (mode == 'k')
+	{
+		if (prefix == '-')
+		{
+			if (!m_password.empty())
+				if (arguments[2] == m_password)
+					m_password = "";
+		}
+		else
+			m_password = arguments[2];
+		}
+	else
+	{
+		if (prefix == '-')
+			m_userLimit = -1;
+		else
+		{
+			try
+			{
+				m_userLimit = std::stoi(arguments[2]);
+			}
+			catch (std::exception& e)
+			{
+				std::cout << "Bad argument: " << e.what() << std::endl;
+				m_userLimit = -1;
+				return (-1);
+			}
+		}
+	}
+	return (0);
+}
+
+std::vector<std::string>&	Channel::getBanMasks(void)
+{
+	return (m_banMasks);
+}
+
+std::vector<std::string>&	Channel::getExceptionBanMasks(void)
+{
+	return (m_exceptionBanMasks);
+}
+
+std::vector<std::string>&	Channel::getInviteMasks(void)
+{
+	return (m_inviteMasks);
+}
+
+std::string			Channel::getCreatorName(void) const
+{
+	return (m_creatorNick);
+}
+
+void						Channel::setCreatorNick(std::string nickname)
+{
+	m_creatorNick = nickname;
+}
+
+void				Channel::manageSimpleMode(char c, char prefix)
+{
+	int modeNum = this->findMode(c);
+
+	if (prefix == '+')
+		this->turnOnMode(modeNum);
+	else
+		this->turnOffMode(modeNum);
+}
+
 
 std::uint16_t       Channel::modeBitMasks[NUM_MODES_CHANNEL] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6,
 																	1 << 7, 1 << 8};

@@ -1,14 +1,15 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   channel.hpp                                        :+:      :+:    :+:   */
+/*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/21 15:36:12 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/23 19:26:59 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 
@@ -19,6 +20,7 @@
 #include <vector>
 
 #include <Client.hpp>
+#include <algorithm>
 
 #define LOCAL_CHAN '&'
 #define NETWORKWIDE_CHAN '#'
@@ -55,6 +57,8 @@ namespace ChannelModes
 		total
     };
 };
+//TODO: COPLIEN FORM
+
 class Channel
 {
 private:
@@ -63,39 +67,48 @@ private:
 	int							m_type; // the scope of the channel local/networkwide
 	std::vector<int>			m_operators; // this vector stores the clientfds of the ops
 	std::string					m_topic;
-	std::vector<int>			m_banned; // probably useless
 	std::vector<int>			m_members;
 	std::vector<int>			m_invited;
-	std::string					m_password;
 	std::uint16_t               modes; // need to give em default modes
+
+	std::string					m_creatorNick;
 
 	std::vector<std::string>	m_banMasks;
 	std::vector<std::string>	m_exceptionBanMasks;
 	std::vector<std::string>	m_inviteMasks;
 
-	int							m_userLimit;
+	std::string					m_password; // boolean
+	int							m_userLimit; // initialized to -1
 
 	
 
 public:
-	Channel(void);
-	Channel(int mode, int opFd, std::string name, char type, std::string password);
-	~Channel(void);
+						Channel(void);
+						Channel(int mode, int opFd, std::string name, char type, std::string password);
+						~Channel(void);
 
 
-	std::string 		getName(void) const;
-	std::string 		getPassword(void) const;
-	int					getMode(void) const;
-	std::vector<int> 	&getOps(void);
-	std::vector<int> 	&getMembers(void);
-	std::vector<int> 	&getInvited(void);
-	int			 		getType(void) const;
-	std::string			getTopic(void) const;
+	std::vector<std::string>&	getBanMasks(void);
+	std::vector<std::string>&	getExceptionBanMasks(void);
+	std::vector<std::string>&	getInviteMasks(void);
+
+	std::string					getCreatorName(void) const;
+
 	
-	void					setTopic(std::string topic);
-	void					setMode(int mode);
-	void					setName(std::string name);
-	void					setPassword(std::string password);
+	std::string 				getName(void) const;
+	std::string 				getPassword(void) const;
+	int							getMode(void) const;
+	std::vector<int> 			&getOps(void);
+	std::vector<int> 			&getMembers(void);
+	std::vector<int> 			&getInvited(void);
+	int			 				getType(void) const;
+	std::string&				getTopic(void);
+	
+	void						setTopic(std::string topic);
+	void						setMode(int mode);
+	void						setName(std::string name);
+	void						setPassword(std::string password);
+	void						setCreatorNick(std::string nickname);
 	
 	bool				isOp(int clientFd) const;
 	bool				checkPassword(std::string password);
@@ -105,21 +118,41 @@ public:
 	void				removeOp(int clientFd);
 	void				removeInvited(int clientFd);
 	void				addOp(int clientFd);
-	bool				isBanned(int clientFd) const;
+	bool				isBanned(Client &client) const;
 	bool				isMember(int clientFd) const;
 	bool				isInvited(int clientFd) const;
 	// std::string			m_composeMask(Client & client) const;
-	void					Ban(int clinetFd);
 
 	bool        			getModeValue(int modeNum) const;
 
 	int 	    			findMode(char c) const;
 
+	int							manageAttribute(char mode, char prefix,
+								std::vector<std::string> arguments);
+	void						manageSimpleMode(char mode, char prefix);
     void        			turnOnMode(int modeNum);
     void        			turnOffMode(int modeNum);
+	bool            		m_isMaskUserMatch(std::string hostname, std::string TLD) const // maybe it should be a friend function
+		{
+		    hostname = hostname.erase(0, hostname.size() - TLD.size());
+		    return (hostname == TLD || TLD.empty());
+		}
 
 	static std::uint16_t	modeBitMasks[NUM_MODES_CHANNEL];
 	static std::string		potentialModes;
+
+	template <typename T>
+        void    printVector(T &vector)
+        {
+            typename T::iterator it = vector.begin();
+            typename T::iterator end = vector.end();
+            std::cout << "printing vector\n";
+            while (it != end)
+            {
+                std::cout << "|" << *it << "|" << std::endl;
+                it++;
+            }
+        }
 };
 
 #endif
