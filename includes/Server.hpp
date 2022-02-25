@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/23 20:17:36 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/24 19:31:38 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,7 +136,7 @@ namespace Replies
         ERR_WRONGCHANMODESYNTAX = 888,
         /********************/
         
-
+        ERR_CHANUSERLIMIT = 777,
         ERR_USERONCHANNEL = 443,
         RPL_NAMREPLY = 353,
         RPL_ENDOFNAMES = 366,
@@ -246,6 +246,8 @@ class Server {
         int                             listen(void);
 
         int                             startServer(void);
+        void                            setServPassword(std::string password);
+
 
     private:
 
@@ -324,7 +326,6 @@ class Server {
         std::string                     m_composeList(std::string channelName);
         std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);// const?
 
-        std::vector<std::string>        m_extractTLDs(std::vector<std::string>& arguments, int start);
 
         int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments); // turn arguments into references?
         std::vector<std::string>        m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex);
@@ -368,7 +369,7 @@ class Server {
 
         void                            m_privMsgCmd_noticeCmd(Client &client);
         void                            m_p_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
-
+        
         void                            m_kickCmd(Client & client);
         
         void                            m_inviteCmd(Client & client);
