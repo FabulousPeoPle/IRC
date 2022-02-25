@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:54 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/23 20:07:05 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/25 16:00:53 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,17 +27,23 @@ char* strdup(const char *s)
 int main(int argc, char **argv)
 {
     
-    (void)argc;
-    (void)argv;
-    Server myServer("6667", "", "FabulousPP", 20);
+    if (argc != 3)
+    {
+        std::cout << "Usage: ./ircserv [port] [password]\n";
+        return (-1);
+    }
+    Server myServer(argv[1], "", "FabulousPP", 20);
 
     myServer.initializeCmdFuncs();
     myServer.setOperPassword("meh");
+    myServer.setServPassword(argv[2]);
+
     std::cout << "Server name: " << myServer.getServName() << std::endl;
     
-    // myServer.setServerHints(AF_INET6, SOCK_STREAM, AI_PASSIVE);
-    // myServer.setServerInfo();
-    myServer.setSockfd_in6();
+    myServer.setServerHints(AF_UNSPEC, SOCK_STREAM, AI_PASSIVE);
+    myServer.setServerInfo();
+    myServer.setSockfd(AF_UNSPEC);
+    // myServer.setSockfd_in6();
     myServer.listen();
     myServer.startServer();
 }

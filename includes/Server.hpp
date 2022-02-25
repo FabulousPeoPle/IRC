@@ -6,9 +6,10 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/25 19:27:32 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/25 20:01:36 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 #ifndef _SERVER_HPP_
@@ -80,11 +81,13 @@ namespace Replies
         RPL_MOTD = 372,
         RPL_ENDOFMOTD = 376,
         ERR_NOMOTD = 422,
+        /*****-AWAY-*********/
+        ERR_NOTAWAY = 111, 
         RPL_NOWAWAY = 306,
         RPL_UNAWAY = 305,
         ERR_NOTREGISTERED = 541,
         ERR_UNKNOWNCOMMAND = 421,
-
+        /********************/
         /*****-LUSERS-*******/
         RPL_LUSERCLIENT = 251,
         RPL_LUSEROP = 252,
@@ -200,11 +203,6 @@ typedef struct      s_m_socketInfo
     int protocol;
 }                   t_socketInfo;
 
-// TODO: SET AN ENUM FOR ERRORS
-// TODO: ADD EXCEPTIONS
-// TODO: THROW EXCEPTIONS INSTEAD OF EXITING?
-// TODO: change inet_ntoa in startServer(), only converts from IPv4, we need to be able to convert from IPv6
-// TODO: BIT masking for user modes
 class Server {
     public:
         typedef void (Server::*cmdFun)(Client&);
@@ -246,6 +244,8 @@ class Server {
         int                             listen(void);
 
         int                             startServer(void);
+        void                            setServPassword(std::string password);
+
 
     private:
 
@@ -290,8 +290,8 @@ class Server {
         void                            m_modeCmd(Client& client);
         void                            m_motdCmd(Client& client);
         void                            m_awayCmd(Client& client);
-        void                            m_pingCmd(Client& client); // TODO: Need to test with BITCHX
-        void                            m_pongCmd(Client& client);
+        void                            m_pingCmd(Client& client);
+        void                            m_pongCmd(Client& client); // TODO: SHOULD PROBABLY BE REMOVED
         void                            m_lusersCmd(Client& client);
         void                            m_whoisCmd(Client& client);
         void                            m_topicCmd(Client& client);
@@ -360,14 +360,14 @@ class Server {
         bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans);
         bool                            m_channelExists(std::string);
         void                            m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected);
-        void                            m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected);
+        void                            m_addChannel(int clientFd, std::string channelName, std::string password);
 
         void                            m_partCmd(Client & client);
         void                            m_partZero(Client & client);
 
         void                            m_privMsgCmd_noticeCmd(Client &client);
         void                            m_p_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
-
+        
         void                            m_kickCmd(Client & client);
         
         void                            m_inviteCmd(Client & client);
@@ -376,6 +376,8 @@ class Server {
         void                            m_p_namesCmd_listCmd(Client & client,std::string target, std::string cmd); // still not implemented
         void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
         void                            m_passCmd(Client &client);
+
+        std::string                     m_constructMask(Client& client);
 
         std::string                     m_getTLD(std::string mask);
         std::vector<int>                m_grabClientsWithMask(std::string mask);

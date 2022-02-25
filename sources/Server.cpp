@@ -6,9 +6,10 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/25 19:36:26 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/25 20:02:18 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 
@@ -21,8 +22,6 @@
 // #define DEBUG_USERHOST
 
 // TODO: NICK NEEDS TO CHECK FOR NUMBER OF PARAMETERS
-// TODO: LITERAL MESSAGE DOESN'T NECESSARILY CONTAIN ':'
-// TODO: turn on channel creator when creating channel? what did we do before
 
 char* strdup(const char *s);
 
@@ -80,6 +79,17 @@ Server::Server(std::string port, std::string hostname, std::string name, int max
     this->m_sockfd = -1;
     this->m_poll_count = 0;
     m_numOps = 0;
+    
+    try
+    {
+        std::stoi(port);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        std::exit(1);
+    }
+    
     memset(&(this->m_socketInfo), 0, sizeof(this->m_socketInfo));
     memset(&(this->m_hints), 0, sizeof(this->m_hints));
     memset(&(this->m_addr_in), 0, sizeof(this->m_addr_in));
@@ -139,15 +149,16 @@ int             Server::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, s
 
     if ((this->m_sockfd = socket(socketInfo.family, socketInfo.socktype, socketInfo.protocol)) == -1)
     {
-        perror("socket:");
+        perror("socket");
         return (-1);
     }
     // allowing a port to be reused, unless there is a socket already listening to the port
     if (setsockopt(this->m_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
     {
-        perror("setsocketopt:");
+        perror("setsocketopt");
         // is freeing necessary before exit()?
-        freeaddrinfo(this->m_servinfo);
+        if (this->m_servinfo)
+            freeaddrinfo(this->m_servinfo);
         exit(1);
     }
     if ((bind(this->m_sockfd, addr, addrlen)))
@@ -183,7 +194,7 @@ int             Server::setSockfd(int family)
     {
         // Might add an enum for errors
         std::cerr << "Couldn't find a socket." << std::endl;
-        return (-1);
+        std::exit(1);
     }
     return (0);
 }
@@ -709,12 +720,12 @@ void            Server::m_userModeCmd(Client& client, Message& message) // TODO:
         m_reply(client.getFd(), Replies::RPL_UMODEIS, modeChanges);
 }
 
-void            Server::m_modeCmd(Client& client) // TODO: CHANGE THE MAGIC NUMBERS
+void            Server::m_modeCmd(Client& client)
 {
     Message& message = client.getMessageQueue().front();
-
-    if (m_isChannelPrefix(message.getArgs()[0][0]))
-        m_channelModeCmd(client, message);
+    std::string channelName = message.getArgs()[0];
+    if (m_isChannelPrefix(channelName[0]))
+        m_channelModeCmd(client, message); // send to all users the changes modes
     else if (message.getArgs().size() < 2)
     {
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, ""); // NOT SURE ABOUT THIS
@@ -771,7 +782,7 @@ void                Server::m_motdCmd(Client& client)
     m_reply(client.getFd(), Replies::RPL_ENDOFMOTD, "");
 }
 
-void                Server::m_awayCmd(Client& client) // TODO: SHOULD WORK TOGETHER WITH PRIVMSG to send messgae in channels the user is in?
+void                Server::m_awayCmd(Client& client)
 {
     Message& message = client.getMessageQueue().front();
 
@@ -784,6 +795,11 @@ void                Server::m_awayCmd(Client& client) // TODO: SHOULD WORK TOGET
     else
     {
         client.setAwayMsg("");
+        if (!client.getModeValue(UserModes::away))
+        {
+            m_reply(client.getFd(), Replies::ERR_NOTAWAY, "");
+            return ;
+        }
         client.turnOffMode(UserModes::away);
         m_reply(client.getFd(), Replies::RPL_UNAWAY, ""); // what if the user was never away
     }
@@ -887,7 +903,7 @@ void                Server::m_topicCmd(Client& client)
         return ;
     }
     std::vector<std::string> &channels = client.getChannels();
-    if (std::find(channels.begin(), channels.end(), arguments[0]) == channels.end()) // TODO: wrong reply?
+    if (std::find(channels.begin(), channels.end(), arguments[0]) == channels.end())
     {
         m_reply(client.getFd(), Replies::ERR_NOTONCHANNEL, arguments[0]);
         return ;
@@ -970,7 +986,7 @@ bool                Server::m_onlyOps(std::vector<std::string> arguments)
 
 typedef void (Server::*cmdFun)(Client&);
 
-void                Server::m_relay(int clientFd)
+void                Server::m_relay(int clientFd) // segfault when sending nick
 {
     Client& client = this->m_clients[clientFd];
     t_messageDQeue& messages = client.getMessageQueue();
@@ -984,10 +1000,6 @@ void                Server::m_relay(int clientFd)
         std::cout << message.getCmd()<< " this is the command\n";
         #endif
         
-        // This two lines might be deleting our message
-        // if (!messages.empty())
-        // TODO: replace with switch case
-        // TODO: a map that has command function as values and the string command as key
         std::string command = message.getCmd();
 
 
@@ -1063,6 +1075,17 @@ bool Server::m_nickIsValid(std::string &str)
     return (!(std::find_if(str.begin(), str.end(), m_isAlphaNum) == str.end()));
 }
 
+void     Server::setServPassword(std::string password)
+{
+    if (password.empty())
+    {
+        std::cout << "Error: Password cannot be empty.\n";
+        std::exit(-1);
+    }
+    m_passProtected = true;
+    m_password = password;
+}
+
 bool    Server::m_checkNickSyntax(Message& message)
 {
     if (message.getArgs().empty())
@@ -1126,19 +1149,22 @@ bool    Server::m_tryAuthentificate(Client& client)
         Message& msg = client.getMessageQueue().front();
 
         msg.parse();
-        if (msg.getCmd() != NICK_COMMAND && msg.getCmd() != USER_COMMAND)
+
+        std::string command = msg.getCmd();
+        
+        if (command != NICK_COMMAND && command != USER_COMMAND && command != PASS_COMMAND)
         {
-            if (this->m_isValidCommand(msg.getCmd()))
+            if (this->m_isValidCommand(command))
                 m_reply(client.getFd(), Replies::ERR_NOTREGISTERED, "");
             if (!client.getMessageQueue().empty())
                 client.getMessageQueue().pop_front();
             return (false);
         }
-        if (msg.getCmd() == USER_COMMAND)
+        if (command == USER_COMMAND)
             m_userCmd(client);
-        else if (msg.getCmd() == NICK_COMMAND)
+        else if (command == NICK_COMMAND)
             m_nickCmd(client);
-        else if (msg.getCmd() == PASS_COMMAND)
+        else if (command == PASS_COMMAND)
             m_passCmd(client);
         if (!client.getMessageQueue().empty())
             client.getMessageQueue().pop_front();
@@ -1147,7 +1173,7 @@ bool    Server::m_tryAuthentificate(Client& client)
 }
 // heavy refactor
 
-void    Server::m_reply(int clientFd, int replyCode, std::string message) // TODO:: change this so that it can take a string argument, needed for MODE reply
+void    Server::m_reply(int clientFd, int replyCode, std::string message)
 {
     #ifdef DEBUG_USERHOST
     std::cout << m_clients[clientFd].getNickname() << "|\n";
@@ -1192,7 +1218,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
         case Replies::ERR_UMODEUNKNOWNFLAG:\
             this->m_send(clientFd, ':' + this->m_serverName + " 501 :Unknown MODE flag\r\n");
             break;
-        case Replies::RPL_UMODEIS: // TODO: EXTRA CARE
+        case Replies::RPL_UMODEIS:
             this->m_send(clientFd, ':' + m_clients[clientFd].getNickname() + " MODE " + m_clients[clientFd].getNickname() + " :" + message + "\r\n"); // TODO: change +i to the correct value of modes
             break;
         case Replies::ERR_NOMOTD :\
@@ -1204,7 +1230,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
         case Replies::RPL_ENDOFMOTD :\
             this->m_send(clientFd, ':' + this->m_serverName + " 376 " + m_clients[clientFd].getNickname() + " :End of MOTD command\r\n");
             break;
-        case Replies::RPL_MOTD: // TODO: DECIDE IF WE WANNA PRINT DATE AFTER EVERY LINE
+        case Replies::RPL_MOTD:
             this->m_send(clientFd, ':' + this->m_serverName + " 372 " + m_clients[clientFd].getNickname() + " :- " + message + "\r\n");
             break;
         case Replies::RPL_NOWAWAY: // TODO: care for message syntax
@@ -1220,7 +1246,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
             this->m_send(clientFd, ':' + this->m_serverName + " 421 :" + message + " :Unknown command\r\n");
             break;
         case Replies::RPL_LUSERCLIENT:
-            this->m_send(clientFd, ':' + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_athenticatedUserNum) + " user(s) on the server\r\n"); // TODO: STILL need to add number of services and the number of servers
+            this->m_send(clientFd, ':' + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_athenticatedUserNum) + " user(s) on the server\r\n");
             break;
         case Replies::RPL_LUSERUNKNOWN:
             this->m_send(clientFd, ':' + this->m_serverName + " 253 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_calculateUnknownConnections()) + " unknown connection(s)\r\n");
@@ -1352,7 +1378,10 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message) // TOD
             this->m_send(clientFd, ":" + this->m_serverName + " 404 " + message + " :Cannot send to channel\r\n");
             break;
         case Replies::RPL_NOTOPIC:
-            this->m_send(clientFd,m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + ' ' + message + " :No topic set\r\n");
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + ' ' + message + " :No topic set\r\n");
+            break;
+        case Replies::ERR_NOTAWAY:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + " :Not away\r\n");
             break;
     }
 }
@@ -1617,7 +1646,11 @@ void    Server::m_passCmd(Client &client)
     }
 }
 
-// TODO: needs tweaks, mainly a hostname, a string of the address, and an if else depending on if a message was left or not
+std::string             Server::m_constructMask(Client& client)
+{
+    return (':' + client.getNickname() + "!~" + client.getUsername() + '@' + client.getHostname());
+}
+
 // TODO: QUIT FROM CHANNELS
 void                    Server::m_quitCmd(Client& client) 
 {
@@ -1630,7 +1663,7 @@ void                    Server::m_quitCmd(Client& client)
     std::vector<std::string>::iterator end = client.getChannels().end();
     while (it != end)
     {
-        m_p_privMsgCmd_noticeCmd(client, Message(" PART " + client.getNickname() + ' ' + client.getMessageQueue().front().getLiteralMsg().erase(0, 1)), *it);
+        m_p_privMsgCmd_noticeCmd(client, Message(m_constructMask(client) + " QUIT :Quit: "  + client.getNickname()), *it);
         m_channels[*it].removeMember(client.getFd());
         m_channels[*it].removeOp(client.getFd());
         m_channels[*it].removeInvited(client.getFd());
@@ -1690,6 +1723,8 @@ bool                    Server::m_channelExists(std::string channelName)
 void                    Server::m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected)
 {
     Channel & chan = m_channels[channelName];
+    std::cout << password << " :this is the password given\n";
+    std::cout << chan.getPassword() << " :this is the chan pass\n";
     if (chan.isInMaskVector(m_clients[clientFd], chan.getBanMasks())
             && !chan.isInMaskVector(m_clients[clientFd], chan.getExceptionBanMasks()))
         m_reply(clientFd, Replies::ERR_BANNEDFROMCHAN, channelName);
@@ -1718,9 +1753,9 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
     }
 }
 
-void                    Server::m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected)
+void                    Server::m_addChannel(int clientFd, std::string channelName, std::string password)
 {
-    Channel newChannel(PEASEANT_MODES, clientFd, channelName, channelName.at(0), (passProtected ? password : ""));
+    Channel newChannel(PEASEANT_MODES, clientFd, channelName, channelName.at(0), password);
     // if (passProtected)
     //     newChannel.setPassword(password);
     newChannel.addMember(clientFd);
@@ -1739,7 +1774,7 @@ void                    Server::m_joinCmd(Client & client)
     std::vector<std::string>    chans;
     std::vector<std::string>    passes;
     Message& msg = client.getMessageQueue().front();
-    bool                        passProtected;
+    bool                        passProtected = true;
     
     ////// TODO: syntax check
     if (msg.getArgs().empty())
@@ -1759,10 +1794,12 @@ void                    Server::m_joinCmd(Client & client)
         {
             if (it_passes == end_passes)
                 passProtected = false;
+            else
+                std::cout << "pass from vector :" << *it_passes << std::endl;
             if (m_channelExists(*it_chan))
                 m_addClientToChan(client.getFd(), *it_chan, (passProtected)? *it_passes : "", passProtected);
             else
-                m_addChannel(client.getFd(), *it_chan, (passProtected)? *it_passes : "", passProtected);
+                m_addChannel(client.getFd(), *it_chan, (passProtected)? *it_passes : "");
             if (it_passes != end_passes)
                 it_passes++;
             it_chan++;

@@ -6,9 +6,10 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/25 12:01:02 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/25 19:59:00 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 
@@ -57,7 +58,6 @@ namespace ChannelModes
 		total
     };
 };
-//TODO: COPLIEN FORM
 
 class Channel
 {
