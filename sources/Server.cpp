@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/24 19:34:27 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/25 16:22:45 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,17 +148,18 @@ int             Server::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, s
 
     if ((this->m_sockfd = socket(socketInfo.family, socketInfo.socktype, socketInfo.protocol)) == -1)
     {
-        perror("socket:");
+        perror("socket");
         return (-1);
     }
     // allowing a port to be reused, unless there is a socket already listening to the port
-    if (setsockopt(this->m_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
-    {
-        perror("setsocketopt:");
-        // is freeing necessary before exit()?
-        freeaddrinfo(this->m_servinfo);
-        exit(1);
-    }
+    // if (setsockopt(this->m_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
+    // {
+    //     perror("setsocketopt");
+    //     // is freeing necessary before exit()?
+    //     if (this->m_servinfo)
+    //         freeaddrinfo(this->m_servinfo);
+    //     exit(1);
+    // }
     if ((bind(this->m_sockfd, addr, addrlen)))
     {
         perror("bind");
@@ -192,7 +193,7 @@ int             Server::setSockfd(int family)
     {
         // Might add an enum for errors
         std::cerr << "Couldn't find a socket." << std::endl;
-        return (-1);
+        std::exit(1);
     }
     return (0);
 }
@@ -1062,6 +1063,11 @@ void                Server::m_manageClientEvent(int pollIndex)
 
 void     Server::setServPassword(std::string password)
 {
+    if (password.empty())
+    {
+        std::cout << "Error: Password cannot be empty.\n";
+        std::exit(-1);
+    }
     m_passProtected = true;
     m_password = password;
 }
