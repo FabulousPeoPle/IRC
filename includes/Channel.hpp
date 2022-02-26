@@ -6,9 +6,11 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/26 11:34:01 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/26 16:17:48 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+
 
 
 
@@ -28,6 +30,7 @@
 //IDK IF THIS IS HOW WE ARE HANDLING THIS, THIS IS JUST SO I CAN WORK ON THE JOIN COMMAND 
 
 #define NUM_MODES_CHANNEL 9
+#define NEW_CHAN_MODES 0
 
 class Client;
 
@@ -127,10 +130,10 @@ public:
 	bool        				getModeValue(int modeNum) const;
 
 	int 	    				findMode(char c) const;
-	void						m_addToChanVector(std::vector<std::string>& dst, std::string src);
+	void							m_addToMaskVector(std::vector<std::string>& dst, std::string src);
 	int							manageAttribute(char mode, char prefix,
-								std::vector<std::string> arguments);
-	void						manageSimpleMode(char mode, char prefix);
+								std::vector<std::string> arguments, std::string& modeChanges);
+	void						manageSimpleMode(char mode, char prefix, std::string& modeChanges);
     void        			turnOnMode(int modeNum);
     void        			turnOffMode(int modeNum);
 	bool					isInMaskVector(Client &client, std::vector<std::string>& maskVector);

@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/24 18:05:37 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/25 19:56:20 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,10 +30,6 @@ Message & Message::operator=(Message const & rhs)
     return (*this);
 }
 
-t_strDQeue  &Message::getMsgQueue(void)
-{
-    return (_messageQueue);
-}
 
 std::string Message::getMsg(void) const
 {
@@ -53,27 +49,6 @@ std::string Message::getLiteralMsg(void) const
 std::vector<std::string>    &Message::getArgs(void)
 {
     return (arguments);
-}
-
-void    Message::pushMsgInQueue(std::string message)
-{
-    _messageQueue.push_back(message);
-}
-
-void    Message::popMsgFromQueue(std::string message)
-{
-    t_strDQeue::iterator it = _messageQueue.begin();
-	t_strDQeue::iterator end = _messageQueue.end();
-
-	while (it != end)
-	{
-		if (*it == message)
-		{
-			_messageQueue.erase(it);
-			break ;
-		}
-		it++;
-	}
 }
 
 void    Message::setMsg(std::string message)
@@ -126,6 +101,7 @@ void Message::parse(void)
             arguments.push_back(token);
     }
     free(msg);
+        std::cout << _literalMsg << std::endl;
 }
 
 Message::~Message(void){}

@@ -21,6 +21,7 @@ Channel::Channel(int mode, int opFd, std::string name, char type, std::string pa
 	std::cout << "password we get: " << password << std::endl;
 	m_topic = "";
 	m_userLimit = -1;
+	modes = NEW_CHAN_MODES;
 }
 
 Channel::Channel(const Channel& channelRef)
@@ -278,15 +279,15 @@ bool		Channel::getModeValue(int modeNum) const
 	return (this->modeBitMasks[modeNum] & this->modes);
 }
 
-void                                Channel::m_addToChanVector(std::vector<std::string>& dst, std::string src)
+void                                Channel::m_addToMaskVector(std::vector<std::string>& dst, std::string src)
 {
     if (src == "*!*@*" || src == "0" || src == "*")
 		dst.push_back("*");
-    else
+    else if (src.substr(0, 6) == "*!*@*." && src.size() > 6) // change to ismask
         dst.push_back(src.erase(0, 5));
 }
 
-int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string> arguments)
+int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string> arguments, std::string& modeChanges)
 {
 	if (mode == 'k')
 	{
@@ -294,23 +295,36 @@ int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string
 		{
 			if (!m_password.empty())
 				if (arguments[2] == m_password)
+				{
 					m_password = "";
+					modeChanges += "k";
+				}
 		}
 		else
 		{
 			m_password = arguments[2];
-			std::cout << "This is the password: " << m_password << std::endl;
+			modeChanges += "k";
 		}
 		}
 	else
 	{
 		if (prefix == '-')
-			m_userLimit = -1;
+		{
+			if (m_userLimit != -1)
+			{
+				modeChanges += 'l';
+				m_userLimit = -1;
+			}
+		}
 		else
 		{
 			try
 			{
 				m_userLimit = std::stoi(arguments[2]);
+				if (m_userLimit > 0)
+					modeChanges += 'l';
+				else
+					m_userLimit = -1;
 			}
 			catch (std::exception& e)
 			{
@@ -348,14 +362,26 @@ void						Channel::setCreatorNick(std::string nickname)
 	m_creatorNick = nickname;
 }
 
-void				Channel::manageSimpleMode(char c, char prefix)
+void				Channel::manageSimpleMode(char c, char prefix, std::string& modeChanges)
 {
 	int modeNum = this->findMode(c);
-
+	bool	modeNumValue = this->getModeValue(modeNum);
 	if (prefix == '+')
-		this->turnOnMode(modeNum);
+	{
+		if (!modeNumValue)
+		{
+			modeChanges += c;
+			this->turnOnMode(modeNum);
+		}
+	}
 	else
-		this->turnOffMode(modeNum);
+	{
+		if (modeNumValue)
+		{
+			modeChanges += c;
+			this->turnOffMode(modeNum);
+		}
+	}
 }
 
 std::uint16_t       Channel::modeBitMasks[NUM_MODES_CHANNEL] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6,

@@ -6,9 +6,11 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/26 11:37:49 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/26 14:36:06 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+
 
 
 #ifndef _SERVER_HPP_
@@ -48,7 +50,7 @@
 
 #define BUFFER_SIZE 512
 
-
+// #define ILLEGALE_CHARS_NICK "#&*@.,;:\"\'"
 
 #define END_STRING "\r\n"
 
@@ -324,8 +326,9 @@ class Server {
         std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);// const?
 
 
-        int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments); // turn arguments into references?
-        std::vector<std::string>        m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex);
+        int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, std::string& modeChanges); // turn arguments into references?
+        std::vector<std::string>        m_manageMaskMode(char mode, std::vector<std::string> arguments);
+        void                            m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex);
 
         void                            m_findNextMask(std::vector<std::string> arguments, int& paramToUseIndex);
 
@@ -359,7 +362,7 @@ class Server {
         bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans);
         bool                            m_channelExists(std::string);
         void                            m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected);
-        void                            m_addChannel(int clientFd, std::string channelName, std::string password, bool passProtected);
+        void                            m_addChannel(int clientFd, std::string channelName, std::string password);
 
         void                            m_partCmd(Client & client);
         void                            m_partZero(Client & client);
@@ -372,7 +375,7 @@ class Server {
         void                            m_inviteCmd(Client & client);
         
         void                            m_namesCmd_listCmd(Client & client);
-        void                            m_p_namesCmd_listCmd(Client & client, std::string cmd); // still not implemented
+        void                            m_p_namesCmd_listCmd(Client & client,std::string target, std::string cmd); // still not implemented
         void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
         void                            m_passCmd(Client &client);
 
@@ -380,6 +383,7 @@ class Server {
 
         std::string                     m_getTLD(std::string mask);
         std::vector<int>                m_grabClientsWithMask(std::string mask);
+        bool                            m_nickIsValid(std::string &str);
     
         const std::string               m_serverName;
         const std::string               m_port;
