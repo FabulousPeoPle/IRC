@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/25 20:02:18 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/26 16:43:02 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1134,6 +1134,7 @@ bool    Server::m_isValidCommand(std::string potentialCommand)
     {
         if (potentialCommand == Server::m_possibleCommands[i])
             return (true);
+        std::cout << "i = " << i << std::endl;
     }
     return (false);
 }
@@ -1563,7 +1564,7 @@ void    Server::m_userhostCmd(Client & client)
         // call the userhost reply
         if (m_nicknames.find(*it) != m_nicknames.end())
             m_reply(client.getFd(), Replies::RPL_USERHOST, client.getNickname() + " :"\
-            + m_clients[m_nicknames[*it]].getNickname() + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::oper)) ? "*" : "\0") + "=" \
+            + m_clients[m_nicknames[*it]].getNickname() + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::oper)) ? "*" : " ") + "=" \
             + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::away)) ? "+" : "-") + m_clients[m_nicknames[*it]].getHostname());
         it++;
         count += 1;
@@ -1708,8 +1709,8 @@ bool                    Server::m_grabChannelsNames(Message & msg, std::vector<s
     }
     if (chans.empty())
         return (false);
-    printVector(chans, "channels:");
-    printVector(passes, "passes/nicknames:");
+    // printVector(chans, "channels:");
+    // printVector(passes, "passes/nicknames:");
     return (true);
 }
 // should change to accommodate channel modes concerned
@@ -1722,9 +1723,7 @@ bool                    Server::m_channelExists(std::string channelName)
 
 void                    Server::m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected)
 {
-    Channel & chan = m_channels[channelName];
-    std::cout << password << " :this is the password given\n";
-    std::cout << chan.getPassword() << " :this is the chan pass\n";
+    Channel & chan = m_channels[channelName];;
     if (chan.isInMaskVector(m_clients[clientFd], chan.getBanMasks())
             && !chan.isInMaskVector(m_clients[clientFd], chan.getExceptionBanMasks()))
         m_reply(clientFd, Replies::ERR_BANNEDFROMCHAN, channelName);
@@ -1794,8 +1793,6 @@ void                    Server::m_joinCmd(Client & client)
         {
             if (it_passes == end_passes)
                 passProtected = false;
-            else
-                std::cout << "pass from vector :" << *it_passes << std::endl;
             if (m_channelExists(*it_chan))
                 m_addClientToChan(client.getFd(), *it_chan, (passProtected)? *it_passes : "", passProtected);
             else
@@ -1992,11 +1989,9 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
 
 void            Server::m_kickCmd(Client &client)
 {
-    std::cout << "din dyemak\n";
     Message& msg = client.getMessageQueue().front();
     std::vector<std::string>    chans;
     std::vector<std::string>    nicks;
-    std::cout << "din dyemak\n";
     m_grabChannelsNames(msg, chans, nicks);
     if (msg.getArgs().size() < 2 || (chans.size() != 1 && nicks.size() != chans.size()))
     {
@@ -2013,8 +2008,8 @@ void            Server::m_kickCmd(Client &client)
         {
             while (it_nick != end_nick)
             {
-                printVector(m_channels[*it_chan].getMembers(), "members");
-                printVector(m_channels[*it_chan].getOps(), "opers");
+                // printVector(m_channels[*it_chan].getMembers(), "members");
+                // printVector(m_channels[*it_chan].getOps(), "opers");
                 m_p_privMsgCmd_noticeCmd(client, Message("KICK : " + client.getNickname()), *it_nick);
                 m_channels[*it_chan].removeMember(m_nicknames[*it_nick]);
                 m_channels[*it_chan].removeOp(m_nicknames[*it_nick]);
@@ -2167,12 +2162,9 @@ void    Server::m_namesCmd_listCmd(Client & client)
 
 void    Server::m_p_namesCmd_listCmd(Client & client, std::string target, std::string cmd)
 {
-    
-    std::cout << "sector 0 " << m_channels[target].getModeValue(ChannelModes::p_private) << " " << m_channels[target].getModeValue(ChannelModes::s_secret) << std::endl;
     if (cmd == NAMES_COMMAND && !m_channels[target].getModeValue(ChannelModes::p_private)\
     && !m_channels[target].getModeValue(ChannelModes::s_secret))
     {
-        std::cout << "sector 1\n";
         if (!m_channels[target].getModeValue(ChannelModes::a_annonymous))
             m_reply(client.getFd(), Replies::RPL_NAMREPLY, m_composeNames(target));
         else
@@ -2195,4 +2187,5 @@ std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS
                                                             "QUIT", "ISON", "MODE", "PONG",
                                                             "PING", "MOTD", "AWAY", "LUSERS",
                                                             "WHOIS", "TOPIC", "JOIN", "PART",
-                                                            "KICK", "PRIVMSG", "NOTICE", "OPER"};
+                                                            "KICK", "PRIVMSG", "NOTICE", "OPER"
+                                                            "NAMES"};

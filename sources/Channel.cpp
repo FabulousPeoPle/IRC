@@ -18,7 +18,6 @@ Channel::Channel(void) : m_topic(""), m_userLimit(-1), m_password("") {}
 Channel::Channel(int mode, int opFd, std::string name, char type, std::string password) : m_name(name), m_mode(mode), m_type(type), m_password(password)
 {
 	m_operators.push_back(opFd);
-	std::cout << "password we get: " << password << std::endl;
 	m_topic = "";
 	m_userLimit = -1;
 	modes = NEW_CHAN_MODES;

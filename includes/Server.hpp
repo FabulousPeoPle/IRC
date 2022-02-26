@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/25 20:01:36 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/26 14:34:11 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -177,7 +177,7 @@ namespace Replies
 #define KICK_COMMAND        "KICK"
 #define INVITE_COMMAND      "INVITE"
 
-#define NUM_COMMANDS 20
+#define NUM_COMMANDS 21
 
 #define MOTD_LENGTH_LINE 80
 
