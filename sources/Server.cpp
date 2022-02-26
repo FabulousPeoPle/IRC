@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/26 16:36:32 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/26 18:09:46 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 
@@ -1335,7 +1336,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_YOUREOPER, this->m_clients[clientFd].getNickname()) + ' ' + ":You are now an IRC operator\r\n");
             break;
         case Replies::ERR_NOOPERHOST:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_NOOPERHOST, this->m_clients[clientFd].getNickname()) + ' ' + ":No O-lines for your host\r\n");
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_NOOPERHOST, this->m_clients[clientFd].getNickname()) + ' ' + ":No O-lines for your host\r\n"); // TODO: USERNAME ANYONE
             break;
         case Replies::ERR_PASSWDMISMATCH:
             this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_PASSWDMISMATCH, this->m_clients[clientFd].getNickname()) + ' ' + ":Password incorrect\r\n");
@@ -1495,7 +1496,6 @@ int             Server::startServer(void)
 int Server::m_send(int toFd, std::string message)
 {
     int bytesSent = 0;
-    message += END_STRING;
     int size = message.size();
 
     while (size)
@@ -1592,7 +1592,7 @@ void    Server::m_userhostCmd(Client & client)
         // call the userhost reply
         if (m_nicknames.find(*it) != m_nicknames.end())
             m_reply(client.getFd(), Replies::RPL_USERHOST, client.getNickname() + " :"\
-            + m_clients[m_nicknames[*it]].getNickname() + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::oper)) ? "*" : "\0") + "=" \
+            + m_clients[m_nicknames[*it]].getNickname() + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::oper)) ? "*" : " ") + "=" \
             + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::away)) ? "+" : "-") + m_clients[m_nicknames[*it]].getHostname());
         it++;
         count += 1;
@@ -1737,8 +1737,8 @@ bool                    Server::m_grabChannelsNames(Message & msg, std::vector<s
     }
     if (chans.empty())
         return (false);
-    printVector(chans, "channels:");
-    printVector(passes, "passes/nicknames:");
+    // printVector(chans, "channels:");
+    // printVector(passes, "passes/nicknames:");
     return (true);
 }
 // should change to accommodate channel modes concerned
@@ -1751,9 +1751,7 @@ bool                    Server::m_channelExists(std::string channelName)
 
 void                    Server::m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected)
 {
-    Channel & chan = m_channels[channelName];
-    std::cout << password << " :this is the password given\n";
-    std::cout << chan.getPassword() << " :this is the chan pass\n";
+    Channel & chan = m_channels[channelName];;
     if (chan.isInMaskVector(m_clients[clientFd], chan.getBanMasks())
             && !chan.isInMaskVector(m_clients[clientFd], chan.getExceptionBanMasks()))
         m_reply(clientFd, Replies::ERR_BANNEDFROMCHAN, channelName);
@@ -1793,7 +1791,7 @@ void                    Server::m_addChannel(int clientFd, std::string channelNa
     m_clients[clientFd].pushChannel(channelName, OWNER_MODES);
     m_clients[clientFd].turnOnMode(ChannelModes::O_Creator, channelName);
     m_clients[clientFd].turnOnMode(ChannelModes::o_OperatorPrivilege, channelName);
-    m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message(": " + channelName + " channel has been created by " + m_clients[clientFd].getNickname()), channelName);
+    m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message("JOIN :" + channelName), channelName);
     m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message(": " + channelName + " supported commands : INVITE, PART, KICK, MODE, NAMES, LIST "), channelName);
     m_p_namesCmd_listCmd(m_clients[clientFd], channelName, NAMES_COMMAND);
 }
@@ -1823,8 +1821,6 @@ void                    Server::m_joinCmd(Client & client)
         {
             if (it_passes == end_passes)
                 passProtected = false;
-            else
-                std::cout << "pass from vector :" << *it_passes << std::endl;
             if (m_channelExists(*it_chan))
                 m_addClientToChan(client.getFd(), *it_chan, (passProtected)? *it_passes : "", passProtected);
             else
@@ -2007,7 +2003,7 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
         std::vector<int>::iterator end = members.end();
         while (it != end)
         {
-            m_send(*it, ':' + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + ' ' + msg.getMsg());
+            m_send(*it, ':' + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
             it++;
         }
     }
@@ -2015,17 +2011,15 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
     {
         std::map<std::string, int>::iterator it_user = m_nicknames.find(target);
         int clientFd = m_nicknames[target];
-        m_send(m_nicknames[target], ':' + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + ' ' + msg.getMsg());
+        m_send(m_nicknames[target], ':' + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
     }
 }
 
 void            Server::m_kickCmd(Client &client)
 {
-    std::cout << "din dyemak\n";
     Message& msg = client.getMessageQueue().front();
     std::vector<std::string>    chans;
     std::vector<std::string>    nicks;
-    std::cout << "din dyemak\n";
     m_grabChannelsNames(msg, chans, nicks);
     if (msg.getArgs().size() < 2 || (chans.size() != 1 && nicks.size() != chans.size()))
     {
@@ -2042,8 +2036,8 @@ void            Server::m_kickCmd(Client &client)
         {
             while (it_nick != end_nick)
             {
-                printVector(m_channels[*it_chan].getMembers(), "members");
-                printVector(m_channels[*it_chan].getOps(), "opers");
+                // printVector(m_channels[*it_chan].getMembers(), "members");
+                // printVector(m_channels[*it_chan].getOps(), "opers");
                 m_p_privMsgCmd_noticeCmd(client, Message("KICK : " + client.getNickname()), *it_nick);
                 m_channels[*it_chan].removeMember(m_nicknames[*it_nick]);
                 m_channels[*it_chan].removeOp(m_nicknames[*it_nick]);
@@ -2121,11 +2115,11 @@ std::string Server::m_composeNames(std::string channelName)
     if (m_channelExists(channelName))
     {
         if (m_channels[channelName].getModeValue(ChannelModes::s_secret))
-            message += " @ " + channelName + " : ";
+            message += "@ " + channelName + " :";
         else if (m_channels[channelName].getModeValue(ChannelModes::p_private))
-            message += " * " + channelName + " : ";
+            message += "* " + channelName + " :";
         else
-            message += " = " + channelName + " : ";
+            message += "= " + channelName + " :";
         std::vector<int> &members = m_channels[channelName].getMembers();
         std::vector<int>::iterator it = members.begin();
         std::vector<int>::iterator end = members.end();
@@ -2196,12 +2190,9 @@ void    Server::m_namesCmd_listCmd(Client & client)
 
 void    Server::m_p_namesCmd_listCmd(Client & client, std::string target, std::string cmd)
 {
-    
-    std::cout << "sector 0 " << m_channels[target].getModeValue(ChannelModes::p_private) << " " << m_channels[target].getModeValue(ChannelModes::s_secret) << std::endl;
     if (cmd == NAMES_COMMAND && !m_channels[target].getModeValue(ChannelModes::p_private)\
     && !m_channels[target].getModeValue(ChannelModes::s_secret))
     {
-        std::cout << "sector 1\n";
         if (!m_channels[target].getModeValue(ChannelModes::a_annonymous))
             m_reply(client.getFd(), Replies::RPL_NAMREPLY, m_composeNames(target));
         else
@@ -2224,4 +2215,5 @@ std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS
                                                             "QUIT", "ISON", "MODE", "PONG",
                                                             "PING", "MOTD", "AWAY", "LUSERS",
                                                             "WHOIS", "TOPIC", "JOIN", "PART",
-                                                            "KICK", "PRIVMSG", "NOTICE", "OPER"};
+                                                            "KICK", "PRIVMSG", "NOTICE", "OPER"
+                                                            "NAMES"};

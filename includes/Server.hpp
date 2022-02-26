@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/26 14:36:06 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/26 16:46:05 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 
@@ -178,7 +179,7 @@ namespace Replies
 #define KICK_COMMAND        "KICK"
 #define INVITE_COMMAND      "INVITE"
 
-#define NUM_COMMANDS 20
+#define NUM_COMMANDS 21
 
 #define MOTD_LENGTH_LINE 80
 

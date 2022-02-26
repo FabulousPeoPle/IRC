@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/25 19:56:27 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/02/26 12:55:00 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ public:
     /// METHODS ///
     ///////////////
     void    parse(void);
-    void    m_trim(char *str);
+    int     m_trim(char *str);
     int     checkCommand(char *token);
 
     /////////////////
