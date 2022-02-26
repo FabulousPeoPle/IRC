@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/25 18:18:58 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/26 11:37:49 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -345,7 +345,7 @@ class Server {
 
         void                            m_listMasks(std::vector<std::string> maskList, char mode, Client& client, Channel& channel);
 
-        void                            m_executeModes(std::vector<std::string> arguments, Channel& channel, Client& client);
+        std::string                     m_executeModes(std::vector<std::string> arguments, Channel& channel, Client& client);
 
         std::vector<std::string>        m_getClientsToMode(std::vector<std::string> arguments);
 

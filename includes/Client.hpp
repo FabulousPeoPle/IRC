@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/25 17:10:55 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/26 11:28:53 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,10 +85,12 @@ class Client
         Client(int, struct sockaddr_storage, socklen_t);
         ~Client(void);
 
+
+        // int                             findMode(char c) const; // ADD IS AS SERVER OR CLIENT FUNCTION
         /////////////////
         //// GETTERS ////
         /////////////////
-        int         getFd(void) const;
+        int                             getFd(void) const;
         struct sockaddr_storage         getRawAddress(void) const;
         socklen_t                       getAddrLen(void) const;
         t_messageDQeue                  &getMessageQueue(void);
@@ -106,11 +108,11 @@ class Client
         bool                            isAuthComplete(void) const;
         bool                            getModeValue(int modeNum) const;
         bool		                    getModeValue(int modeNum, std::string channelName);
-        int                             findMode(char mode) const;
+        int                             findChanMode(char mode) const;
         std::string                     getLastJoinedChannel(void);
 
         std::vector<std::string>        &getChannels(void);
-        
+        static int                             findMode(char c); // ADD IS AS SERVER OR CLIENT FUNCTION
         /////////////////
         //// SETTERS ////
         /////////////////

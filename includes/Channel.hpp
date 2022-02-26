@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/25 17:09:56 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/26 11:34:01 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -127,7 +127,6 @@ public:
 	bool        				getModeValue(int modeNum) const;
 
 	int 	    				findMode(char c) const;
-
 	void						m_addToChanVector(std::vector<std::string>& dst, std::string src);
 	int							manageAttribute(char mode, char prefix,
 								std::vector<std::string> arguments);

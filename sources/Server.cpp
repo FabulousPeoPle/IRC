@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/25 18:58:03 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/26 11:37:35 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -339,8 +339,6 @@ bool            Server::m_isChannelPrefix(char c) const
     return (c == '#' || c == '&');
 }
 
-
-
 bool            Server::m_isMaskUserMatch(std::string hostname, std::string TLD)
 {
     hostname = hostname.erase(0, hostname.size() - TLD.size());
@@ -361,13 +359,6 @@ std::string     Server::m_composeChannelModes(std::string channelName)
     }
     return (channel.getName() + ' ' + channelModes);
 }
-
-/* take mode
-    is mode userMode?
-    is mode toggler?
-    is mode simple setter/remover
-    is mode complex setter/remover
-*/
 
 bool            Server::m_isUserSpecificChannelMode(char c) const
 {
@@ -411,16 +402,15 @@ bool            Server::m_isMaskMode(char c) const
 
 int            Server::m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments)
 {
-     // template for maps?
     if (m_nicknames.find(arguments[2]) == m_nicknames.end())
             return (-1);
 
     Client& client = m_clients[m_nicknames[arguments[2]]];
 
     if (prefix == '+')
-        client.turnOnMode(client.findMode(mode), arguments[0]);
+        client.turnOnMode(client.findChanMode(mode), arguments[0]);
     else if (prefix == '-')
-        client.turnOffMode(client.findMode(mode), arguments[0]);
+        client.turnOffMode(client.findChanMode(mode), arguments[0]);
     return (0);
 }
 
@@ -664,7 +654,7 @@ void            Server::m_channelModeCmd(Client& client, Message& message)
             m_reply(client.getFd(), Replies::ERR_WRONGCHANMODESYNTAX, channelName); // maybe change arguments[1] to channelName
             return ;
         }
-        m_executeModes(arguments, m_channels[channelName], client);
+        std::string modeChanges = m_executeModes(arguments, m_channels[channelName], client);
     }
 }
 
@@ -682,7 +672,7 @@ void            Server::m_userModeCmd(Client& client, Message& message) // TODO:
     modeChanges += prefix;
     for (int j = 1; j < int(message.getArgs()[1].size()); ++j)
     {
-        int modeNum = findMode(message.getArgs()[1][j]);
+        int modeNum = Client::findMode(message.getArgs()[1][j]);
 
         if (modeNum == UserModes::away) // Ignore it for now, don't know the exact behaviour
             continue ;
@@ -846,7 +836,7 @@ std::string                Server::m_composeWhoisQuery(Client& queryClient, std:
 void                Server::m_pongCmd(Client& client)
 {
     (void)client;
-    std::cout << "Somebody Pinged\n";
+    /* in case we added multithreading */
 }
 
 void                Server::m_pingCmd(Client& client)

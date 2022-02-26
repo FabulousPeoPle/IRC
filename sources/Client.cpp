@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/23 19:27:55 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/02/26 11:28:56 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -281,7 +281,7 @@ void		Client::turnOnMode(int modeNum, std::string channelName)
 	this->_channelModes[channelName] |= this->modeBitMasks[modeNum];
 }
 
-int			Client::findMode(char mode) const
+int			Client::findChanMode(char mode) const
 {
 	switch (mode)
     {
@@ -296,7 +296,26 @@ int			Client::findMode(char mode) const
     }
 }
 
-
+int     Client::findMode(char c)// ADD IS AS SERVER OR CLIENT FUNCTION
+{
+    switch (c)
+    {
+        case 'a':
+            return (UserModes::away);
+        case 'i':
+            return (UserModes::invisible);
+        case 'w':
+            return (UserModes::wallops);
+        case 'r':
+            return (UserModes::restricted);
+        case 'o':
+            return (UserModes::oper);
+        case 's':
+            return (UserModes::serverNotices);           
+        default:
+            return (-1);
+    }
+}
 bool		Client::getModeValue(int modeNum,  const std::string channelName)
 {
 	return (this->modeBitMasks[modeNum] & this->_channelModes[channelName]);
