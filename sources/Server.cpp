@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/26 18:09:46 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/01 11:25:08 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -300,7 +300,7 @@ int            Server::m_manageServerEvent(void)
     {
         fcntl(newFd, F_SETFL, O_NONBLOCK);
         this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
-        this->m_clients[newFd].setHostname(this->convertToHostname(remoteAddr, newFd));
+        this->m_clients[newFd].setHostname(inet_ntoa(((t_sockaddr_in*)&remoteAddr)->sin_addr)); // no hostname
         this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
     }
     else
@@ -1776,7 +1776,8 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
         chan.addMember(clientFd);
         m_clients[clientFd].pushChannel(channelName, PEASEANT_MODES);
         m_reply(clientFd, Replies::RPL_TOPIC, m_composeRplTopic(m_channels[channelName]));
-        m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message(": " + m_clients[clientFd].getNickname() + " has joined the channel"), channelName);
+        m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message("JOIN :" + channelName), channelName);
+        m_p_namesCmd_listCmd(m_clients[clientFd], channelName, NAMES_COMMAND);
     }
 }
 
@@ -2186,6 +2187,13 @@ void    Server::m_namesCmd_listCmd(Client & client)
         }
         it_chan++;
     }
+    if (chans.empty())
+    {
+        if (msg.getCmd() == LIST_COMMAND)
+            m_reply(client.getFd(), Replies::RPL_LISTEND, "");
+        else if (msg.getCmd() == NAMES_COMMAND)
+            m_reply(client.getFd(), Replies::RPL_ENDOFNAMES, "");
+    }
 }
 
 void    Server::m_p_namesCmd_listCmd(Client & client, std::string target, std::string cmd)
@@ -2215,5 +2223,8 @@ std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS
                                                             "QUIT", "ISON", "MODE", "PONG",
                                                             "PING", "MOTD", "AWAY", "LUSERS",
                                                             "WHOIS", "TOPIC", "JOIN", "PART",
-                                                            "KICK", "PRIVMSG", "NOTICE", "OPER"
+                                                            "KICK", "PRIVMSG", "NOTICE", "OPER",
                                                             "NAMES"};
+
+                                                            //TODO: CARE QUITE CHANNEL AND MODES
+                                                            //TODO: SHOW CHANNEL MODES AFTER CREATION
