@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/26 14:34:11 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/01 14:05:10 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -55,7 +55,8 @@
 
 // #define BIG_NUMBER 2000000000
 
-
+////// for ftp nonus //////
+#include <time.h>
 
 namespace Replies
 {
@@ -148,6 +149,15 @@ namespace Replies
         ERR_NONICKNAMEGIVEN = 431,
         ERR_INVITEONLYCHAN = 473,
         ERR_CANNOTSENDTOCHAN = 404,
+        
+        /***** our own replies *****/
+        /***** ftp replies *****/
+        RPL_FILERECIEVED = 1000,
+        RPL_FILESENT,
+        RPL_READYTORECIEVE,
+        ERR_FTPTIMEOUT,
+        ERR_RECIEVEDNOFILES,
+        RPL_READYTOSEND,
     };
 };
 
@@ -176,6 +186,7 @@ namespace Replies
 #define WHO_COMMAND         "WHO"
 #define KICK_COMMAND        "KICK"
 #define INVITE_COMMAND      "INVITE"
+#define SEND_COMMAND        "SEND"
 
 #define NUM_COMMANDS 21
 
@@ -382,6 +393,11 @@ class Server {
         std::string                     m_getTLD(std::string mask);
         std::vector<int>                m_grabClientsWithMask(std::string mask);
         bool                            m_nickIsValid(std::string &str);
+        
+        //// ftp methods ///
+        void                            m_sendCmd(Client &client);
+        void                            m_fetchCmd(Client &client);
+        bool                            m_validArgsFtp(Message& msg, t_fileData &fileData);
     
         const std::string               m_serverName;
         const std::string               m_port;

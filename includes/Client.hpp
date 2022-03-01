@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/25 17:10:55 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/01 13:58:25 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,16 @@ namespace UserModes
     };
 };
 
+
+typedef struct      s_fileData
+{
+    std::string sender;
+    std::string reciever;
+    std::string name;
+    unsigned long length;
+    char *      content;
+}                   t_fileData;
+
 typedef std::deque<Message> t_messageDQeue;
 class Client
 {
@@ -76,6 +86,8 @@ class Client
         std::string                         awayMessage;
         
         std::vector<std::string>            _channels; // TODO: Maybe remove later
+        
+        std::vector<t_fileData >      recievedFiles;
     
     public:
 
@@ -88,7 +100,7 @@ class Client
         /////////////////
         //// GETTERS ////
         /////////////////
-        int         getFd(void) const;
+        int                             getFd(void) const;
         struct sockaddr_storage         getRawAddress(void) const;
         socklen_t                       getAddrLen(void) const;
         t_messageDQeue                  &getMessageQueue(void);
@@ -108,8 +120,8 @@ class Client
         bool		                    getModeValue(int modeNum, std::string channelName);
         int                             findMode(char mode) const;
         std::string                     getLastJoinedChannel(void);
-
         std::vector<std::string>        &getChannels(void);
+        std::vector<t_fileData>         &getFiles(void);
         
         /////////////////
         //// SETTERS ////
@@ -118,6 +130,7 @@ class Client
         void                            setRawAddress(struct sockaddr_storage addr);
         void                            setAddrLen(socklen_t addrLen);
         void                            pushMsg(Message & message);
+        void                            pushFile(t_fileData &fileData);
         void                            setNickname(std::string nickname);
         void                            setUsername(std::string username);
         void                            setIp(std::string ip);

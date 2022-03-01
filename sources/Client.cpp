@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/23 19:27:55 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/01 13:56:50 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -87,6 +87,11 @@ std::string	Client::getAwayMsg(void) const
 	return (awayMessage);
 }
 
+std::vector<t_fileData>	&Client::getFiles(void)
+{
+	return (recievedFiles);
+}
+
 bool		Client::isNickAuth(void) const
 {
 	return(_nickAuth);
@@ -135,6 +140,11 @@ void	Client::setAddrLen(socklen_t len)
 void	Client::pushMsg(Message &message)
 {
 	messages.push_back(message);
+}
+
+void	Client::pushFile(t_fileData &filedata)
+{
+	recievedFiles.push_back(filedata);
 }
 
 void	Client::setNickname(std::string nickname)

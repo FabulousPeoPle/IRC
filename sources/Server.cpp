@@ -6,14 +6,9 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/02/26 16:43:02 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/01 14:17:49 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
-
-
-
-
 
 
 #include "Server.hpp"
@@ -269,7 +264,7 @@ void*           Server::m_getInAddr(t_sockaddr* addr) const
 std::string            Server::convertToHostname(t_sockaddr_storage& remoteAddr, int sock_fd)
 {
     char buffer[INET6_ADDRSTRLEN];
-    int err=getnameinfo((struct sockaddr*)&remoteAddr, sizeof(t_sockaddr_storage), buffer,sizeof(buffer), 0, 0, 0);
+    int err = getnameinfo((struct sockaddr*)&remoteAddr, sizeof(t_sockaddr_storage), buffer,sizeof(buffer), 0, 0, 0);
     if (err)
     {
         printf("Failed to get hostname!\nExiting...");
@@ -728,7 +723,7 @@ void            Server::m_modeCmd(Client& client)
         m_channelModeCmd(client, message); // send to all users the changes modes
     else if (message.getArgs().size() < 2)
     {
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, ""); // NOT SURE ABOUT THIS
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, MODE_COMMAND); // NOT SURE ABOUT THIS
         return ;
     }
     else
@@ -862,7 +857,7 @@ void                Server::m_whoisCmd(Client& client)
     Message&    message = client.getMessageQueue().front();
     if (message.getArgs().empty())
     {
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS,""); // MIGHT remove
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS,WHOIS_COMMAND); // MIGHT remove
         return ;
     }
     std::string queryClientName = message.getArgs()[0];
@@ -899,7 +894,7 @@ void                Server::m_topicCmd(Client& client)
     std::vector<std::string> arguments = message.getArgs();
     if (arguments.empty())
     {
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS,"");
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, TOPIC_COMMAND);
         return ;
     }
     std::vector<std::string> &channels = client.getChannels();
@@ -943,7 +938,7 @@ void                Server::m_operCmd(Client& client)
     std::vector<std::string>    arguments = message.getArgs();
     if (arguments.size() < 2)
     {
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, OPER_COMMAND);
         return ;
     }
     if (arguments[0] != client.getNickname())
@@ -1171,220 +1166,6 @@ bool    Server::m_tryAuthentificate(Client& client)
             client.getMessageQueue().pop_front();
     }
     return (this->m_isAuthenticated(client.getFd()));
-}
-// heavy refactor
-
-void    Server::m_reply(int clientFd, int replyCode, std::string message)
-{
-    #ifdef DEBUG_USERHOST
-    std::cout << m_clients[clientFd].getNickname() << "|\n";
-    std::cout << extraArg << "+++" << clientFd << std::endl;
-    #endif
-    
-    switch (replyCode)  // TODO: care for message syntax
-    {
-        case Replies::RPL_WELCOME :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 001 " + message + " :Welcome sunshine\r\n");
-            break;
-        case Replies::RPL_YOURHOST:  // TODO: care for message syntax
-            this->m_send(clientFd, ":" + this->m_serverName + " 002 " + message + "\r\n");
-            break;
-        case Replies::RPL_CREATED:
-            this->m_send(clientFd, ':' + this->m_serverName + " 003 " + m_clients[clientFd].getNickname() + " :This server was created Sat Feb 12 2020 at 10:40:00 GMT\r\n");
-            break;
-        case Replies::RPL_MYINFO: // TODO: decide on the possible modes for channels and users
-            this->m_send(clientFd, ':' + this->m_serverName + " 004 " + m_clients[clientFd].getNickname() + " :" + this->m_serverName + ' ' + this->m_version + ' ' + "ao" + ' ' + "mtov\r\n");
-            break;
-        case Replies::RPL_BOUNCE:
-            this->m_send(clientFd, ':' + this->m_serverName + " 005 " + m_clients[clientFd].getNickname() + " :Sir t9awed hna 'DS9.GeekShed.net', port '6667'\r\n");
-            break;
-        case Replies::RPL_USERHOST : // causes BitchX segmentation fault
-            this->m_send(clientFd, ":" + this->m_serverName + " 302 " + message + "\r\n");
-            break;
-        case Replies::ERR_NICKNAMEINUSE :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 433 * " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :Nickname is already in use hun\r\n");;
-            break;
-        case Replies::ERR_ERRONEUSNICKNAME :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 432 " + message + " :Erroneous nickname\r\n");
-            break;
-        case Replies::ERR_NEEDMOREPARAMS :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 461 " + m_clients[clientFd].getMessageQueue().front().getCmd()+ " :Not enough parameters\r\n"); // needs the name of the command
-            break;
-        case Replies::ERR_ALREADYREGISTRED :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 462 " + message + " :Unauthorized command (already registered)\r\n");
-            break;
-        case Replies::ERR_USERSDONTMATCH:
-            this->m_send(clientFd, ':' + this->m_serverName + " 446 :Cannot change mode for other users\r\n");
-            break;
-        case Replies::ERR_UMODEUNKNOWNFLAG:\
-            this->m_send(clientFd, ':' + this->m_serverName + " 501 :Unknown MODE flag\r\n");
-            break;
-        case Replies::RPL_UMODEIS:
-            this->m_send(clientFd, ':' + m_clients[clientFd].getNickname() + " MODE " + m_clients[clientFd].getNickname() + " :" + message + "\r\n"); // TODO: change +i to the correct value of modes
-            break;
-        case Replies::ERR_NOMOTD :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 422 :MOTD File is missing\r\n");
-            break;
-        case Replies::RPL_MOTDSTART :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 375 " + m_clients[clientFd].getNickname() +  " :- " + this->m_serverName + " Message of the day -\r\n");
-            break;
-        case Replies::RPL_ENDOFMOTD :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 376 " + m_clients[clientFd].getNickname() + " :End of MOTD command\r\n");
-            break;
-        case Replies::RPL_MOTD:
-            this->m_send(clientFd, ':' + this->m_serverName + " 372 " + m_clients[clientFd].getNickname() + " :- " + message + "\r\n");
-            break;
-        case Replies::RPL_NOWAWAY: // TODO: care for message syntax
-            this->m_send(clientFd, ':' + this->m_serverName + " 306 :You have been marked as being away\r\n");
-            break;
-        case Replies::RPL_UNAWAY:  // TODO: care for message syntax
-            this->m_send(clientFd, ':' + this->m_serverName + " 305 :You are no longer marked as being away\r\n");
-            break;
-        case Replies::ERR_NOTREGISTERED:  // TODO: care for message syntax
-            this->m_send(clientFd, ':' + this->m_serverName + " 451 :You have not registered\r\n");
-            break;
-        case Replies::ERR_UNKNOWNCOMMAND:
-            this->m_send(clientFd, ':' + this->m_serverName + " 421 :" + message + " :Unknown command\r\n");
-            break;
-        case Replies::RPL_LUSERCLIENT:
-            this->m_send(clientFd, ':' + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_athenticatedUserNum) + " user(s) on the server\r\n");
-            break;
-        case Replies::RPL_LUSERUNKNOWN:
-            this->m_send(clientFd, ':' + this->m_serverName + " 253 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_calculateUnknownConnections()) + " unknown connection(s)\r\n");
-            break;
-        case Replies::RPL_LUSERME:
-            this->m_send(clientFd, ':' + this->m_serverName + " 255 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_calculateKnownConnections()) + " client(s)\r\n");
-            break;
-        case Replies::RPL_PINGREQUEST:
-            this->m_send(clientFd,':' + this->m_serverName + " PONG " + this->m_serverName + " :" + m_clients[clientFd].getNickname() + "\r\n");
-            break;
-        // the next too need the channel name (to be concidered when refactoring)
-        case Replies::ERR_BANNEDFROMCHAN :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 474 " + message + " :Cannot join channel (+b)\r\n");
-            break;
-        case Replies::ERR_BADCHANNELKEY :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 475 " + message + " :Cannot join channel (+k)\r\n");
-            break;
-             // should change after refactoring
-        case Replies::ERR_NOSUCHCHANNEL :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 403 " + message + " :No such channel\r\n");
-            break;
-        case Replies::ERR_NORECIPIENT :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 411  :No recipient given " + m_clients[clientFd].getMessageQueue().front().getCmd()+ "\r\n");
-            break;
-        case Replies::ERR_NOTEXTTOSEND :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 412 :No text to send\r\n");
-            break;
-        case Replies::ERR_NOSUCHNICK :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 401 " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :No such nick/channel\r\n");
-            break;
-            // needs to change
-        case Replies::ERR_TOOMANYTARGETS :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 407 " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :too many recipients.\r\n");
-            break;
-        case Replies::RPL_WHOISUSER:
-            this->m_send(clientFd, message + "\r\n");
-            break;
-        case Replies::RPL_WHOISSERVER:
-            this->m_send(clientFd, message + "\r\n");
-            break;
-        case Replies::RPL_WHOISOPERATOR:
-            this->m_send(clientFd, message + "\r\n");
-            break;
-        case Replies::RPL_AWAY:
-            this->m_send(clientFd, message + "\r\n");
-            break;
-        case Replies::RPL_ENDOFWHOIS:
-            this->m_send(clientFd, message + "\r\n");
-            break;
-        case Replies::ERR_NOTONCHANNEL:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_NOTONCHANNEL, this->m_clients[clientFd].getNickname()) + ' ' + message + " :You're not on that channel\r\n");
-            break;
-        case Replies::RPL_TOPIC:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_TOPIC, this->m_clients[clientFd].getNickname()) + ' ' + message + "\r\n");
-            break;
-        case Replies::RPL_YOUREOPER:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_YOUREOPER, this->m_clients[clientFd].getNickname()) + ' ' + ":You are now an IRC operator\r\n");
-            break;
-        case Replies::ERR_NOOPERHOST:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_NOOPERHOST, this->m_clients[clientFd].getNickname()) + ' ' + ":No O-lines for your host\r\n");
-            break;
-        case Replies::ERR_PASSWDMISMATCH:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_PASSWDMISMATCH, this->m_clients[clientFd].getNickname()) + ' ' + ":Password incorrect\r\n");
-            break;
-        case Replies::RPL_CHANNELMODEIS:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_CHANNELMODEIS, this->m_clients[clientFd].getNickname()) + ' ' + message + "\r\n");
-            break;
-        case Replies::ERR_CHANOPRIVSNEEDED:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " :You're not channel operator\r\n");
-            break;
-        case Replies::ERR_WRONGCHANMODESYNTAX:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " USAGE: MODE <channel> *( ( '-' / '+' ) *<modes> *<modeparams> )\r\n");
-            break;
-        case Replies::ERR_USERONCHANNEL:
-            this->m_send(clientFd, ':' + this->m_serverName + " 443 <user> <channel> :is already on channel\r\n");
-            break;
-        case Replies::RPL_NAMREPLY:
-            this->m_send(clientFd, ':' + this->m_serverName + " 353 " + message + "\r\n");
-            break;
-        case Replies::RPL_ENDOFNAMES:
-            this->m_send(clientFd, ':' + this->m_serverName + " 366 " + message +" :End of NAMES list\r\n");
-            break;
-        case Replies::RPL_LIST:
-            this->m_send(clientFd, ':' + this->m_serverName + " 321 " + message + "\r\n");
-            break;
-        case Replies::RPL_LISTEND:
-            this->m_send(clientFd, ':' + this->m_serverName + " 323 " + message +" End of LIST\r\n");
-            break;
-        case Replies::ERR_USERNOTINCHANNEL:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
-            break;
-        case Replies::RPL_UNIQOPIS:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_UNIQOPIS, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
-            break;
-        case Replies::RPL_BANLIST:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_BANLIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
-            break;
-        case Replies::RPL_EXCEPTLIST:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_EXCEPTLIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
-            break;
-        case Replies::RPL_INVITELIST:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_INVITELIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
-            break;
-        case Replies::RPL_ENDOFBANLIST:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ENDOFBANLIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
-            break;
-        case Replies::RPL_ENDOFEXCEPTLIST:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ENDOFEXCEPTLIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
-            break;        
-        case Replies::RPL_ENDOFINVITELIST:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ENDOFINVITELIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
-            break; 
-        case Replies::RPL_LUSERCHANNELS:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSERCHANNELS, this->m_clients[clientFd].getNickname()) + ' ' + std::to_string(m_channels.size()) + " :channels formed" + END_STRING);
-            break;
-        case Replies::RPL_LUSEROP:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSEROP, this->m_clients[clientFd].getNickname()) + ' ' + std::to_string(m_numOps) + " :operator(s) online" + END_STRING);
-            break;
-        case Replies::ERR_INTNEEDED:
-            m_send(clientFd,  m_makeReplyHeader(Replies::ERR_INTNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " cannot be interpreted as an integer\r\n");
-            break;
-        case Replies::ERR_NONICKNAMEGIVEN:
-            this->m_send(clientFd, ":" + this->m_serverName + " 431 :No nickname given\r\n");
-            break;
-        case Replies::ERR_INVITEONLYCHAN:
-            this->m_send(clientFd, ":" + this->m_serverName + " 473 " + message + " :Cannot join channel (+i)\r\n");
-            break;
-        case Replies::ERR_CANNOTSENDTOCHAN:
-            this->m_send(clientFd, ":" + this->m_serverName + " 404 " + message + " :Cannot send to channel\r\n");
-            break;
-        case Replies::RPL_NOTOPIC:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + ' ' + message + " :No topic set\r\n");
-            break;
-        case Replies::ERR_NOTAWAY:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + " :Not away\r\n");
-            break;
-    }
 }
 
 int             Server::m_calculateKnownConnections(void)
@@ -1621,7 +1402,7 @@ void    Server::m_userCmd(Client & client)
     if (client.isUserAuth())
         m_reply(client.getFd(), Replies::ERR_ALREADYREGISTRED, msg.getCmd());
     else if (msg.getArgs().size() != 3)
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, USER_COMMAND);
     else
     {
         client.setUsername(msg.getArgs()[0]);
@@ -1637,7 +1418,7 @@ void    Server::m_passCmd(Client &client)
     std::vector<std::string> &args = msg.getArgs();
     
     if  (args.empty())
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, PASS_COMMAND);
     else if (client.isPassAuth())
         m_reply(client.getFd(), Replies::ERR_ALREADYREGISTRED, msg.getCmd());
     else
@@ -1777,7 +1558,7 @@ void                    Server::m_joinCmd(Client & client)
     
     ////// TODO: syntax check
     if (msg.getArgs().empty())
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, JOIN_COMMAND);
     else if (msg.getArgs().size() == 1 && msg.getArgs().front() == "0")
         m_partZero(client);
     else
@@ -1831,7 +1612,7 @@ void                        Server::m_partCmd(Client &client)
     std::vector<std::string>::iterator end = msg.getArgs().end();
     if (!m_grabChannelsNames(msg, channelNames))
     {
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, PART_COMMAND);
         return ;
     }
     std::vector<std::string>::iterator it_chan = channelNames.begin();
@@ -1917,7 +1698,7 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
         if (it_chan == m_channels.end() && !m_isMask(target.erase(0, 1)))
         {
             if (notifs)
-                m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, "");
+                m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, target);
             return ;
         }
         else if ((it_chan != m_channels.end() && m_channels[target].getModeValue(ChannelModes::n_noOutsideMessage) && !m_channels[target].isMember(client.getFd() && !client.getModeValue(UserModes::oper)))
@@ -1952,7 +1733,7 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
         if (it_user == m_nicknames.end())
         {
             if (notifs)
-                m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, "");
+                m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, target);
             return ;
         }
         int clientFd = m_nicknames[target];
@@ -1995,7 +1776,7 @@ void            Server::m_kickCmd(Client &client)
     m_grabChannelsNames(msg, chans, nicks);
     if (msg.getArgs().size() < 2 || (chans.size() != 1 && nicks.size() != chans.size()))
     {
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, KICK_COMMAND);
         return ;
     }
     std::vector<std::string>::iterator it_chan = chans.begin();
@@ -2048,13 +1829,13 @@ void            Server::m_inviteCmd(Client &client)
     Message& msg = client.getMessageQueue().front();
     std::vector<std::string> &args = msg.getArgs();
     if (args.size() != 2)
-        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, INVITE_COMMAND);
     std::string target = *args.begin();
     std::string chanName = *(args.begin() + 1);
     if (!m_channelExists(chanName))
         m_reply(client.getFd(), Replies::ERR_NOSUCHCHANNEL, "");
     else if (m_nicknames.find(target) == m_nicknames.end())
-        m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, "");
+        m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, target);
     else if (!m_channels[chanName].isMember(client.getFd()))
         m_reply(client.getFd(), Replies::ERR_NOTONCHANNEL, "");
     else if (!m_channels[chanName].isOp(m_nicknames[target])  && !client.getModeValue(UserModes::oper) && m_channels[chanName].getModeValue(ChannelModes::i_inviteOnly))
@@ -2183,7 +1964,79 @@ void    Server::m_p_namesCmd_listCmd(Client & client, std::string target, std::s
     }
 }
 
-std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST",
+bool            Server::m_validArgsFtp(Message &msg, t_fileData &fileData)
+{
+    std::vector<std::string>::iterator it = msg.getArgs().begin();
+    std::string target = *it;
+    std::string fileName = *(++it);
+    std::string fileLength = *(++it);
+    unsigned long length;
+    
+    if (m_nicknames.find(target) == m_nicknames.end() || fileName.find('.') == std::string::npos)
+        return (false);
+    try
+    {
+        length = std::atoi(fileLength.c_str());
+    }
+    catch (std::exception)
+    {
+        return (false);
+    };
+    fileData.reciever = target;
+    fileData.name = fileName;
+    fileData.length = length;
+    return (true);
+}
+
+void            Server::m_sendCmd(Client &client)
+{
+    Message& msg = client.getMessageQueue().front();
+    t_fileData fileData;
+    fileData.content = NULL;
+    fileData.sender = client.getNickname();
+    if (msg.getArgs().empty() || msg.getArgs().size() < 3)
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, SEND_COMMAND);
+    else if (m_nicknames.find(msg.getArgs().front()) == m_nicknames.end())
+        m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, msg.getArgs().front());
+    else if (m_validArgsFtp(msg, fileData))
+    {
+        unsigned int readBytes = 0;
+        char* buffer[fileData.length];
+        fileData.content = (char*)malloc(sizeof(char) * fileData.length);
+        m_reply(client.getFd(), Replies::RPL_READYTORECIEVE, "");
+        time_t timer = time(NULL);
+        while (readBytes != fileData.length)
+        {
+            readBytes += recv(client.getFd(), buffer + readBytes, fileData.length - readBytes, 0);
+            if (readBytes == 0 && difftime(timer, time(NULL)) > 10)
+            {
+                m_reply(client.getFd(), Replies::ERR_FTPTIMEOUT, "");
+                return ;
+            }
+        }
+        m_clients[m_nicknames[fileData.reciever]].pushFile(fileData);
+        m_reply(m_nicknames[fileData.reciever], Replies::RPL_FILERECIEVED, fileData.name);
+        m_reply(client.getFd(), Replies::RPL_FILESENT, fileData.name + " to " + fileData.reciever);
+    }
+}
+
+void            Server::m_fetchCmd(Client &client)
+{
+    if (client.getFiles().empty())
+        m_reply(client.getFd(), Replies::ERR_RECIEVEDNOFILES, "");
+    else
+    {
+        t_fileData fileData = client.getFiles().front();
+        unsigned long sentBytes = 0;
+        m_reply(client.getFd(), Replies::RPL_READYTOSEND, std::to_string(fileData.length));
+        while (sentBytes < fileData.length)
+        {
+            sentBytes += send(client.getFd(), fileData.content + sentBytes, fileData.length - sentBytes, 0);
+        }
+    }
+}
+
+std::string     Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS", "USERHOST",
                                                             "QUIT", "ISON", "MODE", "PONG",
                                                             "PING", "MOTD", "AWAY", "LUSERS",
                                                             "WHOIS", "TOPIC", "JOIN", "PART",
