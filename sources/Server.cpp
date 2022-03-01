@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/01 11:25:08 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/01 12:05:13 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -939,7 +939,7 @@ void                Server::m_topicCmd(Client& client)
         return ;
     }
 
-    if (arguments.size() == 1) // there is only one argument, channel name
+    if (arguments.size() == 1)
     {
         if (m_channels[arguments[0]].getTopic().empty()) // checking if topic is empty
         {
@@ -1067,6 +1067,7 @@ void                Server::m_manageClientEvent(int pollIndex)
             perror("recv: ");
 
         int    badFd = this->m_pfds[pollIndex].fd;
+        // should be removed from channels
         this->m_nicknames.erase(m_clients[badFd].getNickname());
         m_clients.erase(badFd);
         this->m_pfds.erase(this->m_pfds.begin() + pollIndex);
@@ -1793,7 +1794,7 @@ void                    Server::m_addChannel(int clientFd, std::string channelNa
     m_clients[clientFd].turnOnMode(ChannelModes::O_Creator, channelName);
     m_clients[clientFd].turnOnMode(ChannelModes::o_OperatorPrivilege, channelName);
     m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message("JOIN :" + channelName), channelName);
-    m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message(": " + channelName + " supported commands : INVITE, PART, KICK, MODE, NAMES, LIST "), channelName);
+    m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message(":" + channelName + " supported commands : INVITE, PART, KICK, MODE, NAMES, LIST "), channelName);
     m_p_namesCmd_listCmd(m_clients[clientFd], channelName, NAMES_COMMAND);
 }
 
@@ -2228,3 +2229,4 @@ std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS
 
                                                             //TODO: CARE QUITE CHANNEL AND MODES
                                                             //TODO: SHOW CHANNEL MODES AFTER CREATION
+                                                            //TODO: CHANGE OPER BEHAVIOUR

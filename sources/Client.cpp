@@ -6,14 +6,14 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/26 11:28:56 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/01 12:07:37 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
 #include "Client.hpp"
 
-Client::Client(void) : _nickAuth(false), _userAuth(false), _isServerOp(false), _away(false), _authenticated(false)
+Client::Client(void) : _nickAuth(false), _userAuth(false), _passAuth(false), _isServerOp(false), _away(false), _authenticated(false)
 {
 	this->modes = 0;
 	this->lastJoinedChannel = "";
@@ -27,7 +27,7 @@ Client::Client(Client const & src)
 }
 
 Client::Client(int sock_fd, struct sockaddr_storage addr, socklen_t len) : _sock_fd(sock_fd),
-_addr(addr), _addr_size(len), _nickAuth(false), _userAuth(false), _isServerOp(false), _away(false), _authenticated(false)
+_addr(addr), _addr_size(len), _nickAuth(false), _userAuth(false), _passAuth(false), _isServerOp(false), _away(false), _authenticated(false)
 {
 	this->modes = 0;
 	this->lastJoinedChannel = "";
