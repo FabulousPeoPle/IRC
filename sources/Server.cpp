@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/01 14:19:57 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/01 16:35:31 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -652,10 +652,11 @@ bool            Server::m_isModesSyntaxValid(std::vector<std::string> arguments)
 }
 
 //TODO: CHANGE MODES IN REPLY
-void            Server::m_channelModeCmd(Client& client, Message& message)
+void            Server::m_channelModeCmd(Client& client, Message& message) // Might be coming here twice
 {
     std::vector<std::string> arguments = message.getArgs();
     std::string channelName = arguments[0];
+
     if (!m_channelExists(channelName))
     {
         m_reply(client.getFd(), Replies::ERR_NOSUCHCHANNEL, channelName);
@@ -1012,7 +1013,6 @@ void                Server::m_relay(int clientFd) // segfault when sending nick
         
         std::string command = message.getCmd();
 
-
         if (command == USER_COMMAND || command == PASS_COMMAND)
             m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, command); // not sure about this
         else if (this->m_isValidCommand(command))
@@ -1047,11 +1047,7 @@ void                Server::m_manageClientEvent(int pollIndex)
             perror("recv: ");
 
         int    badFd = this->m_pfds[pollIndex].fd;
-        // should be removed from channels
-        this->m_nicknames.erase(m_clients[badFd].getNickname());
-        m_clients.erase(badFd);
-        this->m_pfds.erase(this->m_pfds.begin() + pollIndex);
-        close(badFd);
+        m_quitCmd(m_clients[badFd]);
     }
     else
     {
@@ -1064,9 +1060,6 @@ void                Server::m_manageClientEvent(int pollIndex)
                 this->m_relay(this->m_pfds[pollIndex].fd); // TODO: INSERT TRY AUTHENTIFICATE HERE
             else
             {
-                #ifdef DEBUG
-                std::cout << "client not authenticated" << std::endl;
-                #endif
                 this->m_tryAuthentificate(m_clients[this->m_pfds[pollIndex].fd]);
                 if (this->m_isAuthenticated(this->m_pfds[pollIndex].fd))
                     this->m_relay(this->m_pfds[pollIndex].fd);
@@ -1077,7 +1070,7 @@ void                Server::m_manageClientEvent(int pollIndex)
 
 bool    m_isAlphaNum(char c) // TODO: fix this shit // maybe this should be seperated
 {
-    return (isalnum(c));
+    return (isalnum(c) || c == '_');
 }
 
 bool Server::m_nickIsValid(std::string &str)
@@ -1101,9 +1094,6 @@ bool    Server::m_checkNickSyntax(Message& message)
 {
     if (message.getArgs().empty())
     {
-        #ifdef DEBUG_USERHOST
-        std::cout << message.getArgs().empty() << " there are no arguments u cunt!\n";
-        #endif
         return false;
     }
     std::string & nick = message.getArgs().front();
@@ -1112,9 +1102,6 @@ bool    Server::m_checkNickSyntax(Message& message)
     // pending research on the restrictions demanded
     if (len > 9 || len < 1 || nick == "anonymous" || !m_nickIsValid(nick))
     {
-        #ifdef DEBUG_USERHOST
-        std::cout << "wrong length u cunt!\n";
-        #endif
         return (false);
     }
     return (true);
@@ -1124,9 +1111,6 @@ bool    Server::m_checkStatusAuth(Client& client)
 {
     if (client.isUserAuth() && client.isNickAuth() && (!m_passProtected || client.isPassAuth()))
     {
-        #ifdef DEBUG
-        std::cout << "Has authenticated correctly\n";
-        #endif
         m_reply(client.getFd(), Replies::RPL_WELCOME, client.getNickname());
         m_reply(client.getFd(), Replies::RPL_YOURHOST, client.getNickname() + " :Your host is " + m_serverName + ", running version " + m_version);
         m_reply(client.getFd(), Replies::RPL_CREATED, "");
@@ -1151,9 +1135,6 @@ bool    Server::m_isValidCommand(std::string potentialCommand)
 
 bool    Server::m_tryAuthentificate(Client& client)
 {
-    #ifdef DEBUG
-    std::cout << "Trying to authenticate\n";
-    #endif
     while (!m_checkStatusAuth(client) && client.getMessageQueue().size())
     {
         // should userCMD parse?
@@ -1299,14 +1280,8 @@ int	Server::m_manageRecv(std::string message, int clientFd)
     t_messageDQeue& messageQueue = this->m_clients[clientFd].getMessageQueue();
     std::string token = strToken(message);
 
-    #ifdef DEBUG
-    std::cout << "Queue size == " << messageQueue.size() << std::endl;
-    #endif
     while (token.size())
     {
-        #ifdef DEBUG
-        std::cout << "this is a token: " << token << std::endl;
-        #endif
         if (messageQueue.empty() || messageQueue.back().getMsg().find(END_STRING)
                                                         != std::string::npos)
             messageQueue.push_back(Message(token));
@@ -1314,10 +1289,6 @@ int	Server::m_manageRecv(std::string message, int clientFd)
             messageQueue.back().setMsg(messageQueue.back().getMsg() + token);
         token = strToken("");
     }
-    #ifdef DEBUG
-    std::cout << "Queue size 2 == " << messageQueue.size() << std::endl;
-    printQueue(messageQueue);
-    #endif
     if (messageQueue.back().getMsg().find(END_STRING) != std::string::npos)
         return (1);
     return (0);
@@ -1405,7 +1376,6 @@ void    Server::m_nickCmd(Client & client)
                 m_nicknames.erase(client.getNickname());
             client.setNickname(msg.getArgs().front());
             client.setNickAuth();
-            std::cout << "Nick cmd is done\n";
         }
         else
             m_reply(client.getFd(), Replies::ERR_NICKNAMEINUSE, "");
@@ -1426,7 +1396,6 @@ void    Server::m_userCmd(Client & client)
         client.setUsername(msg.getArgs()[0]);
         mode = msg.getArgs()[1];
         client.setRealname(msg.getLiteralMsg());
-        std::cout << "User done\n";
         client.setUserAuth();
     }
 }
@@ -1445,7 +1414,6 @@ void    Server::m_passCmd(Client &client)
         if (m_passProtected && args.front() == m_password) // serv password in obligatory? TODO:
         {
             client.setPassAuth();
-            std::cout << "pass is done\n";
         }
     }
 }
@@ -1467,30 +1435,23 @@ void                    Server::m_quitCmd(Client& client)
     std::vector<std::string>::iterator end = client.getChannels().end();
     while (it != end)
     {
-        m_p_privMsgCmd_noticeCmd(client, Message(m_constructMask(client) + " QUIT :Quit: "  + client.getNickname()), *it);
+        std::cout << "how many times do we come here\n";
+        m_p_privMsgCmd_noticeCmd(client, Message(" QUIT :Quit: "  + client.getNickname()), *it);
         m_channels[*it].removeMember(client.getFd());
         m_channels[*it].removeOp(client.getFd());
         m_channels[*it].removeInvited(client.getFd());
         it++;
     }
-    // should I cut the connection
-    // stop listening to incoming events
-    this->m_eraseClientPoll(client.getFd());
-    // remove the nickname from the map
-    this->m_nicknames.erase(m_clients[client.getFd()].getNickname());
-    // removing it from client list
-    this->m_clients.erase(client.getFd());
-    close(client.getFd());
+
+    int    badFd = client.getFd();
+
+    if (m_clients[badFd].getModeValue(UserModes::oper))
+        --m_numOps;
+    this->m_nicknames.erase(m_clients[badFd].getNickname());
+    m_clients.erase(badFd);
+    this->m_eraseClientPoll(client.getFd()); // TODO: make it more efficient mpfds.erase(this->m_pfds.begin() + pollIndex)
+    close(badFd);
 };
-
-/* QUIT ERROR MSG in GeekShed
- *  QUIT :sayonara wa
- *  ERROR :Closing Link: ohachim[ll62-88-161-251-62.ll62.iam.net.ma] (Quit: ohachim)
-*/
-
-// AF_UNSPEC comboed with AF_INET6
-
-    // just to compile the thing
 
 bool                    Server::m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes)
 {
@@ -1777,9 +1738,12 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
         std::vector<int> &members = chan.getMembers();
         std::vector<int>::iterator it = members.begin();
         std::vector<int>::iterator end = members.end();
+
+        // our send   :ohachim!ohachim@0.0.0.0  QUIT :Quit: ohachim
+        // their send :oha!~oha@protectedhost-FA4D0DBC.ll62.iam.net.ma QUIT :Quit: oha
         while (it != end)
         {
-            m_send(*it, ':' + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
+            m_send(*it, ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
             it++;
         }
     }
@@ -1787,7 +1751,7 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
     {
         std::map<std::string, int>::iterator it_user = m_nicknames.find(target);
         int clientFd = m_nicknames[target];
-        m_send(m_nicknames[target], ':' + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
+        m_send(m_nicknames[target], ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
     }
 }
 
@@ -1985,7 +1949,6 @@ void    Server::m_p_namesCmd_listCmd(Client & client, std::string target, std::s
     else if (cmd == LIST_COMMAND && !m_channels[target].getModeValue(ChannelModes::p_private)\
     && !m_channels[target].getModeValue(ChannelModes::s_secret))
     {
-        std::cout << "sector 2\n";
         if (!m_channels[target].getModeValue(ChannelModes::a_annonymous))
             m_reply(client.getFd(), Replies::RPL_LIST, m_composeList(target));
         else
