@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/01 15:56:16 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/02 20:06:53 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -174,7 +174,6 @@ namespace Replies
 #define TOPIC_COMMAND       "TOPIC"
 #define NAMES_COMMAND       "NAMES"
 #define LIST_COMMAND        "LIST"
-#define WHO_COMMAND         "WHO"
 #define KICK_COMMAND        "KICK"
 #define INVITE_COMMAND      "INVITE"
 

@@ -148,7 +148,6 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, ':' + this->m_serverName + " 443 <user> <channel> :is already on channel\r\n");
             break;
         case Replies::RPL_NAMREPLY:
-            std::cout << "this is the server name: " << this->m_serverName << "\n";
             this->m_send(clientFd, ':' + this->m_serverName + " 353 " + message + "\r\n");
             break;
         case Replies::RPL_ENDOFNAMES:
@@ -185,7 +184,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ENDOFINVITELIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
             break; 
         case Replies::RPL_LUSERCHANNELS:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSERCHANNELS, this->m_clients[clientFd].getNickname()) + ' ' + std::to_string(m_channels.size()) + " :channels formed" + END_STRING);
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSERCHANNELS, this->m_clients[clientFd].getNickname()) + ' ' + std::to_string(m_channels.size()) + " :channels formed" + END_STRING); //TODO: TAKE INTO CONSIDERATION SECRET/PRIVATE CHANNELS
             break;
         case Replies::RPL_LUSEROP:
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSEROP, this->m_clients[clientFd].getNickname()) + ' ' + std::to_string(m_numOps) + " :operator(s) online" + END_STRING);

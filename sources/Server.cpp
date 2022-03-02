@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/01 16:35:31 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/02 20:16:30 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -870,7 +870,7 @@ void                Server::m_pingCmd(Client& client)
     m_reply(client.getFd(), Replies::RPL_PINGREQUEST,"");
 }
 
-void                Server::m_whoisCmd(Client& client)
+void                Server::m_whoisCmd(Client& client) // should compose channel thingy? TODO:
 {
     Message&    message = client.getMessageQueue().front();
     if (message.getArgs().empty())
@@ -905,11 +905,12 @@ std::string         Server::m_composeRplTopic(Channel& channel)
     return (channel.getName() + " :" + channel.getTopic());
 }
 
-void                Server::m_topicCmd(Client& client)
+void                Server::m_topicCmd(Client& client) // TODO: CHANGE TO LITERAL MSG
 {
     Message& message = client.getMessageQueue().front();
 
     std::vector<std::string> arguments = message.getArgs();
+    std::string topicToSet = message.getLiteralMsg();
     if (arguments.empty())
     {
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS,"");
@@ -922,7 +923,7 @@ void                Server::m_topicCmd(Client& client)
         return ;
     }
 
-    if (arguments.size() == 1)
+    if (topicToSet.empty())
     {
         if (m_channels[arguments[0]].getTopic().empty()) // checking if topic is empty
         {
@@ -932,7 +933,7 @@ void                Server::m_topicCmd(Client& client)
         m_reply(client.getFd(), Replies::RPL_TOPIC, m_composeRplTopic(m_channels[arguments[0]])); // there is a topic
         return;
     }
-    if (arguments.size() == 2)
+    if (topicToSet.size())
     {
         Channel& channel = m_channels[arguments[0]];
 
@@ -940,12 +941,12 @@ void                Server::m_topicCmd(Client& client)
         {
             if (client.getModeValue(ChannelModes::o_OperatorPrivilege, arguments[0])
                     || client.getModeValue(ChannelModes::O_Creator, arguments[0]))
-                channel.getTopic() = arguments[1];
+                channel.getTopic() = topicToSet;
             else
                 m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, arguments[0]);
         }
         else
-            channel.getTopic() = arguments[1];
+            channel.getTopic() = topicToSet;
     }    
 }
 
@@ -1435,7 +1436,6 @@ void                    Server::m_quitCmd(Client& client)
     std::vector<std::string>::iterator end = client.getChannels().end();
     while (it != end)
     {
-        std::cout << "how many times do we come here\n";
         m_p_privMsgCmd_noticeCmd(client, Message(" QUIT :Quit: "  + client.getNickname()), *it);
         m_channels[*it].removeMember(client.getFd());
         m_channels[*it].removeOp(client.getFd());
@@ -1529,7 +1529,7 @@ void                    Server::m_addChannel(int clientFd, std::string channelNa
     m_clients[clientFd].turnOnMode(ChannelModes::O_Creator, channelName);
     m_clients[clientFd].turnOnMode(ChannelModes::o_OperatorPrivilege, channelName);
     m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message("JOIN :" + channelName), channelName);
-    m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message(":" + channelName + " supported commands : INVITE, PART, KICK, MODE, NAMES, LIST "), channelName);
+    m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message(":" + channelName + " supported commands :INVITE, PART, KICK, MODE, NAMES, LIST "), channelName);
     m_p_namesCmd_listCmd(m_clients[clientFd], channelName, NAMES_COMMAND);
 }
 
@@ -1739,11 +1739,10 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
         std::vector<int>::iterator it = members.begin();
         std::vector<int>::iterator end = members.end();
 
-        // our send   :ohachim!ohachim@0.0.0.0  QUIT :Quit: ohachim
-        // their send :oha!~oha@protectedhost-FA4D0DBC.ll62.iam.net.ma QUIT :Quit: oha
         while (it != end)
         {
-            m_send(*it, ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
+            if (*it != client.getFd())
+                m_send(*it, ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
             it++;
         }
     }
