@@ -57,6 +57,7 @@ void    Server::initializeCmdFuncs(void)
     this->m_cmdFuncs.insert(std::make_pair(PRIVMSG_COMMAND, &Server::m_privMsgCmd_noticeCmd));
     this->m_cmdFuncs.insert(std::make_pair(NOTICE_COMMAND, &Server::m_privMsgCmd_noticeCmd));
     this->m_cmdFuncs.insert(std::make_pair(NICK_COMMAND, &Server::m_nickCmd));
+    this->m_cmdFuncs.insert(std::make_pair(PART_COMMAND, &Server::m_partCmd));
 }
 
 Server::~Server(void)
@@ -1594,6 +1595,12 @@ void                        Server::m_partCmd(Client &client)
     /// TODO: syntax check
     std::vector<std::string>::iterator it = msg.getArgs().begin();
     std::vector<std::string>::iterator end = msg.getArgs().end();
+    std::vector<std::string> &args = msg.getArgs();
+    if (args.empty())
+    {
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        return;
+    }
     if (!m_grabChannelsNames(msg, channelNames))
     {
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
@@ -1702,12 +1709,13 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
         std::vector<int>::iterator end = members.end();
         while (it != end)
         {
+            //we added ~ infront of the user for bitchX compatibility maybe!!!
             if (m_clients[*it].getModeValue(UserModes::away))
-                m_send(client.getFd(), ":" + m_clients[*it].getNickname() + "!" + m_clients[*it].getUsername() + "@" + m_clients[*it].getHostname() + " " + m_clients[*it].getAwayMsg());
+                m_send(client.getFd(), ":" + m_clients[*it].getNickname() + "!~" + m_clients[*it].getUsername() + "@" + m_clients[*it].getHostname() + " " + m_clients[*it].getAwayMsg());
             if (isAnonymous)
-                m_send(*it, ":anonymous!anonymous@anonymous " + msg.getMsg());
+                m_send(*it, ":anonymous!~anonymous@anonymous " + msg.getMsg());
             else
-                m_send(*it, ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
+                m_send(*it, ":" + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
             it++;
         }
     }
@@ -1816,7 +1824,10 @@ void            Server::m_inviteCmd(Client &client)
     Message& msg = client.getMessageQueue().front();
     std::vector<std::string> &args = msg.getArgs();
     if (args.size() != 2)
+    {
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        return;
+    }
     std::string target = *args.begin();
     std::string chanName = *(args.begin() + 1);
     if (!m_channelExists(chanName))
@@ -1831,8 +1842,9 @@ void            Server::m_inviteCmd(Client &client)
         m_reply(client.getFd(), Replies::ERR_USERONCHANNEL, "");
     else
     {
-        m_p_privMsgCmd_noticeCmd(client, Message("INVITE :" + client.getNickname()), target);
-        m_p_privMsgCmd_noticeCmd(client, Message("INVITE :" + client.getNickname()), client.getNickname());
+        //we changed this to match the format of the msg needed
+        m_p_privMsgCmd_noticeCmd(client, Message("INVITE " + client.getNickname() + " :" + chanName), target);
+        m_p_privMsgCmd_noticeCmd(client, Message("INVITE " + client.getNickname() + " :" + chanName), client.getNickname());
         m_channels[chanName].addInvited(m_nicknames[target]);
     }
 }
@@ -1963,7 +1975,7 @@ std::string    Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PASS
                                                             "MOTD", "AWAY", "LUSERS",
                                                             "WHOIS", "TOPIC", "JOIN", "PART",
                                                             "KICK", "PRIVMSG", "NOTICE", "OPER",
-                                                            "NAMES"};
+                                                            "NAMES", "INVITE"};
 
                                                             //TODO: CARE QUITE CHANNEL AND MODES
                                                             //TODO: SHOW CHANNEL MODES AFTER CREATION

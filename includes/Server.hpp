@@ -178,7 +178,7 @@ namespace Replies
 #define KICK_COMMAND        "KICK"
 #define INVITE_COMMAND      "INVITE"
 
-#define NUM_COMMANDS 20
+#define NUM_COMMANDS 21
 
 #define MOTD_LENGTH_LINE 80
 
