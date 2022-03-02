@@ -6,7 +6,7 @@
 #    By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2021/10/05 12:47:22 by ohachim           #+#    #+#              #
-#    Updated: 2022/02/23 19:47:58 by ohachim          ###   ########.fr        #
+#    Updated: 2022/03/01 13:47:06 by ohachim          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,7 +15,7 @@ CC = clang++
 
 SRC_PATH = sources
 
-SRC_NAME = main.cpp Server.cpp Client.cpp Message.cpp ServerGetters.cpp strToken.cpp Channel.cpp
+SRC_NAME = main.cpp Server.cpp Client.cpp Message.cpp ServerGetters.cpp strToken.cpp Channel.cpp ServerReply.cpp
 
 OBJ_PATH = obj
 

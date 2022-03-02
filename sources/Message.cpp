@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Message.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/24 18:05:37 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/01 11:04:04 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,10 +30,6 @@ Message & Message::operator=(Message const & rhs)
     return (*this);
 }
 
-t_strDQeue  &Message::getMsgQueue(void)
-{
-    return (_messageQueue);
-}
 
 std::string Message::getMsg(void) const
 {
@@ -55,27 +51,6 @@ std::vector<std::string>    &Message::getArgs(void)
     return (arguments);
 }
 
-void    Message::pushMsgInQueue(std::string message)
-{
-    _messageQueue.push_back(message);
-}
-
-void    Message::popMsgFromQueue(std::string message)
-{
-    t_strDQeue::iterator it = _messageQueue.begin();
-	t_strDQeue::iterator end = _messageQueue.end();
-
-	while (it != end)
-	{
-		if (*it == message)
-		{
-			_messageQueue.erase(it);
-			break ;
-		}
-		it++;
-	}
-}
-
 void    Message::setMsg(std::string message)
 {
     this->message = message;
@@ -94,11 +69,15 @@ int  Message::checkCommand(char *token)
     return (1);
 }
 // also needs a redo
-void Message::m_trim(char *str)
+int Message::m_trim(char *str)
 {
-    char *end = std::strchr(str, '\r');
+    char *end = std::strrchr(str, '\r');
     if (end)
         end[0] = '\0';
+    int idx = 0;
+    while (str[idx] && str[idx] == ' ')
+        idx++;
+    return (idx);
 }
 
 // needs a quick redo // maybe not
@@ -106,8 +85,9 @@ void Message::parse(void)
 {
     char *token = NULL;
     char * msg = strdup(message.c_str());
-    m_trim(msg);
-    char * literalMessage = std::strchr(msg, ':');
+    int idx = m_trim(msg);
+    char * buff;
+    char * literalMessage = ((buff = std::strrchr(msg, ':')) == (msg + idx)) ? NULL : buff;
     
     if (literalMessage)
     {

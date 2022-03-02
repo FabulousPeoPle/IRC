@@ -3,7 +3,7 @@
 int main()
 {
 	pid_t ch_pid;
-	char *args[] = {"/usr/bin/curl","https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=Carrot", NULL};
+	char *args[] = {"/usr/bin/curl","https://en.wikipedia.org/w/api.php?format=json&action=query&prop=extracts&exintro&explaintext&redirects=1&titles=NO_GAME_NO_LIFE", NULL};
 	ch_pid = fork();
 	if (ch_pid == -1)
 	{
