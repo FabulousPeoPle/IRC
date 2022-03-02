@@ -65,10 +65,8 @@ int Bot::m_auth(void)
 
     if ((err = m_send(user)))
         return err;
-    sleep(1);
     if ((err = m_send(nick)))
         return err;
-    sleep(1);
     if ((err = m_send(passwd)))
         return err;
 	return 0;
@@ -131,50 +129,85 @@ void Bot::m_cmdHandler(std::string msg)
 	t_msg p_msg;
 	int err = 0;
 
-	if (!m_msgParse(msg, p_msg))
-	{
-		std::cout << p_msg.nick << std::endl;
-		std::cout << p_msg.user << std::endl;
-		std::cout << p_msg.host << std::endl;
-		std::cout << p_msg.cmd << std::endl;
-		std::cout << p_msg.args << std::endl;
-		std::cout << p_msg.msg << std::endl;
-		err = m_cmdDispatcher(p_msg);
-	}
+	if (m_msgParse(msg, p_msg) == 0)
+    {
+        std::cout << "pmsg -------- S" << std::endl;
+        std::cout << p_msg.nick << std::endl;
+        std::cout << p_msg.user << std::endl;
+        std::cout << p_msg.host << std::endl;
+        std::cout << p_msg.cmd << std::endl;
+        std::cout << p_msg.args << std::endl;
+        std::cout << p_msg.msg << std::endl;
+        std::cout << "pmsg -------- E" << std::endl;
+	    err = m_cmdDispatcher(p_msg);
+    }
+}
+
+int Bot::m_invCmdHandler(t_msg &p_msg)
+{
+    std::vector<std::string> s_msg;
+
+    ssplit(p_msg.msg, " ", s_msg);
+    if (s_msg.size() != 1 || s_msg[0][0] != '#')
+        return -1;
+    m_send("JOIN " + s_msg[0]);
+    m_privMsg(s_msg[0], "I shall thank you for the invite " + p_msg.nick);
+
+}
+
+int Bot::m_pmCmdHandler(t_msg &p_msg)
+{
+    std::vector<std::string> s_msg;
+    std::string temp;
+
+    ssplit(p_msg.msg, " ", s_msg);
+    if (s_msg.size() < 1 || s_msg[0] != "!bota")
+        return NOTACMD;
+    else if (s_msg.size() == 1)
+        return EC_USAGE;
+    else if (s_msg.size() == 2)
+    {
+        if (s_msg[1] == "time")
+            m_privMsg(p_msg.nick, "It's " + CurrentTime());
+    }
+    else if (s_msg.size() == 3)
+    {
+        if (s_msg[1] == "whatis")
+        {
+            wiki_desc(s_msg[2], temp);
+            m_privMsg(p_msg.nick, temp);
+        }
+    }
 }
 
 int Bot::m_msgParse(std::string msg, t_msg &p_msg)
 {
-	if (msg.find("!bota ") != std::string::npos)
-	{
-		if ((p_msg.nick = strToken(msg.erase(0, 1), "!")).size() == 0)
+    std::cout << p_msg.cmd << std::endl;
+	if ((p_msg.nick = strToken(msg.erase(0, 1), "!")).size() == 0)
 			return -1;
-		msg.erase(0, p_msg.nick.size());
-		if ((p_msg.user = strToken(msg.erase(0, 1), "@")).size() == 0)
-			return -2;
-		msg.erase(0, p_msg.user.size());
-		if ((p_msg.host = strToken(msg.erase(0, 1), " ")).size() == 0)
-			return -3;
-		msg.erase(0, p_msg.host.size());
-		if ((p_msg.cmd = strToken(msg.erase(0, 1), " ")).size() == 0)
-			return -4;
-		msg.erase(0, p_msg.cmd.size());
-		if ((p_msg.args = strToken(msg.erase(0, 1), ":")).size() == 0)
-			return -5;
-		msg.erase(0, p_msg.args.size() + 1);
-		if ((p_msg.msg = msg).size() == 0)
-			return -6;	
-		msg.erase(0, p_msg.msg.size());
-		trim(p_msg.nick, " \t\n\r");
-		trim(p_msg.user, " \t\n\r");
-		trim(p_msg.host, " \t\n\r");
-		trim(p_msg.cmd, " \t\n\r");
-		trim(p_msg.args, " \t\n\r");
-		trim(p_msg.msg, " \t\n\r");
-	}
-	else
-		return -7;
-	return 0;
+	msg.erase(0, p_msg.nick.size());
+	if ((p_msg.user = strToken(msg.erase(0, 1), "@")).size() == 0)
+		return -2;
+	msg.erase(0, p_msg.user.size());
+	if ((p_msg.host = strToken(msg.erase(0, 1), " ")).size() == 0)
+		return -3;
+	msg.erase(0, p_msg.host.size());
+	if ((p_msg.cmd = strToken(msg.erase(0, 1), " ")).size() == 0)
+		return -4;
+	msg.erase(0, p_msg.cmd.size());
+	if ((p_msg.args = strToken(msg.erase(0, 1), ":")).size() == 0)
+		return -5;
+	msg.erase(0, p_msg.args.size() + 1);
+	if ((p_msg.msg = msg).size() == 0)
+		return -6;	
+	msg.erase(0, p_msg.msg.size());
+	trim(p_msg.nick, " \t\n\r");
+	trim(p_msg.user, " \t\n\r");
+	trim(p_msg.host, " \t\n\r");
+	trim(p_msg.cmd, " \t\n\r");
+    trim(p_msg.args, " \t\n\r");
+	trim(p_msg.msg, " \t\n\r");
+    return 0;
 }
 
 int Bot::m_cmdDispatcher(t_msg p_msg)
@@ -182,24 +215,11 @@ int Bot::m_cmdDispatcher(t_msg p_msg)
 	std::vector<std::string> s_msg;
 	std::string temp;
 
-	ssplit(p_msg.msg, " ", s_msg);
-	if (s_msg.size() < 1 || s_msg[0] != "!bota")
-		return NOTACMD;
-	else if (s_msg.size() == 1)
-		return EC_USAGE;
-	else if (s_msg.size() == 2)
-	{
-		if (s_msg[1] == "time")
-			m_privMsg(p_msg.nick, "It's " + CurrentTime());
-	}
-	else if (s_msg.size() == 3)
-	{
-		if (s_msg[1] == "whatis")
-		{
-			wiki_desc(s_msg[2], temp);
-			m_privMsg(p_msg.nick, temp);
-		}
-	}
+    std::cout << p_msg.cmd << std::endl;
+    if (p_msg.cmd == "PRIVMSG")
+        m_pmCmdHandler(p_msg);
+    else if(p_msg.cmd == "INVITE")
+        m_invCmdHandler(p_msg);
 	return 0;
 }
 

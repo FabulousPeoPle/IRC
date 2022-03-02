@@ -63,6 +63,10 @@ private:
                         int m_msgParse(std::string msg, t_msg &p_msg);
                         int m_privMsg(std::string to, std::string msg);
                         int m_cmdDispatcher(t_msg p_msg);
+                        int m_internalCmd(std::string msg, t_msg &p_msg);
+                        int m_pmCmdHandler(t_msg &p_msg);
+                        int m_invCmdHandler(t_msg &p_msg);
+
 };
 
 #endif
