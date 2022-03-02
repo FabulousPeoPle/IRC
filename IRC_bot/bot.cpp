@@ -152,7 +152,7 @@ int Bot::m_invCmdHandler(t_msg &p_msg)
         return -1;
     m_send("JOIN " + s_msg[0]);
     m_privMsg(s_msg[0], "I shall thank you for the invite " + p_msg.nick);
-
+    return 1;
 }
 
 int Bot::m_pmCmdHandler(t_msg &p_msg)
@@ -178,6 +178,7 @@ int Bot::m_pmCmdHandler(t_msg &p_msg)
             m_privMsg(p_msg.nick, temp);
         }
     }
+    return 1;
 }
 
 int Bot::m_msgParse(std::string msg, t_msg &p_msg)

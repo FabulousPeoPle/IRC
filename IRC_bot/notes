@@ -1,3 +1,6 @@
+NEED to add log functionality.
+NEED to check ftp. (maybe add it to server or bot); ''\_(o.o)_/''
+
 parsing msg containing : after the nickname , PRIVMSG bota : !bota whatis maroc or PRTIVMSG bota : !bota 
 Crtl+c from nc throes the following error :
 '''
