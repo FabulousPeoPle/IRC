@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/02 20:06:53 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/03 11:49:13 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -190,6 +190,7 @@ typedef struct sockaddr_in6     t_sockaddr_in6;
 typedef struct pollfd           t_pollfd;
 
 std::string strToken(std::string str);
+std::string intToString(int num);
 
 class Client;
 class Message;
@@ -392,7 +393,7 @@ class Server {
         const int                       m_maxClients;
         t_addrinfo*                     m_servinfo;
         t_addrinfo                      m_hints;
-        int                             m_athenticatedUserNum;
+        int                             m_authenticatedUserNum;
         // in case we wanted to do it manually // kinda useless now
         t_sockaddr_in                   m_addr_in;
         t_sockaddr_in6                  m_addr_in6;

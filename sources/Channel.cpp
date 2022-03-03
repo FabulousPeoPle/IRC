@@ -369,6 +369,9 @@ void				Channel::manageSimpleMode(char c, char prefix, std::string& modeChanges)
 	{
 		if (!modeNumValue)
 		{
+			if ((modeNum == ChannelModes::s_secret && this->getModeValue(ChannelModes::p_private))
+				|| (modeNum == ChannelModes::p_private && this->getModeValue(ChannelModes::s_secret))) // good example
+				return ;
 			modeChanges += c;
 			this->turnOnMode(modeNum);
 		}

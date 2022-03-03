@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/02 20:16:30 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/03 11:53:29 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@
 
 char* strdup(const char *s);
 
-Server::Server(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME), m_version("0.1"), m_maxClients(150), m_athenticatedUserNum(0)
+Server::Server(void) : m_port(DEFAULT_PORT), m_hostname(DEFAULT_HOSTNAME), m_version("0.1"), m_maxClients(150), m_authenticatedUserNum(0)
 {
     this->m_servinfo = NULL;
     this->m_sockfd = -1;
@@ -63,7 +63,7 @@ Server::~Server(void)
 {
 }
 
-Server::Server(std::string port, std::string hostname, std::string name, int maxClients) : m_serverName(name), m_port(port), m_hostname(hostname), m_version("0.1"), m_maxClients(maxClients), m_athenticatedUserNum(0)
+Server::Server(std::string port, std::string hostname, std::string name, int maxClients) : m_serverName(name), m_port(port), m_hostname(hostname), m_version("0.1"), m_maxClients(maxClients), m_authenticatedUserNum(0)
 {
     this->m_servinfo = NULL;
     this->m_sockfd = -1;
@@ -721,6 +721,8 @@ void            Server::m_userModeCmd(Client& client, Message& message) // TODO:
         {
             if (modeNum == UserModes::restricted)
                 continue ;
+            if (modeNum == UserModes::oper)
+                --m_numOps;
             if (client.getModeValue(modeNum))
             {
                 client.turnOffMode(modeNum);
@@ -829,7 +831,7 @@ void                Server::m_lusersCmd(Client& client)
 // TODO: WE SHOULD BE ABLE TO USE NICK AGAIN
 std::string                 Server::m_makeReplyHeader(int replyNum, std::string nickname)
 {
-    std::string strReplyNum = std::to_string(replyNum);
+    std::string strReplyNum = intToString(replyNum);
     int         len = strReplyNum.size();
     std::string s = std::string(3 - len, '0');
     std::string header = ':' + this->m_serverName + ' ' + s + strReplyNum + ' ' + nickname;
@@ -1117,7 +1119,7 @@ bool    Server::m_checkStatusAuth(Client& client)
         m_reply(client.getFd(), Replies::RPL_CREATED, "");
         m_reply(client.getFd(), Replies::RPL_MYINFO, "");
         this->m_motdCmd(client);
-        ++(this->m_athenticatedUserNum);
+        ++(this->m_authenticatedUserNum);
         client.setAuthComplete();
         return (true);
     }
@@ -1427,22 +1429,27 @@ std::string             Server::m_constructMask(Client& client)
 // TODO: QUIT FROM CHANNELS/ if he is an operator, decrease ops
 void                    Server::m_quitCmd(Client& client) 
 {
-    std::string messageToSend = "ERROR: Closing Link: " + client.getUsername() + "(" 
-                                + client.getMessageQueue().front().getLiteralMsg().erase(0, 1) + ") " + client.getHostname() + " (Quit: "
-                                    + client.getNickname() + ")" + END_STRING;
-
-    this->m_send(client.getFd(), messageToSend);
-    std::vector<std::string>::iterator it = client.getChannels().begin();
-    std::vector<std::string>::iterator end = client.getChannels().end();
-    while (it != end)
+    if (client.isAuthComplete())
     {
-        m_p_privMsgCmd_noticeCmd(client, Message(" QUIT :Quit: "  + client.getNickname()), *it);
-        m_channels[*it].removeMember(client.getFd());
-        m_channels[*it].removeOp(client.getFd());
-        m_channels[*it].removeInvited(client.getFd());
-        it++;
-    }
+        std::string messageToSend = "ERROR: Closing Link: " + client.getUsername() + "(" 
+                                    + client.getMessageQueue().front().getLiteralMsg().erase(0, 1) + ") " + client.getHostname() + " (Quit: "
+                                        + client.getNickname() + ")" + END_STRING;
 
+        std::cout << "00000\n";
+        this->m_send(client.getFd(), messageToSend);
+        std::vector<std::string>::iterator it = client.getChannels().begin();
+        std::vector<std::string>::iterator end = client.getChannels().end();
+        std::cout << "111111\n";
+        while (it != end)
+        {
+            m_p_privMsgCmd_noticeCmd(client, Message(" QUIT :Quit: "  + client.getNickname()), *it);
+            m_channels[*it].removeMember(client.getFd());
+            m_channels[*it].removeOp(client.getFd());
+            m_channels[*it].removeInvited(client.getFd());
+            it++;
+        }
+        --m_authenticatedUserNum;
+    }
     int    badFd = client.getFd();
 
     if (m_clients[badFd].getModeValue(UserModes::oper))
