@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/03 11:53:29 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/03 13:13:51 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1385,7 +1385,7 @@ void    Server::m_nickCmd(Client & client)
     }
 }
 
-void    Server::m_userCmd(Client & client)
+void    Server::m_userCmd(Client & client) // TODO: GIVES  need more params when there are too many params
 {
     Message&    msg = client.getMessageQueue().front();
     std::string mode;
@@ -1403,7 +1403,7 @@ void    Server::m_userCmd(Client & client)
     }
 }
 
-void    Server::m_passCmd(Client &client)
+void    Server::m_passCmd(Client &client) //TODO: what if pass is incorrecto
 {
     Message &msg = client.getMessageQueue().front();
     std::vector<std::string> &args = msg.getArgs();
@@ -1526,6 +1526,7 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
 
 void                    Server::m_addChannel(int clientFd, std::string channelName, std::string password)
 {
+    std::cout << "Do we come here\n";
     Channel newChannel(PEASEANT_MODES, clientFd, channelName, channelName.at(0), password);
     // if (passProtected)
     //     newChannel.setPassword(password);
@@ -1683,6 +1684,7 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
         return ;
     }
     std::string target = msg.getArgs().front();
+    std::cout << "OUR target is:  " << target << std::endl;
     if (target.at(0) == LOCAL_CHAN || target.at(0) == NETWORKWIDE_CHAN)
     {
         std::map<std::string, Channel>::iterator it_chan = m_channels.find(target);
@@ -1709,13 +1711,13 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
         std::vector<int>::iterator end = members.end();
         while (it != end)
         {
-            if (m_clients[*it].getModeValue(UserModes::away))
-                m_send(client.getFd(), ":" + m_clients[*it].getNickname() + "!" + m_clients[*it].getUsername() + "@" + m_clients[*it].getHostname() + " " + m_clients[*it].getAwayMsg());
-            if (isAnonymous)
-                m_send(*it, ":anonymous!anonymous@anonymous " + msg.getMsg());
-            else
-                m_send(*it, ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
-            it++;
+                if (m_clients[*it].getModeValue(UserModes::away))
+                    m_send(client.getFd(), ":" + m_clients[*it].getNickname() + "!~" + m_clients[*it].getUsername() + "@" + m_clients[*it].getHostname() + " " + m_clients[*it].getAwayMsg());
+                if (isAnonymous)
+                    m_send(*it, ":anonymous!~anonymous@anonymous " + msg.getMsg());
+                else
+                    m_send(*it, ":" + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
+                it++;
         }
     }
     else
@@ -1729,8 +1731,8 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
         }
         int clientFd = m_nicknames[target];
         if (m_clients[clientFd].getModeValue(UserModes::away))
-                m_send(client.getFd(), ":" + m_clients[clientFd].getNickname() + "!" + m_clients[clientFd].getUsername() + "@" + m_clients[clientFd].getHostname() + " " + m_clients[clientFd].getAwayMsg());
-        m_send(m_nicknames[target], ":" + client.getNickname() + "!" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
+                m_send(client.getFd(), ":" + m_clients[clientFd].getNickname() + "!~" + m_clients[clientFd].getUsername() + "@" + m_clients[clientFd].getHostname() + " " + m_clients[clientFd].getAwayMsg());
+        m_send(m_nicknames[target], ":" + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
     }
 }
 
@@ -1738,8 +1740,10 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
 // an overload of the privmsg command
 void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target)
 {
+    msg.parse();
     if (target.at(0) == LOCAL_CHAN || target.at(0) == NETWORKWIDE_CHAN)
     {
+        
         std::map<std::string, Channel>::iterator it_chan = m_channels.find(target);
         Channel & chan = m_channels[target];
         std::vector<int> &members = chan.getMembers();
@@ -1748,7 +1752,8 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
 
         while (it != end)
         {
-            if (*it != client.getFd())
+
+            if (msg.getCmd() == "JOIN" || (msg.getCmd() != "JOIN" && *it != client.getFd()))
                 m_send(*it, ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
             it++;
         }
