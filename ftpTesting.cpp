@@ -7,8 +7,8 @@
 
 int main(void)
 {
-	FILE *img = fopen("../img.jpeg", "rb");
-	FILE *dest = fopen("img_copy.jpeg", "wb");
+	FILE *img = fopen("text", "rb");
+	FILE *dest = fopen("textt", "wb");
 	fseek(img, 0, SEEK_END);
 	unsigned long len = ftell(img);
 	rewind(img);

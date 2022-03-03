@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/01 14:05:10 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/02 15:59:45 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -152,7 +152,7 @@ namespace Replies
         
         /***** our own replies *****/
         /***** ftp replies *****/
-        RPL_FILERECIEVED = 1000,
+        RPL_FILERECIEVED = 900,
         RPL_FILESENT,
         RPL_READYTORECIEVE,
         ERR_FTPTIMEOUT,
@@ -187,8 +187,9 @@ namespace Replies
 #define KICK_COMMAND        "KICK"
 #define INVITE_COMMAND      "INVITE"
 #define SEND_COMMAND        "SEND"
+#define FETCH_COMMAND       "FETCH"
 
-#define NUM_COMMANDS 21
+#define NUM_COMMANDS 23
 
 #define MOTD_LENGTH_LINE 80
 
@@ -323,6 +324,7 @@ class Server {
                 it++;
             }
         }
+        
         void                            m_channelModeCmd(Client& client, Message& message);
 
         std::string                     m_makeReplyHeader(int replyNum, std::string nickname);

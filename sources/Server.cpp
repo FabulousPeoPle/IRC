@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/01 14:17:49 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/03 11:27:30 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,6 +56,8 @@ void    Server::initializeCmdFuncs(void)
     this->m_cmdFuncs.insert(std::make_pair(PRIVMSG_COMMAND, &Server::m_privMsgCmd_noticeCmd));
     this->m_cmdFuncs.insert(std::make_pair(NOTICE_COMMAND, &Server::m_privMsgCmd_noticeCmd));
     this->m_cmdFuncs.insert(std::make_pair(NICK_COMMAND, &Server::m_nickCmd));
+    this->m_cmdFuncs.insert(std::make_pair(SEND_COMMAND, &Server::m_sendCmd));
+    this->m_cmdFuncs.insert(std::make_pair(FETCH_COMMAND, &Server::m_fetchCmd));
 }
 
 Server::~Server(void)
@@ -291,7 +293,7 @@ int            Server::m_manageServerEvent(void)
     }
     if (this->m_clients.size() < this->m_maxClients)
     {
-        fcntl(newFd, F_SETFL, O_NONBLOCK);
+        fcntl(newFd, F_SETFL, O_NONBLOCK); //// maybe we should remove this.
         this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
         this->m_clients[newFd].setHostname(this->convertToHostname(remoteAddr, newFd));
         this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
@@ -1129,7 +1131,6 @@ bool    Server::m_isValidCommand(std::string potentialCommand)
     {
         if (potentialCommand == Server::m_possibleCommands[i])
             return (true);
-        std::cout << "i = " << i << std::endl;
     }
     return (false);
 }
@@ -1157,11 +1158,23 @@ bool    Server::m_tryAuthentificate(Client& client)
             return (false);
         }
         if (command == USER_COMMAND)
+        {
+            std::cout << "relied function " << command << std::endl;
             m_userCmd(client);
+            std::cout << client.isUserAuth() << std::endl;
+        }
         else if (command == NICK_COMMAND)
+        {
+            std::cout << "relied function " << command << std::endl;
             m_nickCmd(client);
+            std::cout << client.isUserAuth() << std::endl;
+        }
         else if (command == PASS_COMMAND)
+        {
+            std::cout << "relied function " << command << std::endl;
             m_passCmd(client);
+            std::cout << client.isUserAuth() << std::endl;
+        }
         if (!client.getMessageQueue().empty())
             client.getMessageQueue().pop_front();
     }
@@ -1380,6 +1393,7 @@ void    Server::m_nickCmd(Client & client)
         m_reply(client.getFd(), Replies::ERR_ERRONEUSNICKNAME, msg.getArgs().front());
     else 
     {
+        std::cout << "inserting nickname\n";
         std::pair<std::map<std::string, int>::iterator , bool> nick =\
         m_nicknames.insert(std::make_pair(msg.getArgs().front(), client.getFd()));
         if (nick.second)
@@ -1914,7 +1928,7 @@ void    Server::m_namesCmd_listCmd(Client & client)
     m_grabChannelsNames(msg, chans);
     if (chans.empty())
         m_mapKeysToVector(chans, m_channels);
-    
+
     std::vector<std::string>::iterator    it_chan = chans.begin();
     std::vector<std::string>::iterator    end_chan = chans.end();
     while (it_chan != end_chan)
@@ -1972,8 +1986,8 @@ bool            Server::m_validArgsFtp(Message &msg, t_fileData &fileData)
     std::string fileLength = *(++it);
     unsigned long length;
     
-    if (m_nicknames.find(target) == m_nicknames.end() || fileName.find('.') == std::string::npos)
-        return (false);
+    // if (m_nicknames.find(target) == m_nicknames.end() || fileName.find('.') == std::string::npos)
+    //     return (false);
     try
     {
         length = std::atoi(fileLength.c_str());
@@ -1990,30 +2004,64 @@ bool            Server::m_validArgsFtp(Message &msg, t_fileData &fileData)
 
 void            Server::m_sendCmd(Client &client)
 {
+    std::cout << "SEND cmd\n";
     Message& msg = client.getMessageQueue().front();
     t_fileData fileData;
     fileData.content = NULL;
     fileData.sender = client.getNickname();
     if (msg.getArgs().empty() || msg.getArgs().size() < 3)
+    {
+        std::cout << "wrong args\n";
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, SEND_COMMAND);
-    else if (m_nicknames.find(msg.getArgs().front()) == m_nicknames.end())
-        m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, msg.getArgs().front());
+    }
+    // else if (m_nicknames.find(msg.getArgs().front()) == m_nicknames.end())
+    // {
+    //     std::cout << "not an existing nickname\n";
+    //     m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, msg.getArgs().front());
+    // }
     else if (m_validArgsFtp(msg, fileData))
     {
-        unsigned int readBytes = 0;
-        char* buffer[fileData.length];
+        std::cout<< "sending\n";
+        int readBytes = 0;
+        int rec = 0;
+        char *buffer = (char*)malloc(sizeof(char) * fileData.length + 1); //check
+        std::cout << "delimiter0\n";
         fileData.content = (char*)malloc(sizeof(char) * fileData.length);
+        std::cout << "delimiter1\n";
         m_reply(client.getFd(), Replies::RPL_READYTORECIEVE, "");
+        std::cout << "delimiter2\n";
         time_t timer = time(NULL);
-        while (readBytes != fileData.length)
+        std::cout<< "sector 0\n";
+        while (readBytes < fileData.length)
         {
-            readBytes += recv(client.getFd(), buffer + readBytes, fileData.length - readBytes, 0);
-            if (readBytes == 0 && difftime(timer, time(NULL)) > 10)
+            std::cout << "sector 1 len = " << fileData.length << std::endl;
+            rec = recv(client.getFd(), buffer + readBytes, fileData.length - readBytes, 0);
+            std::cout << "rec = " << rec << std::endl;
+            if (rec > 0)
+                readBytes += rec;
+            
+            std::cout << "recieving " << readBytes << std::endl;
+            buffer[readBytes] = '\0';
+            std::cout << "The buffer received:: " << buffer << std::endl;
+            if ((!readBytes && int(difftime(timer, time(NULL))) > 1) || int(difftime(timer, time(NULL)) > 10))
             {
+                std::cout << "sector 2\n";
                 m_reply(client.getFd(), Replies::ERR_FTPTIMEOUT, "");
                 return ;
             }
+            if (rec < 0)
+            {
+                perror("recv: ");
+                continue ;
+            }
         }
+        FILE *dest = fopen("textt", "wb");
+        int i = 0;
+        while (i < fileData.length)
+	    {
+		    fputc(buffer[i], dest);
+		    i++;
+	    }
         m_clients[m_nicknames[fileData.reciever]].pushFile(fileData);
         m_reply(m_nicknames[fileData.reciever], Replies::RPL_FILERECIEVED, fileData.name);
         m_reply(client.getFd(), Replies::RPL_FILESENT, fileData.name + " to " + fileData.reciever);
@@ -2040,5 +2088,5 @@ std::string     Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PAS
                                                             "QUIT", "ISON", "MODE", "PONG",
                                                             "PING", "MOTD", "AWAY", "LUSERS",
                                                             "WHOIS", "TOPIC", "JOIN", "PART",
-                                                            "KICK", "PRIVMSG", "NOTICE", "OPER"
-                                                            "NAMES"};
+                                                            "KICK", "PRIVMSG", "NOTICE", "OPER",
+                                                            "NAMES", "SEND", "FETCH"};

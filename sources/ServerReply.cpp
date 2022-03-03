@@ -215,10 +215,10 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_FILERECIEVED, m_clients[clientFd].getNickname()) + " :You have recieved this file " + message + "\r\n");
             break;
         case Replies::RPL_FILESENT:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_FILERECIEVED, m_clients[clientFd].getNickname()) + " :You have sent this file " + message +"\r\n");
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_FILESENT, m_clients[clientFd].getNickname()) + " :You have sent this file " + message +"\r\n");
             break;
         case Replies::RPL_READYTORECIEVE:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_FILERECIEVED, m_clients[clientFd].getNickname()) + " :You have sent this file " + message +"\r\n");
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_READYTORECIEVE, m_clients[clientFd].getNickname()) + " :Server ready to recieve " + message +"\r\n");
             break;
         case Replies::ERR_FTPTIMEOUT:
             this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_FTPTIMEOUT, m_clients[clientFd].getNickname()) + " :You took too long to send file\r\n");
