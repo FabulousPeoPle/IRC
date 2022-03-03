@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2022/02/26 12:55:00 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/03 13:07:37 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,7 +47,7 @@ public:
     std::string getCmd(void) const;
     std::string getLiteralMsg(void) const;
     std::vector<std::string>    &getArgs(void);
-    
+
     ///////////////
     /// SETTERS ///
     ///////////////
@@ -57,9 +57,24 @@ public:
     /// METHODS ///
     ///////////////
     void    parse(void);
-    int     m_trim(char *str);
-    int     checkCommand(char *token);
+    std::string    m_grabLiteralMsg(char *msg);
+    char     *m_trim(char *str);
+    // int     m_trim(char *str, std::string & literalMessage);
+    int     m_checkCommand(char *token);
 
+
+    template <typename T>
+        void    printVector(T &vector, std::string name)
+        {
+            typename T::iterator it = vector.begin();
+            typename T::iterator end = vector.end();
+            std::cout << "printing vector " << name << std::endl;
+            while (it != end)
+            {
+                std::cout << "|" << *it << "|" << std::endl;
+                it++;
+            }
+        }
     /////////////////
     /// OPERATORS ///
     /////////////////

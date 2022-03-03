@@ -6,9 +6,10 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/01 11:04:04 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/03 13:19:34 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 #include "Message.hpp"
 
@@ -56,7 +57,7 @@ void    Message::setMsg(std::string message)
     this->message = message;
 }
 
-int  Message::checkCommand(char *token)
+int  Message::m_checkCommand(char *token)
 {
     int index = 0;
     
@@ -69,43 +70,48 @@ int  Message::checkCommand(char *token)
     return (1);
 }
 // also needs a redo
-int Message::m_trim(char *str)
+
+std::string Message::m_grabLiteralMsg(char *msg)
 {
-    char *end = std::strrchr(str, '\r');
-    if (end)
-        end[0] = '\0';
-    int idx = 0;
-    while (str[idx] && str[idx] == ' ')
-        idx++;
-    return (idx);
+    char * literalMsgPtr = strchr(msg, ':');
+    if (!literalMsgPtr)
+        return (std::string(""));
+    std::string returnValue = std::string(literalMsgPtr);
+    literalMsgPtr[0] = '\0';
+    return (returnValue);
 }
 
-// needs a quick redo // maybe not
-void Message::parse(void)
+char *Message::m_trim(char *str)
 {
-    char *token = NULL;
-    char * msg = strdup(message.c_str());
-    int idx = m_trim(msg);
-    char * buff;
-    char * literalMessage = ((buff = std::strrchr(msg, ':')) == (msg + idx)) ? NULL : buff;
+    int idx = 0;
     
-    if (literalMessage)
-    {
-        _literalMsg = std::string(literalMessage);
-        literalMessage[0] = '\0';
-    }
-    token = strtok(msg, " ,");
-    while (token && !checkCommand(token))
-        token = strtok(NULL, ", ");
+    while (str[idx] && (str[idx] == ' ' || str[idx] == '\t' || str[idx] == ':'))
+        idx++;
+    return (str + idx);
+}
+
+void    Message::parse(void)
+{
+    char * msgbuffer = strdup(message.c_str());
+    char * msg = m_trim(msgbuffer);
+    _literalMsg = m_grabLiteralMsg(msg);
+    char *token = NULL;
+    
+    token = strtok(msg, " ,\t\r\n");
+    while (token && !m_checkCommand(token))
+        token = strtok(NULL, ", \t\r\n");
     if (token)
         command = token;
     while (token)
     {
-        token = strtok(NULL, ", ");
+        token = strtok(NULL, ", \t\r\n");
         if (token)
             arguments.push_back(token);
     }
-    free(msg);
+    std::cout << "|" << command << "|" << std::endl;
+    printVector(arguments, " arguments ");
+    std::cout << _literalMsg << std::endl;
+    free(msgbuffer);
 }
 
 Message::~Message(void){}

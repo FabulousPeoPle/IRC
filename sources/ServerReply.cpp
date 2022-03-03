@@ -31,7 +31,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, ":" + this->m_serverName + " 432 " + message + " :Erroneous nickname\r\n");
             break;
         case Replies::ERR_NEEDMOREPARAMS :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 461 " + m_clients[clientFd].getMessageQueue().front().getCmd()+ " :Not enough parameters\r\n"); // needs the name of the command
+            this->m_send(clientFd, ':' + this->m_serverName + " 461 " + message + " :Not enough parameters\r\n"); // needs the name of the command
             break;
         case Replies::ERR_ALREADYREGISTRED :\
             this->m_send(clientFd, ':' + this->m_serverName + " 462 " + message + " :Unauthorized command (already registered)\r\n");
@@ -70,13 +70,13 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, ':' + this->m_serverName + " 421 :" + message + " :Unknown command\r\n");
             break;
         case Replies::RPL_LUSERCLIENT:
-            this->m_send(clientFd, ':' + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_athenticatedUserNum) + " user(s) on the server\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :" + intToString(this->m_authenticatedUserNum) + " user(s) on the server\r\n");
             break;
         case Replies::RPL_LUSERUNKNOWN:
-            this->m_send(clientFd, ':' + this->m_serverName + " 253 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_calculateUnknownConnections()) + " unknown connection(s)\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 253 " + m_clients[clientFd].getNickname() + " :" + intToString(this->m_calculateUnknownConnections()) + " unknown connection(s)\r\n");
             break;
         case Replies::RPL_LUSERME:
-            this->m_send(clientFd, ':' + this->m_serverName + " 255 " + m_clients[clientFd].getNickname() + " :" + std::to_string(this->m_calculateKnownConnections()) + " client(s)\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 255 " + m_clients[clientFd].getNickname() + " :" + intToString(this->m_calculateKnownConnections()) + " client(s)\r\n");
             break;
         case Replies::RPL_PINGREQUEST:
             this->m_send(clientFd,':' + this->m_serverName + " PONG " + this->m_serverName + " :" + m_clients[clientFd].getNickname() + "\r\n");
@@ -99,7 +99,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, ':' + this->m_serverName + " 412 :No text to send\r\n");
             break;
         case Replies::ERR_NOSUCHNICK :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 401 " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :No such nick/channel\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 401 " + message + " :No such nick/channel\r\n");
             break;
             // needs to change
         case Replies::ERR_TOOMANYTARGETS :\
@@ -130,7 +130,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_YOUREOPER, this->m_clients[clientFd].getNickname()) + ' ' + ":You are now an IRC operator\r\n");
             break;
         case Replies::ERR_NOOPERHOST:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_NOOPERHOST, this->m_clients[clientFd].getNickname()) + ' ' + ":No O-lines for your host\r\n"); // TODO: USERNAME ANYONE
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_NOOPERHOST, this->m_clients[clientFd].getNickname()) + ' ' + ":No O-lines for your host\r\n");
             break;
         case Replies::ERR_PASSWDMISMATCH:
             this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_PASSWDMISMATCH, this->m_clients[clientFd].getNickname()) + ' ' + ":Password incorrect\r\n");
@@ -148,7 +148,6 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, ':' + this->m_serverName + " 443 <user> <channel> :is already on channel\r\n");
             break;
         case Replies::RPL_NAMREPLY:
-            std::cout << "this is the server name: " << this->m_serverName << "\n";
             this->m_send(clientFd, ':' + this->m_serverName + " 353 " + message + "\r\n");
             break;
         case Replies::RPL_ENDOFNAMES:
@@ -185,10 +184,10 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ENDOFINVITELIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
             break; 
         case Replies::RPL_LUSERCHANNELS:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSERCHANNELS, this->m_clients[clientFd].getNickname()) + ' ' + std::to_string(m_channels.size()) + " :channels formed" + END_STRING);
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSERCHANNELS, this->m_clients[clientFd].getNickname()) + ' ' + intToString(m_channels.size()) + " :channels formed" + END_STRING); //TODO: TAKE INTO CONSIDERATION SECRET/PRIVATE CHANNELS
             break;
         case Replies::RPL_LUSEROP:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSEROP, this->m_clients[clientFd].getNickname()) + ' ' + std::to_string(m_numOps) + " :operator(s) online" + END_STRING);
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSEROP, this->m_clients[clientFd].getNickname()) + ' ' + intToString(m_numOps) + " :operator(s) online" + END_STRING);
             break;
         case Replies::ERR_INTNEEDED:
             m_send(clientFd,  m_makeReplyHeader(Replies::ERR_INTNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " cannot be interpreted as an integer\r\n");
@@ -207,6 +206,24 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             break;
         case Replies::ERR_NOTAWAY:
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_NOTOPIC, this->m_clients[clientFd].getNickname()) + " :Not away\r\n");
+            break;
+        case Replies::RPL_FILERECIEVED:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_FILERECIEVED, m_clients[clientFd].getNickname()) + " :You have recieved this file " + message + "\r\n");
+            break;
+        case Replies::RPL_FILESENT:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_FILESENT, m_clients[clientFd].getNickname()) + " :You have sent this file " + message +"\r\n");
+            break;
+        case Replies::RPL_READYTORECIEVE:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_READYTORECIEVE, m_clients[clientFd].getNickname()) + " :Server ready to recieve " + message +"\r\n");
+            break;
+        case Replies::ERR_FTPTIMEOUT:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_FTPTIMEOUT, m_clients[clientFd].getNickname()) + " :You took too long to send file\r\n");
+            break;
+        case Replies::ERR_RECIEVEDNOFILES:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_RECIEVEDNOFILES, m_clients[clientFd].getNickname()) + " :You have not recieved any files\r\n");
+            break;
+        case Replies::RPL_READYTOSEND:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_READYTOSEND, m_clients[clientFd].getNickname()) + " :Server is sending file with length " + message + " \r\n");
             break;
     }
 }

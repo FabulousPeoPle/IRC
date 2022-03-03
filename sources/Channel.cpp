@@ -122,7 +122,7 @@ void	Channel::addOp(int clientFd)
 
 void	Channel::addInvited(int clientFd)
 {
-	m_operators.push_back(clientFd);
+	m_invited.push_back(clientFd);
 }
 
 
@@ -369,6 +369,9 @@ void				Channel::manageSimpleMode(char c, char prefix, std::string& modeChanges)
 	{
 		if (!modeNumValue)
 		{
+			if ((modeNum == ChannelModes::s_secret && this->getModeValue(ChannelModes::p_private))
+				|| (modeNum == ChannelModes::p_private && this->getModeValue(ChannelModes::s_secret))) // good example
+				return ;
 			modeChanges += c;
 			this->turnOnMode(modeNum);
 		}

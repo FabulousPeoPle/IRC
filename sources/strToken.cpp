@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   strToken.cpp                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
+/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/05 15:30:49 by ohachim           #+#    #+#             */
-/*   Updated: 2022/01/06 18:47:44 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/02 17:18:19 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ std::string strToken(std::string str)
 
     if (!strDup.size())
         return "";
-
+;
     int found = strDup.find("\r\n");
 
     if (static_cast<unsigned long>(found) == std::string::npos)

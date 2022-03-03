@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/01 15:56:16 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/03 13:25:02 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,8 @@
 
 // #define BIG_NUMBER 2000000000
 
-
+////// for ftp nonus //////
+#include <time.h>
 
 namespace Replies
 {
@@ -150,6 +151,15 @@ namespace Replies
         ERR_NONICKNAMEGIVEN = 431,
         ERR_INVITEONLYCHAN = 473,
         ERR_CANNOTSENDTOCHAN = 404,
+        
+        /***** our own replies *****/
+        /***** ftp replies *****/
+        RPL_FILERECIEVED = 900,
+        RPL_FILESENT,
+        RPL_READYTORECIEVE,
+        ERR_FTPTIMEOUT,
+        ERR_RECIEVEDNOFILES,
+        RPL_READYTOSEND,
     };
 };
 
@@ -174,11 +184,12 @@ namespace Replies
 #define TOPIC_COMMAND       "TOPIC"
 #define NAMES_COMMAND       "NAMES"
 #define LIST_COMMAND        "LIST"
-#define WHO_COMMAND         "WHO"
 #define KICK_COMMAND        "KICK"
 #define INVITE_COMMAND      "INVITE"
+#define SEND_COMMAND        "SEND"
+#define FETCH_COMMAND       "FETCH"
 
-#define NUM_COMMANDS 21
+#define NUM_COMMANDS 24
 
 #define MOTD_LENGTH_LINE 80
 
@@ -191,6 +202,7 @@ typedef struct sockaddr_in6     t_sockaddr_in6;
 typedef struct pollfd           t_pollfd;
 
 std::string strToken(std::string str);
+std::string intToString(int num);
 
 class Client;
 class Message;
@@ -323,6 +335,7 @@ class Server {
                 it++;
             }
         }
+        
         void                            m_channelModeCmd(Client& client, Message& message);
 
         std::string                     m_makeReplyHeader(int replyNum, std::string nickname);
@@ -385,6 +398,11 @@ class Server {
         std::string                     m_getTLD(std::string mask);
         std::vector<int>                m_grabClientsWithMask(std::string mask);
         bool                            m_nickIsValid(std::string &str);
+        
+        //// ftp methods ///
+        void                            m_sendCmd(Client &client);
+        void                            m_fetchCmd(Client &client);
+        bool                            m_validArgsFtp(Message& msg, t_fileData &fileData);
     
         const std::string               m_serverName;
         const std::string               m_port;
@@ -393,7 +411,7 @@ class Server {
         const int                       m_maxClients;
         t_addrinfo*                     m_servinfo;
         t_addrinfo                      m_hints;
-        int                             m_athenticatedUserNum;
+        int                             m_authenticatedUserNum;
         // in case we wanted to do it manually // kinda useless now
         t_sockaddr_in                   m_addr_in;
         t_sockaddr_in6                  m_addr_in6;
