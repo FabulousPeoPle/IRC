@@ -72,12 +72,14 @@ int Bot::m_auth(void)
 	return 0;
 }
 
-int Bot::m_listner(void)
+void Bot::m_listner(void)
 {
     std::queue<std::string> msg;
     while(1)
     {
         this->m_recv(msg);
+        if (msg.empty())
+            break;
         this->m_qHandler(msg);
     }
 }
@@ -90,7 +92,6 @@ int Bot::m_send(std::string msg)
 
     while (size)
     {
-        // TODO: What the last parameter?
         bytesSent = send(this->sock, msg.data() + bytesSent, size, 0);
         if (bytesSent == -1)
             return (-1);
@@ -124,23 +125,42 @@ int Bot::m_qHandler(std::queue<std::string> &msg_q)
 	return 0;
 }
 
+void Bot::m_channelSearch(std::string msg)
+{
+    std::cout << msg << std::endl;
+    for(int i=0; i < this->joinedChannels.size(); i++)
+        if (msg.find(joinedChannels[i]) !=  std::string::npos)
+            m_writeChanneLog(joinedChannels[i], msg);
+}
+
 void Bot::m_cmdHandler(std::string msg)
 {
 	t_msg p_msg;
 	int err = 0;
+    std::string msgCopy = msg;
 
-	if (m_msgParse(msg, p_msg) == 0)
-    {
-        std::cout << "pmsg -------- S" << std::endl;
-        std::cout << p_msg.nick << std::endl;
-        std::cout << p_msg.user << std::endl;
-        std::cout << p_msg.host << std::endl;
-        std::cout << p_msg.cmd << std::endl;
-        std::cout << p_msg.args << std::endl;
-        std::cout << p_msg.msg << std::endl;
-        std::cout << "pmsg -------- E" << std::endl;
+	if (m_msgParse(msgCopy, p_msg) == 0)
 	    err = m_cmdDispatcher(p_msg);
-    }
+    m_channelSearch(msg);
+}
+
+int Bot::m_writeChanneLog(std::string channelName, std::string msgLog)
+{
+    std::string logDirName = "./bota_logs";
+    struct stat st = {0};
+    std::string channelPath = logDirName + "/" + channelName;
+    FILE * logFile;
+    std::string modMsgLog;
+
+    if (stat(logDirName.c_str(), &st) == -1)
+        mkdir(logDirName.c_str(), 0700);
+    if ((logFile = fopen(channelPath.c_str(), "a+")) == NULL)
+        return -1;
+    
+    modMsgLog += CurrentTime() + ":: " + msgLog + "\n";
+    fputs(modMsgLog.c_str(), logFile);
+    fclose(logFile);
+    return 1;
 }
 
 int Bot::m_invCmdHandler(t_msg &p_msg)
@@ -151,6 +171,7 @@ int Bot::m_invCmdHandler(t_msg &p_msg)
     if (s_msg.size() != 1 || s_msg[0][0] != '#')
         return -1;
     m_send("JOIN " + s_msg[0]);
+    this->joinedChannels.push_back(s_msg[0]);
     m_privMsg(s_msg[0], "I shall thank you for the invite " + p_msg.nick);
     return 1;
 }
@@ -168,14 +189,14 @@ int Bot::m_pmCmdHandler(t_msg &p_msg)
     else if (s_msg.size() == 2)
     {
         if (s_msg[1] == "time")
-            m_privMsg(p_msg.nick, "It's " + CurrentTime());
+            m_privMsg(p_msg.args, "It's " + CurrentTime());
     }
     else if (s_msg.size() == 3)
     {
         if (s_msg[1] == "whatis")
         {
             wiki_desc(s_msg[2], temp);
-            m_privMsg(p_msg.nick, temp);
+            m_privMsg(p_msg.args, temp);
         }
     }
     return 1;
@@ -183,7 +204,6 @@ int Bot::m_pmCmdHandler(t_msg &p_msg)
 
 int Bot::m_msgParse(std::string msg, t_msg &p_msg)
 {
-    std::cout << p_msg.cmd << std::endl;
 	if ((p_msg.nick = strToken(msg.erase(0, 1), "!")).size() == 0)
 			return -1;
 	msg.erase(0, p_msg.nick.size());
@@ -216,7 +236,6 @@ int Bot::m_cmdDispatcher(t_msg p_msg)
 	std::vector<std::string> s_msg;
 	std::string temp;
 
-    std::cout << p_msg.cmd << std::endl;
     if (p_msg.cmd == "PRIVMSG")
         m_pmCmdHandler(p_msg);
     else if(p_msg.cmd == "INVITE")
@@ -226,6 +245,8 @@ int Bot::m_cmdDispatcher(t_msg p_msg)
 
 int Bot::m_privMsg(std::string to, std::string msg)
 {
-    m_send("PRIVMSG " + to + ":" + msg);
+    std::string privMsgStr = "PRIVMSG " + to + ":" + msg;
+    m_channelSearch(privMsgStr);
+    m_send(privMsgStr);
     return 0;
 }

@@ -1,6 +1,18 @@
 NEED to add log functionality.
 NEED to check ftp. (maybe add it to server or bot); ''\_(o.o)_/''
 
+i can shutdown the server from the bot ????????? intended !!!! move break to under the qHandler
+
+
+
+
+
+
+
+
+
+FIXED :: 
+
 parsing msg containing : after the nickname , PRIVMSG bota : !bota whatis maroc or PRTIVMSG bota : !bota 
 Crtl+c from nc throes the following error :
 '''
@@ -10,3 +22,4 @@ irc_server(15097,0x10d9d15c0) malloc: *** set a breakpoint in malloc_error_break
 libc++abi.dylib: terminating with uncaught exception of type std::bad_alloc: std::bad_alloc
 [1]    15097 abort      ./irc_server 6667 133
 '''
+

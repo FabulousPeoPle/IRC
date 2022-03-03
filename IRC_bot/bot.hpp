@@ -12,6 +12,11 @@
 # include <iostream>
 # include <stdlib.h>
 # include <sstream>
+# include <fcntl.h>
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <unistd.h>
+#include <fstream>
 # include "cmds.hpp"
 # include "utils.hpp"
 
@@ -30,11 +35,6 @@ typedef struct s_msg
 	std::string msg;
 }t_msg;
 
-// typedef struct sockaddr_in         t_sockaddr;
-
-std::string strToken(std::string str, std::string delim);
-
-
 class Bot
 {
 private:
@@ -45,6 +45,7 @@ private:
     int                 sock;
     std::string         passwd;
     struct sockaddr_in  serv_addr;
+    std::vector<std::string> joinedChannels;
 
 
 public:
@@ -56,7 +57,7 @@ public:
 private:
                         int m_auth(void);
                         int m_send(std::string msg);
-                        int m_listner();
+                        void m_listner(void);
                         int m_recv(std::queue<std::string> &msg);
                         int m_qHandler(std::queue<std::string> &msg);
                         void m_cmdHandler(std::string msg);
@@ -66,7 +67,8 @@ private:
                         int m_internalCmd(std::string msg, t_msg &p_msg);
                         int m_pmCmdHandler(t_msg &p_msg);
                         int m_invCmdHandler(t_msg &p_msg);
-
+                        int m_writeChanneLog(std::string channelName, std::string msgLog);
+                        void m_channelSearch(std::string msg);
 };
 
 #endif
