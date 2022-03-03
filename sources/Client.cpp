@@ -6,14 +6,15 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/01 13:56:50 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/03 13:22:36 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 
+
 #include "Client.hpp"
 
-Client::Client(void) : _nickAuth(false), _userAuth(false), _isServerOp(false), _away(false), _authenticated(false)
+Client::Client(void) : _nickAuth(false), _userAuth(false), _passAuth(false), _isServerOp(false), _away(false), _authenticated(false)
 {
 	this->modes = 0;
 	this->lastJoinedChannel = "";
@@ -27,7 +28,7 @@ Client::Client(Client const & src)
 }
 
 Client::Client(int sock_fd, struct sockaddr_storage addr, socklen_t len) : _sock_fd(sock_fd),
-_addr(addr), _addr_size(len), _nickAuth(false), _userAuth(false), _isServerOp(false), _away(false), _authenticated(false)
+_addr(addr), _addr_size(len), _nickAuth(false), _userAuth(false), _passAuth(false), _isServerOp(false), _away(false), _authenticated(false)
 {
 	this->modes = 0;
 	this->lastJoinedChannel = "";
@@ -291,7 +292,7 @@ void		Client::turnOnMode(int modeNum, std::string channelName)
 	this->_channelModes[channelName] |= this->modeBitMasks[modeNum];
 }
 
-int			Client::findMode(char mode) const
+int			Client::findChanMode(char mode) const
 {
 	switch (mode)
     {
@@ -306,7 +307,26 @@ int			Client::findMode(char mode) const
     }
 }
 
-
+int     Client::findMode(char c)// ADD IS AS SERVER OR CLIENT FUNCTION
+{
+    switch (c)
+    {
+        case 'a':
+            return (UserModes::away);
+        case 'i':
+            return (UserModes::invisible);
+        case 'w':
+            return (UserModes::wallops);
+        case 'r':
+            return (UserModes::restricted);
+        case 'o':
+            return (UserModes::oper);
+        case 's':
+            return (UserModes::serverNotices);           
+        default:
+            return (-1);
+    }
+}
 bool		Client::getModeValue(int modeNum,  const std::string channelName)
 {
 	return (this->modeBitMasks[modeNum] & this->_channelModes[channelName]);

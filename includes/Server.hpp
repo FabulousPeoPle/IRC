@@ -6,9 +6,12 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/02 15:59:45 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/03 13:25:02 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+
+
 
 
 
@@ -168,7 +171,6 @@ namespace Replies
 #define QUIT_COMMAND        "QUIT"
 #define ISON_COMMAND        "ISON"
 #define MODE_COMMAND        "MODE"
-#define PONG_COMMAND        "PONG" // yeet
 #define PING_COMMAND        "PING" // yeet
 #define MOTD_COMMAND        "MOTD"
 #define AWAY_COMMAND        "AWAY"
@@ -183,13 +185,12 @@ namespace Replies
 #define TOPIC_COMMAND       "TOPIC"
 #define NAMES_COMMAND       "NAMES"
 #define LIST_COMMAND        "LIST"
-#define WHO_COMMAND         "WHO"
 #define KICK_COMMAND        "KICK"
 #define INVITE_COMMAND      "INVITE"
 #define SEND_COMMAND        "SEND"
 #define FETCH_COMMAND       "FETCH"
 
-#define NUM_COMMANDS 23
+#define NUM_COMMANDS 24
 
 #define MOTD_LENGTH_LINE 80
 
@@ -202,6 +203,7 @@ typedef struct sockaddr_in6     t_sockaddr_in6;
 typedef struct pollfd           t_pollfd;
 
 std::string strToken(std::string str);
+std::string intToString(int num);
 
 class Client;
 class Message;
@@ -224,7 +226,9 @@ class Server {
                                         Server(std::string port, std::string hostname, std::string serverName, int maxClients);
                                         Server(const Server& serverRef);
                                         ~Server();
+
         void                            initializeCmdFuncs(void);
+
         Server&                         operator=(const Server& serverRef);
 
         std::string                     getPort(void) const;
@@ -276,11 +280,6 @@ class Server {
         bool                            m_checkStatusAuth(Client& client);
         bool                            m_tryAuthentificate(Client& client);
         
-        void                            m_userCmd(Client & client);
-        void                            m_nickCmd(Client & client);
-        
-        void                            m_userhostCmd(Client & client);
-        void                            m_isonCmd(Client & client);
         
         void                            m_relay(int clientFd);
         void                            m_debugAuthentificate(int clientFd);
@@ -296,21 +295,34 @@ class Server {
 
         bool                            m_onlyOps(std::vector<std::string> arguments);
 
+        // void                            m_pongCmd(Client& client);
+        // void                            m_whoCmd(Client& client);
+        void                            m_p_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
+        void                            m_p_namesCmd_listCmd(Client & client,std::string target, std::string cmd); // still not implemented
 
-        void                            m_quitCmd(Client& client); // Needs a recheck
-        // Need to know more about channel class
+        void                            m_joinCmd(Client & client);
+        void                            m_kickCmd(Client & client);
+        void                            m_namesCmd_listCmd(Client & client);
+        void                            m_privMsgCmd_noticeCmd(Client &client);
+        void                            m_inviteCmd(Client & client);
+        void                            m_partCmd(Client & client);
+        void                            m_passCmd(Client &client);
+        void                            m_userCmd(Client & client);
+        void                            m_nickCmd(Client & client);
+        void                            m_userhostCmd(Client & client);
+        void                            m_isonCmd(Client & client);
+        void                            m_quitCmd(Client& client); 
         void                            m_modeCmd(Client& client);
         void                            m_motdCmd(Client& client);
         void                            m_awayCmd(Client& client);
         void                            m_pingCmd(Client& client);
-        void                            m_pongCmd(Client& client); // TODO: SHOULD PROBABLY BE REMOVED
         void                            m_lusersCmd(Client& client);
         void                            m_whoisCmd(Client& client);
         void                            m_topicCmd(Client& client);
         void                            m_operCmd(Client& client);
         void                            m_whoCmd(Client& client);
-        
         void                            m_userModeCmd(Client& client, Message& message);
+        
 
         template <typename T>
         void    printVector(T &vector, std::string name)
@@ -338,8 +350,9 @@ class Server {
         std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);// const?
 
 
-        int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments); // turn arguments into references?
-        std::vector<std::string>        m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex);
+        int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, std::string& modeChanges); // turn arguments into references?
+        std::vector<std::string>        m_manageMaskMode(char mode, std::vector<std::string> arguments);
+        void                            m_manageMaskMode(char mode, char prefix, std::vector<std::string> arguments, int& paramToUseIndex);
 
         void                            m_findNextMask(std::vector<std::string> arguments, int& paramToUseIndex);
 
@@ -359,7 +372,7 @@ class Server {
 
         void                            m_listMasks(std::vector<std::string> maskList, char mode, Client& client, Channel& channel);
 
-        void                            m_executeModes(std::vector<std::string> arguments, Channel& channel, Client& client);
+        std::string                     m_executeModes(std::vector<std::string> arguments, Channel& channel, Client& client);
 
         std::vector<std::string>        m_getClientsToMode(std::vector<std::string> arguments);
 
@@ -368,27 +381,18 @@ class Server {
         int                             m_calculateKnownConnections(void);
 
         
-        void                            m_joinCmd(Client & client);
         bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans, std::vector<std::string> & passes);
         bool                            m_grabChannelsNames(Message & msg, std::vector<std::string> & chans);
         bool                            m_channelExists(std::string);
         void                            m_addClientToChan(int clientFd, std::string channelName, std::string password, bool passProtected);
         void                            m_addChannel(int clientFd, std::string channelName, std::string password);
 
-        void                            m_partCmd(Client & client);
         void                            m_partZero(Client & client);
 
-        void                            m_privMsgCmd_noticeCmd(Client &client);
-        void                            m_p_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
         
-        void                            m_kickCmd(Client & client);
         
-        void                            m_inviteCmd(Client & client);
         
-        void                            m_namesCmd_listCmd(Client & client);
-        void                            m_p_namesCmd_listCmd(Client & client,std::string target, std::string cmd); // still not implemented
         void                            m_mapKeysToVector(std::vector<std::string> &vector, std::map<std::string, Channel> &map);//this should become a template for wider usecases
-        void                            m_passCmd(Client &client);
 
         std::string                     m_constructMask(Client& client);
 
@@ -408,7 +412,7 @@ class Server {
         const int                       m_maxClients;
         t_addrinfo*                     m_servinfo;
         t_addrinfo                      m_hints;
-        int                             m_athenticatedUserNum;
+        int                             m_authenticatedUserNum;
         // in case we wanted to do it manually // kinda useless now
         t_sockaddr_in                   m_addr_in;
         t_sockaddr_in6                  m_addr_in6;

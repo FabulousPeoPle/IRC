@@ -6,9 +6,10 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/01 13:58:25 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/03 13:23:59 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 
@@ -97,6 +98,8 @@ class Client
         Client(int, struct sockaddr_storage, socklen_t);
         ~Client(void);
 
+
+        // int                             findMode(char c) const; // ADD IS AS SERVER OR CLIENT FUNCTION
         /////////////////
         //// GETTERS ////
         /////////////////
@@ -118,11 +121,12 @@ class Client
         bool                            isAuthComplete(void) const;
         bool                            getModeValue(int modeNum) const;
         bool		                    getModeValue(int modeNum, std::string channelName);
-        int                             findMode(char mode) const;
+        int                             findChanMode(char mode) const;
         std::string                     getLastJoinedChannel(void);
         std::vector<std::string>        &getChannels(void);
         std::vector<t_fileData>         &getFiles(void);
         
+        static int                             findMode(char c); // ADD IS AS SERVER OR CLIENT FUNCTION
         /////////////////
         //// SETTERS ////
         /////////////////

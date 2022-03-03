@@ -45,18 +45,18 @@ int main(int argc, char const *argv[])
     int readbytes = 0;
 	while (true)
 	{
-	    read(sock, buffer, 2048);
+	    recv(sock, buffer, 2048, 0);
 	    printf("%s\n",buffer );
 		if (lock)
 		{
             std::cout << "lock is not locked\n";
 			int bytesSent = 0;
-			send(sock, "SEND user0 text 10\r\n", strlen("SEND user0 text 10\r\n"), 0);
-			FILE *img = fopen("../img.jpeg", "rb");
-			unsigned char *buff = (unsigned char*)malloc(sizeof(unsigned char) * 10 + 1);
-            buff[10] = '\0';
-			fread(buff, sizeof(unsigned char), 10, img);
-			read(sock, buffer, 2048);
+			send(sock, "SEND user0 text 22\r\n", strlen("SEND user0 text 22\r\n"), 0);
+			FILE *img = fopen("text", "rb");
+			unsigned char *buff = (unsigned char*)malloc(sizeof(unsigned char) * 22 + 1);
+            buff[22] = '\0';
+			fread(buff, sizeof(unsigned char), 22, img);
+			recv(sock, buffer, 2048, 0);
 	    	printf("--->%s\n", buffer );
             while (true)
             {
@@ -72,10 +72,10 @@ int main(int argc, char const *argv[])
                 readbytes = 0;
             }
             std::cout << "this is the buff we sending: " << buff << std::endl;
-			while (bytesSent < 10)
+			while (bytesSent < 22)
 			{
                 std::cout << "--->sending " << bytesSent << std::endl;
-				bytesSent += send(sock, buff + bytesSent, 10 - bytesSent, 0);
+				bytesSent += send(sock, buff + bytesSent, 22 - bytesSent, 0);
                 std::cout << "--->sent " << bytesSent << std::endl;
 			}
 			lock = false;
