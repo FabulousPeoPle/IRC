@@ -1441,10 +1441,11 @@ void                    Server::m_quitCmd(Client& client)
 {
     if (client.isAuthComplete())
     {
-        std::string messageToSend = "ERROR: Closing Link: " + client.getUsername() + "(" 
-                                    + client.getMessageQueue().front().getLiteralMsg().erase(0, 1) + ") " + client.getHostname() + " (Quit: "
+        std::string messageToSend = "ERROR: Closing Link: " + client.getUsername() + "(" ;
+        if (client.getMessageQueue().size())
+            messageToSend += client.getMessageQueue().front().getLiteralMsg().erase(0, 1);
+        messageToSend +=  ") " + client.getHostname() + " (Quit: "
                                         + client.getNickname() + ")" + END_STRING;
-
         std::cout << "00000\n";
         if (this->m_send(client.getFd(), messageToSend) < 0)
             std::cout << "wtf\n";
