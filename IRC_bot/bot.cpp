@@ -34,7 +34,6 @@ int Bot::startBot(std::string host, int port, std::string passwd)
     this->host = host;
     this->port = port;
     this->passwd = passwd;
-    int yes = 1;
     if ((this->sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("\n Socket creation error \n");
