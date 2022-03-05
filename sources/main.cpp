@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:54 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/05 12:39:42 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/05 14:11:29 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,9 +40,9 @@ int main(int argc, char **argv)
 
     //std::cout << "Server name: " << myServer.getServName() << std::endl;
     
-    myServer.setServerHints(AF_UNSPEC, SOCK_STREAM, AI_PASSIVE);
+    myServer.setServerHints(AF_INET, SOCK_STREAM, AI_PASSIVE);
     myServer.setServerInfo();
-    myServer.setSockfd(AF_UNSPEC);
+    myServer.setSockfd(AF_INET);
     // myServer.setSockfd_in6();
     myServer.listen();
     myServer.startServer();

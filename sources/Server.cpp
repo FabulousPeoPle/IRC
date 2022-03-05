@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/05 14:02:42 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/05 14:38:16 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -703,12 +703,12 @@ void            Server::m_userModeCmd(Client& client, Message& message) // TODO:
     {
         int modeNum = Client::findMode(message.getArgs()[1][j]);
 
-        if (modeNum == UserModes::away) // Ignore it for now, don't know the exact behaviour
+        if (modeNum == UserModes::away)
             continue ;
         if (modeNum == -1)
         {
             m_reply(client.getFd(), Replies::ERR_UMODEUNKNOWNFLAG, "");
-            continue ; // Ignore it for now, but might be a warning
+            continue ;
         }
         if (prefix == '+')
         {
@@ -724,17 +724,16 @@ void            Server::m_userModeCmd(Client& client, Message& message) // TODO:
         {
             if (modeNum == UserModes::restricted)
                 continue ;
-            if (modeNum == UserModes::oper)
-                --m_numOps;
             if (client.getModeValue(modeNum))
             {
+                if (modeNum == UserModes::oper)
+                    --m_numOps;
                 client.turnOffMode(modeNum);
                 modeChanges += message.getArgs()[1][j];
             }
         }
     }
-    // should reply with a string of the modes
-    if (modeChanges.size() > 1) // that's how GeekShed do it
+    if (modeChanges.size() > 1)
         m_reply(client.getFd(), Replies::RPL_UMODEIS, modeChanges);
 }
 
@@ -931,33 +930,42 @@ void                Server::m_topicCmd(Client& client) // TODO: CHANGE TO LITERA
         m_reply(client.getFd(), Replies::ERR_NOTONCHANNEL, arguments[0]);
         return ;
     }
+    std::string channelName = arguments[0]; 
 
     if (topicToSet.empty())
     {
-        if (m_channels[arguments[0]].getTopic().empty()) // checking if topic is empty
+        if (m_channels[channelName].getTopic().empty()) // checking if topic is empty
         {
-            m_reply(client.getFd(), Replies::RPL_NOTOPIC,  arguments[0]);
+            m_reply(client.getFd(), Replies::RPL_NOTOPIC,  channelName);
             return;
         }
-        m_reply(client.getFd(), Replies::RPL_TOPIC, m_composeRplTopic(m_channels[arguments[0]])); // there is a topic
+        m_reply(client.getFd(), Replies::RPL_TOPIC, m_composeRplTopic(m_channels[channelName])); // there is a topic
         return;
     }
     if (topicToSet.size())
     {
-        Channel& channel = m_channels[arguments[0]];
+        Channel& channel = m_channels[channelName];
 
         if (channel.getModeValue(ChannelModes::t_topicOperatorOnly))
         {
-            std::cout << "chanel name: " << arguments[0] << std::endl;
-            if (client.getModeValue(ChannelModes::o_OperatorPrivilege, arguments[0])
-                    || client.getModeValue(ChannelModes::O_Creator, arguments[0]) || client.getModeValue(UserModes::oper))
+            std::cout << "chanel name: " << channelName << std::endl;
+            if (client.getModeValue(ChannelModes::o_OperatorPrivilege, channelName)
+                    || client.getModeValue(ChannelModes::O_Creator, channelName) || client.getModeValue(UserModes::oper))
+            {
                 channel.getTopic() = topicToSet;
+                m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + ":" + topicToSet), channelName);
+            }
+
             else
-                m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, arguments[0]);
+                m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, channelName);
         }
         else
+        {
+            m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + ":" + topicToSet), channelName);
             channel.getTopic() = topicToSet;
-    }    
+        }
+    }
+    
 }
 
 void                Server::m_operCmd(Client& client)
@@ -1799,9 +1807,7 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
 
         while (it != end)
         {
-
-            if (msg.getCmd() == "JOIN" || (msg.getCmd() != "JOIN" && *it != client.getFd()))
-                m_send(*it, ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
+            m_send(*it, ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING); // choose who to send to
             it++;
         }
     }
