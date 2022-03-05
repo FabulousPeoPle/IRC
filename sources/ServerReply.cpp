@@ -117,6 +117,9 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
         case Replies::RPL_AWAY:
             this->m_send(clientFd, message + "\r\n");
             break;
+        case Replies::RPL_WHOISCHANNELS:
+            this->m_send(clientFd, message + END_STRING);
+            break;
         case Replies::RPL_ENDOFWHOIS:
             this->m_send(clientFd, message + "\r\n");
             break;

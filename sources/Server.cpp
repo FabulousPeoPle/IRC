@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/05 14:38:16 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/05 19:39:14 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -840,28 +840,30 @@ std::string                 Server::m_makeReplyHeader(int replyNum, std::string 
     return (header);
 }
 
-std::string                Server::m_composeWhoisQuery(Client& queryClient, std::string clientNickname, int replyCode)
+std::string                Server::m_composeWhoisQuery(Client& client, Client& queryClient, int replyCode)
 {
     std::string awayMsg = queryClient.getAwayMsg();
-    
+
     if (awayMsg.empty())
         awayMsg = "is away";
     switch (replyCode)
     {
         case Replies::RPL_WHOISUSER:
-            return (m_makeReplyHeader(Replies::RPL_WHOISUSER, clientNickname) + ' ' + queryClient.getNickname()
+            return (m_makeReplyHeader(Replies::RPL_WHOISUSER, client.getNickname()) + ' ' + queryClient.getNickname()
                                         + " ~" + queryClient.getUsername() + ' ' + queryClient.getHostname() + " * " + queryClient.getRealname());
         case Replies::RPL_WHOISSERVER:
-            return (m_makeReplyHeader(Replies::RPL_WHOISSERVER, clientNickname) + ' ' + queryClient.getNickname()
+            return (m_makeReplyHeader(Replies::RPL_WHOISSERVER, client.getNickname()) + ' ' + queryClient.getNickname()
                                                     + ' ' + m_serverName + " :Morocco 1337 Server, Provided by 1337 students Powered by Itisalat Al Maghreb.");
         case Replies::RPL_AWAY:
-            return (m_makeReplyHeader(Replies::RPL_AWAY, clientNickname) + ' ' + queryClient.getNickname() + ' ' + awayMsg);
+            return (m_makeReplyHeader(Replies::RPL_AWAY, client.getNickname()) + ' ' + queryClient.getNickname() + ' ' + awayMsg);
         case Replies::RPL_WHOISOPERATOR:
             if (queryClient.getModeValue(UserModes::oper))
-                return (m_makeReplyHeader(Replies::RPL_WHOISOPERATOR, clientNickname) + ' ' + queryClient.getNickname() + " :is an IRC operator");
+                return (m_makeReplyHeader(Replies::RPL_WHOISOPERATOR, client.getNickname()) + ' ' + queryClient.getNickname() + " :is an IRC operator");
         case Replies::RPL_ENDOFWHOIS:
-            return (m_makeReplyHeader(Replies::RPL_ENDOFWHOIS, clientNickname) + ' ' + queryClient.getNickname()
+            return (m_makeReplyHeader(Replies::RPL_ENDOFWHOIS, client.getNickname()) + ' ' + queryClient.getNickname()
                                          + ' ' + ":End of WHOIS list.");
+        case Replies::RPL_WHOISCHANNELS:
+            return ("");
         default:
             return ("");
     }
@@ -876,6 +878,14 @@ std::string                Server::m_composeWhoisQuery(Client& queryClient, std:
 void                Server::m_pingCmd(Client& client)
 {
     m_reply(client.getFd(), Replies::RPL_PINGREQUEST,"");
+}
+
+std::string         Server::m_composeWhoIsChannels(Client& client, Client& queryClient, std::string channelName, std::string appliedModes)
+{
+    return (m_makeReplyHeader(Replies::RPL_WHOISCHANNELS, client.getNickname())
+        + " :" + appliedModes
+        + "~" + queryClient.getUsername()
+        + " " + channelName);
 }
 
 void                Server::m_whoisCmd(Client& client) // should compose channel thingy? TODO:
@@ -898,13 +908,28 @@ void                Server::m_whoisCmd(Client& client) // should compose channel
     
     Client&     queryClient = this->m_clients[clientFd];
 
-    m_reply(client.getFd(), Replies::RPL_WHOISUSER, m_composeWhoisQuery(queryClient, client.getNickname(), Replies::RPL_WHOISUSER));
-    m_reply(client.getFd(), Replies::RPL_WHOISSERVER, m_composeWhoisQuery(queryClient, client.getNickname(), Replies::RPL_WHOISSERVER));
+    m_reply(client.getFd(), Replies::RPL_WHOISUSER, m_composeWhoisQuery(client, queryClient, Replies::RPL_WHOISUSER));
+    m_reply(client.getFd(), Replies::RPL_WHOISSERVER, m_composeWhoisQuery(client, queryClient, Replies::RPL_WHOISSERVER));
     if (queryClient.getModeValue(UserModes::oper))
-        m_reply(client.getFd(), Replies::RPL_WHOISOPERATOR, m_composeWhoisQuery(queryClient, client.getNickname(), Replies::RPL_WHOISOPERATOR));
+        m_reply(client.getFd(), Replies::RPL_WHOISOPERATOR, m_composeWhoisQuery(client, queryClient, Replies::RPL_WHOISOPERATOR));
     if (queryClient.getModeValue(UserModes::away)) // TODO: HAVE A DEFAULT REPLY MESSAGE
-        m_reply(client.getFd(), Replies::RPL_AWAY, m_composeWhoisQuery(queryClient, client.getNickname(), Replies::RPL_AWAY));
-    m_reply(client.getFd(), Replies::RPL_ENDOFWHOIS, m_composeWhoisQuery(queryClient, client.getNickname(), Replies::RPL_ENDOFWHOIS));
+        m_reply(client.getFd(), Replies::RPL_AWAY, m_composeWhoisQuery(client, queryClient, Replies::RPL_AWAY));
+
+    std::vector<std::string> queryClientChannels = queryClient.getChannels();
+    std::string appliedModes;
+
+    for (int i = 0; i < queryClientChannels.size(); ++i)
+    {
+        appliedModes = "";
+        if (queryClient.getModeValue(ChannelModes::O_Creator, queryClientChannels[i])
+            || queryClient.getModeValue(ChannelModes::o_OperatorPrivilege, queryClientChannels[i]))
+            appliedModes += "@";
+        if (queryClient.getModeValue(ChannelModes::v_voicePrivilege, queryClientChannels[0]))
+            appliedModes += "+";
+        if (appliedModes.size())
+            m_reply(client.getFd(), Replies::RPL_WHOISCHANNELS, m_composeWhoIsChannels(client, queryClient, queryClientChannels[i], appliedModes));
+    }
+    m_reply(client.getFd(), Replies::RPL_ENDOFWHOIS, m_composeWhoisQuery(client, queryClient, Replies::RPL_ENDOFWHOIS));
 
 }
 
@@ -961,8 +986,8 @@ void                Server::m_topicCmd(Client& client) // TODO: CHANGE TO LITERA
         }
         else
         {
-            m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + ":" + topicToSet), channelName);
             channel.getTopic() = topicToSet;
+            m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + ":" + topicToSet), channelName);
         }
     }
     

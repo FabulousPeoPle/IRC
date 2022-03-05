@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/05 13:05:26 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/05 19:33:22 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,6 +114,7 @@ namespace Replies
         ERR_NOSUCHNICK = 401,
         RPL_WHOISOPERATOR = 313,
         RPL_AWAY = 301,
+        RPL_WHOISCHANNELS = 319,
         /********************/
 
         /******-TOPIC-*******/
@@ -348,12 +349,13 @@ class Server {
         std::string                     m_makeReplyHeader(int replyNum, std::string nickname);
 
         std::string                     m_composeMotd(std::ifstream& motdFile, std::string clientNick);
-        std::string                     m_composeWhoisQuery(Client& QueryClient, std::string clientNickname, int replyCode);
+        std::string                     m_composeWhoisQuery(Client& client, Client& QueryClient, int replyCode);
         std::string                     m_composeRplTopic(Channel& channel);
         std::string                     m_composeChannelModes(std::string channelName);
         std::string                     m_composeNames(std::string channelName);
         std::string                     m_composeList(std::string channelName);
         std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);// const?
+        std::string                     m_composeWhoIsChannels(Client& client, Client& queryClient, std::string channelName, std::string appliedModes);
 
 
         int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, std::string& modeChanges); // turn arguments into references?
