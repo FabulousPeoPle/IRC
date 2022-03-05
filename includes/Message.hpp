@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Message.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/03 13:07:37 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/03 17:12:42 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,10 +68,10 @@ public:
         {
             typename T::iterator it = vector.begin();
             typename T::iterator end = vector.end();
-            std::cout << "printing vector " << name << std::endl;
+            //std::cout << "printing vector " << name << std::endl;
             while (it != end)
             {
-                std::cout << "|" << *it << "|" << std::endl;
+                //std::cout << "|" << *it << "|" << std::endl;
                 it++;
             }
         }

@@ -225,5 +225,10 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
         case Replies::RPL_READYTOSEND:
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_READYTOSEND, m_clients[clientFd].getNickname()) + " :Server is sending file with length " + message + " \r\n");
             break;
+        case Replies::RPL_ISON:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ISON, m_clients[clientFd].getNickname()) + " :" + message + END_STRING);
+            break;
+        default:
+            return ;
     }
 }

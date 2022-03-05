@@ -15,7 +15,7 @@ int main(void)
 	unsigned char *buff = (unsigned char*)malloc(sizeof(unsigned char) * len);
 	char *buffer = (char*)malloc(sizeof(char) * len);
 	int bytesread = fread(buff, sizeof(unsigned char), len, img);
-	std::cout << std::to_string(len) << std::endl;
+	//std::cout << std::to_string(len) << std::endl;
 	int i = 0;
 	while (i < len)
 	{
@@ -31,7 +31,7 @@ int main(void)
 	i = 0;
 	while (i < len)
 	{
-		std::cout << buff[i];
+		//std::cout << buff[i];
 		fputc(buffer[i], dest);
 		i++;
 	}

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Message.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/03 13:19:34 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/05 13:03:08 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,7 @@ std::string Message::m_grabLiteralMsg(char *msg)
     char * literalMsgPtr = strchr(msg, ':');
     if (!literalMsgPtr)
         return (std::string(""));
+    msg = strtok(msg, "\r\n");
     std::string returnValue = std::string(literalMsgPtr);
     literalMsgPtr[0] = '\0';
     return (returnValue);
@@ -108,9 +109,9 @@ void    Message::parse(void)
         if (token)
             arguments.push_back(token);
     }
-    std::cout << "|" << command << "|" << std::endl;
+    //std::cout << "|" << command << "|" << std::endl;
     printVector(arguments, " arguments ");
-    std::cout << _literalMsg << std::endl;
+    //std::cout << _literalMsg << std::endl;
     free(msgbuffer);
 }
 

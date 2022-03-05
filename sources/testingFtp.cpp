@@ -49,7 +49,7 @@ int main(int argc, char const *argv[])
 	    printf("%s\n",buffer );
 		if (lock)
 		{
-            std::cout << "lock is not locked\n";
+            //std::cout << "lock is not locked\n";
 			int bytesSent = 0;
 			send(sock, "SEND user0 text 22\r\n", strlen("SEND user0 text 22\r\n"), 0);
 			FILE *img = fopen("text", "rb");
@@ -60,23 +60,23 @@ int main(int argc, char const *argv[])
 	    	printf("--->%s\n", buffer );
             while (true)
             {
-                std::cout << "--->waiting\n";
+                //std::cout << "--->waiting\n";
                 readbytes = recv(sock, buffer, 100, 0);
                 buffer[readbytes] = '\0';
                 printf("LE BUFFER IS--->%s\n",buffer );
                 if (strstr(buffer, "902"))
                 {
-                    std::cout << "--->recieved code\n";
+                    //std::cout << "--->recieved code\n";
                     break ;
                 }
                 readbytes = 0;
             }
-            std::cout << "this is the buff we sending: " << buff << std::endl;
+            //std::cout << "this is the buff we sending: " << buff << std::endl;
 			while (bytesSent < 22)
 			{
-                std::cout << "--->sending " << bytesSent << std::endl;
+                //std::cout << "--->sending " << bytesSent << std::endl;
 				bytesSent += send(sock, buff + bytesSent, 22 - bytesSent, 0);
-                std::cout << "--->sent " << bytesSent << std::endl;
+                //std::cout << "--->sent " << bytesSent << std::endl;
 			}
 			lock = false;
 		}

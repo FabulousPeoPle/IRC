@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/03 13:25:02 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/05 13:05:26 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -153,6 +153,10 @@ namespace Replies
         ERR_INVITEONLYCHAN = 473,
         ERR_CANNOTSENDTOCHAN = 404,
         
+        /*********-ISON-**********/
+        RPL_ISON = 303,
+        /*************************/
+
         /***** our own replies *****/
         /***** ftp replies *****/
         RPL_FILERECIEVED = 900,
@@ -171,7 +175,8 @@ namespace Replies
 #define QUIT_COMMAND        "QUIT"
 #define ISON_COMMAND        "ISON"
 #define MODE_COMMAND        "MODE"
-#define PING_COMMAND        "PING" // yeet
+#define PING_COMMAND        "PING"
+#define PONG_COMMAND        "PONG"
 #define MOTD_COMMAND        "MOTD"
 #define AWAY_COMMAND        "AWAY"
 #define LUSERS_COMMAND      "LUSERS"
@@ -190,7 +195,7 @@ namespace Replies
 #define SEND_COMMAND        "SEND"
 #define FETCH_COMMAND       "FETCH"
 
-#define NUM_COMMANDS 24
+#define NUM_COMMANDS 25
 
 #define MOTD_LENGTH_LINE 80
 
@@ -300,6 +305,7 @@ class Server {
         void                            m_p_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
         void                            m_p_namesCmd_listCmd(Client & client,std::string target, std::string cmd); // still not implemented
 
+        void                            m_pongCmd(Client& client);
         void                            m_joinCmd(Client & client);
         void                            m_kickCmd(Client & client);
         void                            m_namesCmd_listCmd(Client & client);
@@ -329,10 +335,10 @@ class Server {
         {
             typename T::iterator it = vector.begin();
             typename T::iterator end = vector.end();
-            std::cout << "printing vector " << name << std::endl;
+            //std::cout << "printing vector " << name << std::endl;
             while (it != end)
             {
-                std::cout << "|" << *it << "|" << std::endl;
+                //std::cout << "|" << *it << "|" << std::endl;
                 it++;
             }
         }
@@ -369,6 +375,7 @@ class Server {
         bool                            m_isMaskMode(char c) const; // the masking ones 
         bool                            m_isClientOper(Client& client, std::string channelName) const; // make variable const
         bool                            m_isWildCardMask(std::string str) const; // Used for who
+        bool                            m_isOnServer(std::string nickname);
 
         void                            m_listMasks(std::vector<std::string> maskList, char mode, Client& client, Channel& channel);
 
