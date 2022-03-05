@@ -223,7 +223,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_RECIEVEDNOFILES, m_clients[clientFd].getNickname()) + " :You have not recieved any files\r\n");
             break;
         case Replies::RPL_READYTOSEND:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_READYTOSEND, m_clients[clientFd].getNickname()) + " :Server is sending file with length " + message + " \r\n");
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_READYTOSEND, m_clients[clientFd].getNickname()) + " :Server is sending file with length " + message + " |\r\n");
             break;
     }
 }

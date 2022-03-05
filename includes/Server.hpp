@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/03 13:25:02 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/03 19:34:28 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <string>
 #include <iostream>
+#include <chrono> // for bonus
 
 #include <cstring>
 #include <unistd.h>
@@ -52,7 +53,6 @@
 
 #define BUFFER_SIZE 512
 
-// #define ILLEGALE_CHARS_NICK "#&*@.,;:\"\'"
 
 #define END_STRING "\r\n"
 
@@ -156,11 +156,11 @@ namespace Replies
         /***** our own replies *****/
         /***** ftp replies *****/
         RPL_FILERECIEVED = 900,
-        RPL_FILESENT,
-        RPL_READYTORECIEVE,
-        ERR_FTPTIMEOUT,
-        ERR_RECIEVEDNOFILES,
-        RPL_READYTOSEND,
+        RPL_FILESENT = 901,
+        RPL_READYTORECIEVE = 902,
+        ERR_FTPTIMEOUT = 903,
+        ERR_RECIEVEDNOFILES = 904,
+        RPL_READYTOSEND = 905,
     };
 };
 
@@ -404,6 +404,7 @@ class Server {
         void                            m_sendCmd(Client &client);
         void                            m_fetchCmd(Client &client);
         bool                            m_validArgsFtp(Message& msg, t_fileData &fileData);
+    
     
         const std::string               m_serverName;
         const std::string               m_port;

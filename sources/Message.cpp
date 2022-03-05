@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/03 13:19:34 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/05 13:02:27 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -76,6 +76,7 @@ std::string Message::m_grabLiteralMsg(char *msg)
     char * literalMsgPtr = strchr(msg, ':');
     if (!literalMsgPtr)
         return (std::string(""));
+    msg = strtok(msg, "\r\n");
     std::string returnValue = std::string(literalMsgPtr);
     literalMsgPtr[0] = '\0';
     return (returnValue);
@@ -96,7 +97,7 @@ void    Message::parse(void)
     char * msg = m_trim(msgbuffer);
     _literalMsg = m_grabLiteralMsg(msg);
     char *token = NULL;
-    
+
     token = strtok(msg, " ,\t\r\n");
     while (token && !m_checkCommand(token))
         token = strtok(NULL, ", \t\r\n");
@@ -104,7 +105,7 @@ void    Message::parse(void)
         command = token;
     while (token)
     {
-        token = strtok(NULL, ", \t\r\n");
+        token = strtok(NULL, " ,\t\r\n");
         if (token)
             arguments.push_back(token);
     }

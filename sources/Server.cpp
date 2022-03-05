@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/03 14:40:37 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/05 16:07:24 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -292,6 +292,7 @@ int            Server::m_manageServerEvent(void)
 
 bool            Server::m_isAuthenticated(int clientFd)
 {
+    std::cout << "status is " << this->m_clients[clientFd].isAuthComplete() << std::endl;
     return (this->m_clients[clientFd].isAuthComplete());
 }
 
@@ -2014,55 +2015,54 @@ void            Server::m_sendCmd(Client &client)
         std::cout << "wrong args\n";
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, SEND_COMMAND);
     }
-    // else if (m_nicknames.find(msg.getArgs().front()) == m_nicknames.end())
-    // {
-    //     std::cout << "not an existing nickname\n";
-    //     m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, msg.getArgs().front());
-    // }
+    else if (m_nicknames.find(msg.getArgs().front()) == m_nicknames.end())
+    {
+        std::cout << "not an existing nickname\n";
+        m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, msg.getArgs().front());
+    }
     else if (m_validArgsFtp(msg, fileData))
     {
         std::cout<< "sending\n";
         int readBytes = 0;
         int rec = 0;
         char *buffer = (char*)malloc(sizeof(char) * fileData.length + 1); //check
-        std::cout << "delimiter0\n";
         fileData.content = (char*)malloc(sizeof(char) * fileData.length);
-        std::cout << "delimiter1\n";
+        bzero(fileData.content, fileData.length);
         m_reply(client.getFd(), Replies::RPL_READYTORECIEVE, "");
-        std::cout << "delimiter2\n";
-        time_t timer = time(NULL);
-        std::cout<< "sector 0\n";
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
         while (readBytes < fileData.length)
         {
             rec = recv(client.getFd(), buffer + readBytes, fileData.length - readBytes, 0);
             if (rec > 0)
                 readBytes += rec;
+            else if (std::chrono::steady_clock::now() - start >= std::chrono::seconds(10))
+                return ;
             else if (rec <= 0)
             {
-                std::cout << "bruh\n";
                 perror("recv: ");
                 continue ;
             }
             std::cout << "recieving " << readBytes << std::endl;
-            buffer[readBytes] = '\0';
-            std::cout << "The buffer received:: " << buffer << std::endl;
-            if ((!readBytes && int(difftime(timer, time(NULL))) > 1) || int(difftime(timer, time(NULL)) > 10))
+            if ((!readBytes && std::chrono::steady_clock::now() - start >= std::chrono::seconds(1)) || int(std::chrono::steady_clock::now() - start >= std::chrono::seconds(10)))
             {
                 std::cout << "sector 2\n";
                 m_reply(client.getFd(), Replies::ERR_FTPTIMEOUT, "");
                 return ;
             }
         }
-        FILE *dest = fopen("textt", "wb+");
-        fseek(dest, 0, SEEK_SET);
+        FILE *dest = fopen("ftp_text", "wb");
+        int fd = fileno(dest);
         int i = 0;
-        std::cout << "writing to file\n";
+
+        write (fd, buffer, fileData.length);
+        fileData.content = (char*)malloc(sizeof(char) * (fileData.length + 2));
+        fileData.content[fileData.length] = '\r';
+        fileData.content[fileData.length + 1] = '\n'; // useless it wont be sent
         while (i < fileData.length)
-	    {
-            std::cout << "printed " << i + 1 << "characters\n";
-            fputc(buffer[i], dest);
-		    i++;
-	    }
+        {
+            fileData.content[i] = buffer[i];
+            i++;
+        }
         m_clients[m_nicknames[fileData.reciever]].pushFile(fileData);
         m_reply(m_nicknames[fileData.reciever], Replies::RPL_FILERECIEVED, fileData.name);
         m_reply(client.getFd(), Replies::RPL_FILESENT, fileData.name + " to " + fileData.reciever);
@@ -2078,10 +2078,29 @@ void            Server::m_fetchCmd(Client &client)
         t_fileData fileData = client.getFiles().front();
         unsigned long sentBytes = 0;
         m_reply(client.getFd(), Replies::RPL_READYTOSEND, std::to_string(fileData.length));
+        
+        FILE *dest = fopen("ftp_text_fetch", "wb");
+        int fd = fileno(dest);
+        int readBytes = 0;
+        char * acknowledgement[3];
+        int rec = 0;
+
+        write (fd, fileData.content, fileData.length);
+        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
+        while (!readBytes && std::chrono::steady_clock::now() - start >= std::chrono::seconds(10))
+        {
+            rec = recv(client.getFd(), acknowledgement, 3, 0);
+            readBytes += (rec >= 0) ? rec : 0;
+        }
+        if (std::chrono::steady_clock::now() - start >= std::chrono::seconds(10))
+            exit(1);
+        std::cout << "acknowledged\n";
         while (sentBytes < fileData.length)
         {
             sentBytes += send(client.getFd(), fileData.content + sentBytes, fileData.length - sentBytes, 0);
+            std::cout << sentBytes << "|" << fileData.length << std::endl;
         }
+        m_clients[m_nicknames[fileData.reciever]].getFiles().erase(m_clients[m_nicknames[fileData.reciever]].getFiles().begin());
     }
 }
 
