@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/05 13:23:28 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/05 14:02:42 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1347,23 +1347,29 @@ void    Server::m_eraseClientPoll(int clientFd)
 
 // not tested/ not working
 // will be upgraded when we add channels
-
 void    Server::m_userhostCmd(Client & client)
 {
     // no need to check the size of the queue cz it must has atleast one message at this point
     Message & msg = client.getMessageQueue().front();
-    msg.parse();
+    
     std::vector<std::string>::iterator it = msg.getArgs().begin();
     std::vector<std::string>::iterator end = msg.getArgs().end();
     int count = 0;
 
-    while (!msg.getArgs().empty() && m_checkNickSyntax(msg) && it < end && count < 5)
+    std::vector<std::string> arguments = msg.getArgs();
+    if (arguments.empty())
+    {
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        return ;
+    }
+    while (it < end && count < 5)
     {
         // call the userhost reply
         if (m_nicknames.find(*it) != m_nicknames.end())
             m_reply(client.getFd(), Replies::RPL_USERHOST, client.getNickname() + " :"\
-            + m_clients[m_nicknames[*it]].getNickname() + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::oper)) ? "*" : " ") + "=" \
-            + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::away)) ? "+" : "-") + m_clients[m_nicknames[*it]].getHostname());
+            + m_clients[m_nicknames[*it]].getNickname() + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::oper)) ? "*" : "") + "=" \
+            + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::away)) ? "+" : "-") + "~" + m_clients[m_nicknames[*it]].getUsername()
+            + "@" + m_clients[m_nicknames[*it]].getHostname());
         it++;
         count += 1;
     }
