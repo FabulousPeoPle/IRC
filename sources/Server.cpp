@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/05 19:46:04 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/05 21:03:10 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -274,6 +274,15 @@ int            Server::m_manageServerEvent(void)
     {
         perror("accept: ");
         return (-1);
+    }
+    int yes = 1;
+    if (setsockopt(newFd, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes)))
+    {
+        perror("setsocketopt");
+        // is freeing necessary before exit()?
+        if (this->m_servinfo)
+            freeaddrinfo(this->m_servinfo);
+        exit(1);
     }
     if (this->m_clients.size() < this->m_maxClients)
     {
@@ -794,8 +803,8 @@ void                Server::m_motdCmd(Client& client)
         m_reply(client.getFd(), Replies::ERR_NOMOTD, "");
         return ;
     }
-    m_reply(client.getFd(), Replies::RPL_MOTDSTART, "");
-    m_reply(client.getFd(), Replies::RPL_MOTD, this->m_composeMotd(motd, client.getNickname()));
+    // m_reply(client.getFd(), Replies::RPL_MOTDSTART, "");
+    // m_reply(client.getFd(), Replies::RPL_MOTD, this->m_composeMotd(motd, client.getNickname()));
     m_reply(client.getFd(), Replies::RPL_ENDOFMOTD, "");
 }
 
@@ -1306,19 +1315,25 @@ int Server::m_send(int toFd, std::string message)
 {
     int bytesSent = 0;
     int size = message.size();
+    int total = 0;
 
     std::printf("Sending to fd [%d], client nickname[%s], message is [%s]\n", toFd, m_clients[toFd].getNickname().c_str(), message.c_str());
     while (size)
     {
         // TODO: What the last parameter?
-        bytesSent = send(toFd, message.data() + bytesSent, size, 0);
+        std::cout << "MY DUD SEND IS GOOD\n";
+        std::cout << "this is the size: " << size << " bytesSent: " << bytesSent << " data: " << (message.data() + bytesSent) << " strlen: " << strlen((message.data() + bytesSent)) << std::endl;
+        bytesSent = send(toFd, message.data() + total, size, 0);
         if (bytesSent == -1)
         {
+            std::printf("WA ZEEEEEbiii\n");
             perror("Send");
             return (-1);
         }
+        total += bytesSent;
         size -= bytesSent;
     }
+    std::printf("ACHNO WA9e3\n");
     return (0);
 }
 // TODO: FOR DEBEGGUING WILL BE REMOVED
