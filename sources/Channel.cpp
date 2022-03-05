@@ -327,7 +327,7 @@ int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string
 			}
 			catch (std::exception& e)
 			{
-				std::cout << "Bad argument: " << e.what() << std::endl;
+				//std::cout << "Bad argument: " << e.what() << std::endl;
 				m_userLimit = -1;
 				return (-1);
 			}

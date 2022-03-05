@@ -6,9 +6,10 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/05 13:02:27 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/05 19:53:30 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
 
 
 #include "Message.hpp"
@@ -109,9 +110,9 @@ void    Message::parse(void)
         if (token)
             arguments.push_back(token);
     }
-    std::cout << "|" << command << "|" << std::endl;
+    //std::cout << "|" << command << "|" << std::endl;
     printVector(arguments, " arguments ");
-    std::cout << _literalMsg << std::endl;
+    //std::cout << _literalMsg << std::endl;
     free(msgbuffer);
 }
 

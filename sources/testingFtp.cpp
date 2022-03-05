@@ -139,7 +139,7 @@ int main(int argc, char const *argv[])
                 //printf("LE BUFFER IS--->%s\n",buffer );
                 if (strstr(buffer, "902"))
                 {
-                    std::cout << "--->recieved code\n";
+                    //std::cout << "--->recieved code\n";
                     break ;
                 }
                 readbytes = 0;
