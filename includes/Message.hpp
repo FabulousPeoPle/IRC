@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/03 17:12:42 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/05 19:45:29 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,8 @@
 
 class Client;
 
-std::string strToken(std::string str);
+
+std::string strToken(std::string str, std::string delimiterString);
 
 typedef std::deque<std::string> t_strDQeue;
 

@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/05 19:39:14 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/05 19:46:04 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -1340,7 +1340,7 @@ void    printQueue(std::deque<Message> q)
 int	Server::m_manageRecv(std::string message, int clientFd)
 {
     t_messageDQeue& messageQueue = this->m_clients[clientFd].getMessageQueue();
-    std::string token = strToken(message);
+    std::string token = strToken(message, END_STRING);
 
     while (token.size())
     {
@@ -1349,7 +1349,7 @@ int	Server::m_manageRecv(std::string message, int clientFd)
             messageQueue.push_back(Message(token));
         else if (messageQueue.back().getMsg().find(END_STRING) == std::string::npos)
             messageQueue.back().setMsg(messageQueue.back().getMsg() + token);
-        token = strToken("");
+        token = strToken("", END_STRING);
     }
     if (messageQueue.back().getMsg().find(END_STRING) != std::string::npos)
         return (1);

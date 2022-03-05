@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/05 19:33:22 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/05 19:45:04 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -208,7 +208,7 @@ typedef struct sockaddr_in      t_sockaddr_in;
 typedef struct sockaddr_in6     t_sockaddr_in6;
 typedef struct pollfd           t_pollfd;
 
-std::string strToken(std::string str);
+std::string strToken(std::string str, std::string delimiterString);
 std::string intToString(int num);
 
 class Client;
