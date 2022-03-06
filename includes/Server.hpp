@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/05 19:53:37 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/06 20:27:48 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -337,10 +337,10 @@ class Server {
         {
             typename T::iterator it = vector.begin();
             typename T::iterator end = vector.end();
-            //std::cout << "printing vector " << name << std::endl;
+            std::cout << "printing vector " << name << std::endl;
             while (it != end)
             {
-                //std::cout << "|" << *it << "|" << std::endl;
+                std::cout << "|" << *it << "|" << std::endl;
                 it++;
             }
         }
