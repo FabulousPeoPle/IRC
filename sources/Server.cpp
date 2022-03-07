@@ -6,7 +6,7 @@
 /*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/06 21:28:27 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/07 15:43:36 by azouiten         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -623,15 +623,15 @@ bool            Server::m_isModesSyntaxValid(std::vector<std::string> arguments)
             || (attributeSetters && maskSetters)
             || (maskSetters && userModeSetters))
             return (false);
-        if (attributeSetters > 1) // -kl bruh
+        if (attributeSetters > 1)
             return (false);
         if (prefix == '+' && maskSetters && maskSetters != argNum)
             return (false);
-        if (prefix == '-' && maskSetters && argNum) // untestd
+        if (prefix == '-' && maskSetters && argNum)
             return (false);
-        if (prefix == '-' && attributeSetters && arguments[1][0] == 'l' && argNum) // prefix relative
+        if (prefix == '-' && attributeSetters && arguments[1][0] == 'l' && argNum)
             return (false);
-        if (attributeSetters && argNum != 1) // prefix relative
+        if (attributeSetters && argNum != 1)
             return (false);
         if (userModeSetters && argNum != 1)
             return (false);
@@ -671,17 +671,17 @@ void            Server::m_channelModeCmd(Client& client, Message& message) // Mi
     {
         m_reply(client.getFd(), Replies::RPL_CHANNELMODEIS, m_composeChannelModes(channelName));
         return ;
-    }  // WHAT IF THE CLIENT IS NOT THE CHANNEL OPERATOR
+    }
     if (!m_isClientOper(client, arguments[0]) && !client.getModeValue(UserModes::oper)) 
     {
-        m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, channelName); // maybe change arguments[1] to channelName
+        m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, channelName);
         return ;
     }
-    if (arguments.size() >= 2)// MODE CHAN_NAME MODES WHO
+    if (arguments.size() >= 2)
     {
         if (!m_isModesSyntaxValid(arguments))
         {
-            m_reply(client.getFd(), Replies::ERR_WRONGCHANMODESYNTAX, channelName); // maybe change arguments[1] to channelName
+            m_reply(client.getFd(), Replies::ERR_WRONGCHANMODESYNTAX, channelName);
             return ;
         }
         std::string modeChanges = m_executeModes(arguments, m_channels[channelName], client);
@@ -743,6 +743,11 @@ void            Server::m_userModeCmd(Client& client, Message& message) // TODO:
 void            Server::m_modeCmd(Client& client)
 {
     Message& message = client.getMessageQueue().front();
+    if (message.getArgs().empty())
+    {
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, MODE_COMMAND);
+        return ;
+    }
     std::string channelName = message.getArgs()[0];
     if (m_isChannelPrefix(channelName[0]))
         m_channelModeCmd(client, message); // send to all users the changes modes
@@ -771,7 +776,7 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile, std::string c
     }
     count = 0;
     cursor = 0;
-    while (cursor < motd.size()) // NEEDS TO BE CHANGED; UGLLYYYYYYYY
+    while (cursor < motd.size())
     {
         if (count == MOTD_LENGTH_LINE + 1) 
         {
@@ -1786,7 +1791,7 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
             return ;
         }
         else if ((it_chan != m_channels.end() && m_channels[target].getModeValue(ChannelModes::n_noOutsideMessage) && !m_channels[target].isMember(client.getFd() && !client.getModeValue(UserModes::oper)))
-         || (it_chan != m_channels.end() && m_channels[target].getModeValue(ChannelModes::m_moderated) && !client.getModeValue(ChannelModes::v_voicePrivilege) && !m_channels[target].isOp(client.getFd()) && !client.getModeValue(UserModes::oper)))
+         || (it_chan != m_channels.end() && m_channels[target].getModeValue(ChannelModes::m_moderated) && !client.getModeValue(ChannelModes::v_voicePrivilege, target) && !m_channels[target].isOp(client.getFd()) && !client.getModeValue(UserModes::oper)))
         {
             m_reply(client.getFd(), Replies::ERR_CANNOTSENDTOCHAN, target);
             return ;
