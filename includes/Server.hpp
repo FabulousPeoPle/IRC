@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/06 20:27:48 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/07 20:31:21 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -353,6 +353,7 @@ class Server {
         std::string                     m_composeWhoisQuery(Client& client, Client& QueryClient, int replyCode);
         std::string                     m_composeRplTopic(Channel& channel);
         std::string                     m_composeChannelModes(std::string channelName);
+        std::string                     m_composeUserModes(Client& client);
         std::string                     m_composeNames(std::string channelName);
         std::string                     m_composeList(std::string channelName);
         std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);// const?
@@ -367,17 +368,17 @@ class Server {
 
 
         bool                            m_areModesMasks(std::string modes);
-        bool                            m_isValidCommand(std::string potentialCommand); // should be const
+        bool                            m_isValidCommand(std::string potentialCommand);
         bool                            m_isChannelPrefix(char c) const;
         bool                            m_isUser(Client& client) const;
-        bool                            m_isMaskUserMatch(std::string nickname, std::string TLD); // TODO: should be more general
+        bool                            m_isMaskUserMatch(std::string nickname, std::string TLD);
         bool                            m_isMask(std::string str);
-        bool                            m_isUserSpecificChannelMode(char c) const; // user modes
-        bool                            m_isAttributeSetterMode(char c) const; //password and limit users
-        bool                            m_isSimpleChannelMode(char c) const; // turn on turn off mdoes
-        bool                            m_isMaskMode(char c) const; // the masking ones 
-        bool                            m_isClientOper(Client& client, std::string channelName) const; // make variable const
-        bool                            m_isWildCardMask(std::string str) const; // Used for who
+        bool                            m_isUserSpecificChannelMode(char c) const;
+        bool                            m_isAttributeSetterMode(char c) const;
+        bool                            m_isSimpleChannelMode(char c) const;
+        bool                            m_isMaskMode(char c) const;
+        bool                            m_isClientOper(Client& client, std::string channelName) const;
+        bool                            m_isWildCardMask(std::string str) const;
         bool                            m_isOnServer(std::string nickname);
 
         void                            m_listMasks(std::vector<std::string> maskList, char mode, Client& client, Channel& channel);
@@ -452,7 +453,6 @@ class Server {
         /////////////////////////////////////////////////////////////////
         std::map<std::string, Channel>  m_channels;
         std::map<std::string, cmdFun>   m_cmdFuncs;
-        bool                            m_passProtected;
         std::string                     m_password;
 };
 

@@ -4,19 +4,19 @@
 
 void    Server::m_reply(int clientFd, int replyCode, std::string message)
 {  
-    switch (replyCode)  // TODO: care for message syntax
+    switch (replyCode)
     {
         case Replies::RPL_WELCOME :\
-            this->m_send(clientFd, ":" + this->m_serverName + " 001 " + message + " :Welcome sunshine\r\n");
+            this->m_send(clientFd, ":" + this->m_serverName + " 001 " + message + " :You shall enter\r\n");
             break;
-        case Replies::RPL_YOURHOST:  // TODO: care for message syntax
+        case Replies::RPL_YOURHOST:
             this->m_send(clientFd, ":" + this->m_serverName + " 002 " + message + END_STRING);
             break;
         case Replies::RPL_CREATED:
             this->m_send(clientFd, ':' + this->m_serverName + " 003 " + m_clients[clientFd].getNickname() + " :This server was created Sat Feb 12 2020 at 10:40:00 GMT\r\n");
             break;
-        case Replies::RPL_MYINFO: // TODO: decide on the possible modes for channels and users
-            this->m_send(clientFd, ':' + this->m_serverName + " 004 " + m_clients[clientFd].getNickname() + " :" + this->m_serverName + ' ' + this->m_version + ' ' + "ao" + ' ' + "mtov\r\n");
+        case Replies::RPL_MYINFO:
+            this->m_send(clientFd, ':' + this->m_serverName + " 004 " + m_clients[clientFd].getNickname() + " :" + this->m_serverName + ' ' + this->m_version + ' ' + Channel::potentialModes + ' ' + Client::potentialModes + END_STRING);
             break;
         case Replies::RPL_BOUNCE:
             this->m_send(clientFd, ':' + this->m_serverName + " 005 " + m_clients[clientFd].getNickname() + " :Sir t9awed hna 'DS9.GeekShed.net', port '6667'\r\n");
@@ -43,7 +43,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, ':' + this->m_serverName + " 501 :Unknown MODE flag\r\n");
             break;
         case Replies::RPL_UMODEIS:
-            this->m_send(clientFd, ':' + m_clients[clientFd].getNickname() + " MODE " + m_clients[clientFd].getNickname() + " :" + message + END_STRING); // TODO: change +i to the correct value of modes
+            this->m_send(clientFd, ':' + m_clients[clientFd].getNickname() + " MODE " + m_clients[clientFd].getNickname() + " :" + message + END_STRING);
             break;
         case Replies::ERR_NOMOTD :\
             this->m_send(clientFd, ':' + this->m_serverName + " 422 :MOTD File is missing\r\n");
@@ -57,26 +57,26 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
         case Replies::RPL_MOTD:
             this->m_send(clientFd, ':' + this->m_serverName + " 372 " + m_clients[clientFd].getNickname() + " :- " + message + END_STRING);
             break;
-        case Replies::RPL_NOWAWAY: // TODO: care for message syntax
+        case Replies::RPL_NOWAWAY:
             this->m_send(clientFd, ':' + this->m_serverName + " 306 :You have been marked as being away\r\n");
             break;
-        case Replies::RPL_UNAWAY:  // TODO: care for message syntax
+        case Replies::RPL_UNAWAY:
             this->m_send(clientFd, ':' + this->m_serverName + " 305 :You are no longer marked as being away\r\n");
             break;
-        case Replies::ERR_NOTREGISTERED:  // TODO: care for message syntax
+        case Replies::ERR_NOTREGISTERED:
             this->m_send(clientFd, ':' + this->m_serverName + " 451 :You have not registered\r\n");
             break;
         case Replies::ERR_UNKNOWNCOMMAND:
             this->m_send(clientFd, ':' + this->m_serverName + " 421 :" + message + " :Unknown command\r\n");
             break;
         case Replies::RPL_LUSERCLIENT:
-            this->m_send(clientFd, ':' + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :" + intToString(this->m_authenticatedUserNum) + " user(s) on the server\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 251 " + m_clients[clientFd].getNickname() + " :There are " + intToString(this->m_authenticatedUserNum) + " users and 0 services on 1 servers\r\n");
             break;
         case Replies::RPL_LUSERUNKNOWN:
-            this->m_send(clientFd, ':' + this->m_serverName + " 253 " + m_clients[clientFd].getNickname() + " :" + intToString(this->m_calculateUnknownConnections()) + " unknown connection(s)\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 253 " + m_clients[clientFd].getNickname() + " " + intToString(this->m_calculateUnknownConnections()) + " :unknown connection(s)\r\n");
             break;
         case Replies::RPL_LUSERME:
-            this->m_send(clientFd, ':' + this->m_serverName + " 255 " + m_clients[clientFd].getNickname() + " :" + intToString(this->m_calculateKnownConnections()) + " client(s)\r\n");
+            this->m_send(clientFd, ':' + this->m_serverName + " 255 " + m_clients[clientFd].getNickname() + " :I have " + intToString(this->m_calculateKnownConnections()) + " clients and 1 servers\r\n");
             break;
         case Replies::RPL_PINGREQUEST:
             this->m_send(clientFd,':' + this->m_serverName + " PONG " + this->m_serverName + " :" + m_clients[clientFd].getNickname() + END_STRING);
@@ -145,7 +145,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " :You're not channel operator\r\n");
             break;
         case Replies::ERR_WRONGCHANMODESYNTAX:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " USAGE: MODE <channel> *( ( '-' / '+' ) *<modes> *<modeparams> )\r\n");
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " :WRONG USAGE\r\n");
             break;
         case Replies::ERR_USERONCHANNEL:
             this->m_send(clientFd, ':' + this->m_serverName + " 443 <user> <channel> :is already on channel\r\n");
@@ -187,7 +187,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ENDOFINVITELIST, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
             break; 
         case Replies::RPL_LUSERCHANNELS:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSERCHANNELS, this->m_clients[clientFd].getNickname()) + ' ' + intToString(m_channels.size()) + " :channels formed" + END_STRING); //TODO: TAKE INTO CONSIDERATION SECRET/PRIVATE CHANNELS
+            this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSERCHANNELS, this->m_clients[clientFd].getNickname()) + ' ' + intToString(m_channels.size()) + " :channels formed" + END_STRING);
             break;
         case Replies::RPL_LUSEROP:
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LUSEROP, this->m_clients[clientFd].getNickname()) + ' ' + intToString(m_numOps) + " :operator(s) online" + END_STRING);
@@ -230,6 +230,9 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             break;
         case Replies::RPL_ISON:
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_ISON, m_clients[clientFd].getNickname()) + " :" + message + END_STRING);
+            break;
+        case Replies::ERR_CHANUSERLIMIT:
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANUSERLIMIT, m_clients[clientFd].getNickname()) + " " + message +  " :Channel limit reached" + END_STRING);
             break;
         default:
             return ;

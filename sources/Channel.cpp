@@ -14,13 +14,13 @@
 #include "Channel.hpp"
 
 Channel::Channel(void) : m_topic(""), m_userLimit(-1), m_password("") {}
-// TODO: add a static default no topic
 Channel::Channel(int mode, int opFd, std::string name, char type, std::string password) : m_name(name), m_mode(mode), m_type(type), m_password(password)
 {
+	modes = 0;
 	m_operators.push_back(opFd);
 	m_topic = "";
 	m_userLimit = -1;
-	modes = NEW_CHAN_MODES;
+	turnOnMode(ChannelModes::t_topicOperatorOnly);
 }
 
 Channel::Channel(const Channel& channelRef)
@@ -247,7 +247,7 @@ void		Channel::turnOnMode(int modeNum)
 	this->modes |= this->modeBitMasks[modeNum];
 }
 
-int 	    Channel::findMode(char mode) const // TODO: TURN THE OTHER ONES TO CONST AS WELL
+int 	    Channel::findMode(char mode) const
 {
     switch (mode)
     {
@@ -265,8 +265,6 @@ int 	    Channel::findMode(char mode) const // TODO: TURN THE OTHER ONES TO CONS
             return (ChannelModes::p_private);
 		case 's':
             return (ChannelModes::s_secret);
-		case 'r':
-            return (ChannelModes::r_reop);
 	    case 't':
             return (ChannelModes::t_topicOperatorOnly);
         default:
@@ -297,15 +295,17 @@ int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string
 				if (arguments[2] == m_password)
 				{
 					m_password = "";
+					turnOffMode(ChannelModes::k_passProtected);
 					modeChanges += "k";
 				}
 		}
 		else
 		{
 			m_password = arguments[2];
+			turnOnMode(ChannelModes::k_passProtected);
 			modeChanges += "k";
 		}
-		}
+	}
 	else
 	{
 		if (prefix == '-')
@@ -313,6 +313,7 @@ int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string
 			if (m_userLimit != -1)
 			{
 				modeChanges += 'l';
+				turnOffMode(ChannelModes::l_limitUser);
 				m_userLimit = -1;
 			}
 		}
@@ -322,7 +323,10 @@ int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string
 			{
 				m_userLimit = std::stoi(arguments[2]);
 				if (m_userLimit > 0)
+				{
 					modeChanges += 'l';
+					turnOnMode(ChannelModes::l_limitUser);
+				}
 				else
 					m_userLimit = -1;
 			}
@@ -388,5 +392,5 @@ void				Channel::manageSimpleMode(char c, char prefix, std::string& modeChanges)
 }
 
 std::uint16_t       Channel::modeBitMasks[NUM_MODES_CHANNEL] = {1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5, 1 << 6,
-																	1 << 7, 1 << 8};
-std::string         Channel::potentialModes = "aimnqpsrt";
+																	1 << 7, 1 << 8, 1 << 9};
+std::string         Channel::potentialModes = "aimnqpsklt";

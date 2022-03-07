@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/03 13:23:59 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/07 20:16:07 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,8 @@ namespace UserModes
         wallops,
         restricted,
         oper,
-        serverNotices
+        serverNotices,
+        total
     };
 };
 
@@ -80,26 +81,23 @@ class Client
         bool                                _isServerOp;
         bool                                _away;
         bool                                _authenticated;
-        std::uint8_t                        modes; // need to give em default modes
+        std::uint8_t                        modes;
         static std::uint8_t                 modeBitMasks[NUM_MODES];
-        static std::string                  potentialModes;
-        static std::string			        potentialChannelModes;
         std::string                         awayMessage;
         
-        std::vector<std::string>            _channels; // TODO: Maybe remove later
+        std::vector<std::string>            _channels;
         
         std::vector<t_fileData >      recievedFiles;
     
     public:
 
-        std::map<std::string, std::uint8_t> _channelModes; // TODO: put it in private and make a getter
+        std::map<std::string, std::uint8_t> _channelModes;
         Client(void);
         Client(Client const & src);
         Client(int, struct sockaddr_storage, socklen_t);
         ~Client(void);
 
 
-        // int                             findMode(char c) const; // ADD IS AS SERVER OR CLIENT FUNCTION
         /////////////////
         //// GETTERS ////
         /////////////////
@@ -161,6 +159,9 @@ class Client
         /// METHODS ///
         ///////////////
         void        partChannel(std::string channelName);
+        static std::string                  potentialModes;
+        static std::string			        potentialChannelModes;
+
 };
 
 #endif

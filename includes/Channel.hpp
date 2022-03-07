@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/06 20:17:38 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/07 18:17:22 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,8 +29,7 @@
 
 //IDK IF THIS IS HOW WE ARE HANDLING THIS, THIS IS JUST SO I CAN WORK ON THE JOIN COMMAND 
 
-#define NUM_MODES_CHANNEL 9
-#define NEW_CHAN_MODES 0
+#define NUM_MODES_CHANNEL 0xa
 
 class Client;
 
@@ -52,7 +51,8 @@ namespace ChannelModes
         q_quiet,
         p_private,
         s_secret,
-        r_reop,
+		k_passProtected,
+		l_limitUser,
         t_topicOperatorOnly,
 		/************************/
 
