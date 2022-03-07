@@ -59,9 +59,12 @@ int Bot::startBot(std::string host, int port, std::string passwd)
 int Bot::m_auth(void)
 {
     std::string user = "USER " + this->userName + " * * : hello World";
+    usleep(100);
     std::string nick = "NICK " + this->nickName;
+    usleep(100);
     int err = 0;
     std::string passwd = "PASS " + this->passwd;
+    usleep(100);
 
     if ((err = m_send(user)))
         return err;
@@ -78,9 +81,9 @@ void Bot::m_listner(void)
     while(1)
     {
         this->m_recv(msg);
+        this->m_qHandler(msg);
         if (msg.empty())
             break;
-        this->m_qHandler(msg);
     }
 }
 

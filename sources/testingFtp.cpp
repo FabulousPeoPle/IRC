@@ -84,14 +84,14 @@ int main(int argc, char const *argv[])
     }
     else
     {
-        send(sock , auth2 , strlen(auth) , 0 );
+        send(sock , auth2 , strlen(auth2) , 0 );
         std::cout << "reciever\n";
     }
     std::string fileName = argv[2];
     std::string target = argv[1];
 
 
-    fcntl(sock, F_SETFL, O_NONBLOCK);
+    // fcntl(sock, F_SETFL, O_NONBLOCK);
 
 
 	bool lock = true;
@@ -159,6 +159,7 @@ int main(int argc, char const *argv[])
             int recievedBytes = 0;
             char * code = NULL;
             char * buff_useless;
+            len = 219009;
             unsigned char *buff_send = (unsigned char*)malloc(sizeof(unsigned char) *(len +1 ));
             bzero(buff_send, len);
             buff_send[len] = '\0';
