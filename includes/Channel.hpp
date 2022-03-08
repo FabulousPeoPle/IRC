@@ -1,19 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Channel.hpp                                        :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/08 15:02:57 by ohachim          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-
-
-
-
 
 #ifndef _CHANNEL_
 #define _CHANNEL_
@@ -27,7 +11,6 @@
 #define NETWORKWIDE_CHAN '#'
 #define CHANNEL_NUMBER_LIMIT 10
 
-//IDK IF THIS IS HOW WE ARE HANDLING THIS, THIS IS JUST SO I CAN WORK ON THE JOIN COMMAND 
 
 #define NUM_MODES_CHANNEL 0xa
 
@@ -124,7 +107,7 @@ public:
 	bool						isBanned(Client &client);
 	bool						isMember(int clientFd) const;
 	bool						isInvited(int clientFd) const;
-	// std::string				m_composeMask(Client & client) const;
+	
 	int							m_getUserLimit(void) const;
 
 	bool        				getModeValue(int modeNum) const;

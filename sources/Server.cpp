@@ -1,18 +1,3 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   Server.cpp                                         :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/08 15:55:44 by ohachim          ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
-
-
-
 
 #include "Server.hpp"
 
@@ -967,6 +952,7 @@ void                Server::m_topicCmd(Client& client)
     }
     std::string channelName = arguments[0]; 
 
+    // if (arguments.size() == 1)
     if (topicToSet.empty())
     {
         if (m_channels[channelName].getTopic().empty())
@@ -977,6 +963,7 @@ void                Server::m_topicCmd(Client& client)
         m_reply(client.getFd(), Replies::RPL_TOPIC, m_composeRplTopic(m_channels[channelName]));
         return;
     }
+    // if (arguments.size() == 2)
     if (topicToSet.size())
     {
         Channel& channel = m_channels[channelName];
@@ -1468,14 +1455,11 @@ void                    Server::m_quitCmd(Client& client)
 {
     if (client.isAuthComplete())
     {
-        std::string literalMsg = "";
-        if (!client.getMessageQueue().empty() && client.getMessageQueue().front().getLiteralMsg().size())
-            literalMsg = client.getMessageQueue().front().getLiteralMsg().erase(0, 1);
-        std::string message = client.getMessageQueue().front().getLiteralMsg().erase(0, 1);
-        std::string messageToSend = "ERROR: Closing Link: " + client.getUsername() + "(" 
-                                    + literalMsg + ") " + client.getHostname() + " (Quit: "
+        std::string messageToSend = "ERROR: Closing Link: " + client.getUsername() + "(" ;
+        if (client.getMessageQueue().size())
+            messageToSend += client.getMessageQueue().front().getLiteralMsg().erase(0, 1);
+        messageToSend +=  ") " + client.getHostname() + " (Quit: "
                                         + client.getNickname() + ")" + END_STRING;
-
         if (this->m_send(client.getFd(), messageToSend) < 0)
         {
             std::cout << "Error: send\n";
@@ -1652,6 +1636,12 @@ void                        Server::m_partCmd(Client &client)
     std::vector<std::string> channelNames;
     std::vector<std::string>::iterator it = msg.getArgs().begin();
     std::vector<std::string>::iterator end = msg.getArgs().end();
+    std::vector<std::string> &args = msg.getArgs();
+    if (args.empty())
+    {
+        m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, "");
+        return;
+    }
     if (!m_grabChannelsNames(msg, channelNames))
     {
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, PART_COMMAND);

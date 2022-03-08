@@ -1,7 +1,6 @@
 
 #include "Server.hpp"
 
-
 void    Server::m_reply(int clientFd, int replyCode, std::string message)
 {  
     switch (replyCode)
