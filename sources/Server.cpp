@@ -2196,11 +2196,16 @@ void            Server::m_fetchCmd(Client &client)
             readBytes += (rec >= 0) ? rec : 0;
         }
         if (std::chrono::steady_clock::now() - start >= std::chrono::seconds(10))
-            exit(1);
+            return;
         std::cout << "acknowledged\n";
+        std::cout << fileData.content <<std::endl;
+        usleep(100);
         while (sentBytes < fileData.length)
         {
-            sentBytes += send(client.getFd(), fileData.content + sentBytes, fileData.length - sentBytes, 0);
+            int hold = send(client.getFd(), fileData.content + sentBytes, fileData.length - sentBytes, 0);
+            if (hold == -1)
+                continue;
+            sentBytes += hold;
             std::cout << sentBytes << "|" << fileData.length << std::endl;
         }
         m_clients[m_nicknames[fileData.reciever]].getFiles().erase(m_clients[m_nicknames[fileData.reciever]].getFiles().begin());

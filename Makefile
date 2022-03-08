@@ -21,6 +21,15 @@ OBJ_PATH = obj
 
 OBJ_NAME = $(SRC_NAME:.cpp=.o)
 
+SRC_PATH_BOT = irc_bot/sources
+SRC_NAME_BOT = main.cpp Bot.cpp currentTime.cpp utils.cpp wikiFetcher.cpp
+OBJ_PATH_BOT = irc_bot/obj_bot
+OBJ_NAME_BOT = $(SRC_NAME_BOT:.cpp=.o)
+OBJ_BOT = $(addprefix $(OBJ_PATH_BOT)/, $(OBJ_NAME_BOT))
+HEADER_NAME_BOT = Bot.hpp cmds.hpp utils.hpp
+INC_BOT = irc_bot/includes
+HEADER_BOT = $(addprefix $(INC_BOT)/, $(HEADER_NAME_BOT))
+
 OBJ = $(addprefix $(OBJ_PATH)/, $(OBJ_NAME))
 
 INC = includes
@@ -32,8 +41,9 @@ HEADER = $(addprefix $(INC)/, $(HEADER_NAME))
 # CFLAGS =  -Wall -Wextra -Werror
 
 TARGET = irc_server
+TARGET_BOT = irc_bot
 
-all: $(TARGET)
+all: $(TARGET) $(TARGET_BOT)
 
 $(TARGET): $(OBJ)
 	$(CC)  $^ -o $(TARGET)
@@ -42,14 +52,21 @@ $(OBJ_PATH)/%.o: $(SRC_PATH)/%.cpp $(HEADER)
 	@mkdir $(OBJ_PATH) 2> /dev/null || true
 	$(CC) $(CFLAGS) -I $(INC) -o $@ -c $<
 
-bot:
-	g++ sources/bot.cpp -o bot
+$(TARGET_BOT): $(OBJ_BOT)
+	$(CC)  $^ -o $(TARGET_BOT)
+
+$(OBJ_PATH_BOT)/%.o: $(SRC_PATH_BOT)/%.cpp $(HEADER_BOT)
+	@mkdir $(OBJ_PATH_BOT) 2> /dev/null || true
+	$(CC) $(CFLAGS) -I $(INC_BOT) -o $@ -c $<
+
 clean:
 	@rm -vf $(OBJ)
-	@rm -vf bot
 	@rmdir $(OBJ_PATH) 2> /dev/null || true
+	@rm -vf $(OBJ_BOT)
+	@rmdir $(OBJ_PATH_BOT) 2> /dev/null || true
 
 fclean: clean
 	@rm -vf $(TARGET)
+	@rm -vf $(TARGET_BOT)
 
 re: fclean all
