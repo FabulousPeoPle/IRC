@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/02/07 12:12:16 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/07 18:17:22 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/08 15:02:57 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,7 @@ namespace ChannelModes
     {
 		/******-UserSpecific-****/
 		O_Creator,
-        o_OperatorPrivilege, // we can keep these here, but make sure they don't mix with the other ones
+        o_OperatorPrivilege,
         v_voicePrivilege,
 		/************************/
 
@@ -63,14 +63,14 @@ namespace ChannelModes
 class Channel
 {
 private:
-	std::string					m_name; // cant be 7 ' ' or ',' anything else id fair game
-	int							m_mode; // change
-	int							m_type; // the scope of the channel local/networkwide
-	std::vector<int>			m_operators; // this vector stores the clientfds of the ops
+	std::string					m_name;
+	int							m_mode;
+	int							m_type;
+	std::vector<int>			m_operators;
 	std::string					m_topic;
 	std::vector<int>			m_members;
 	std::vector<int>			m_invited;
-	std::uint16_t               modes; // need to give em default modes
+	std::uint16_t               modes;
 
 	std::string					m_creatorNick;
 
@@ -78,8 +78,8 @@ private:
 	std::vector<std::string>	m_exceptionBanMasks;
 	std::vector<std::string>	m_inviteMasks;
 
-	std::string					m_password; // boolean
-	int							m_userLimit; // initialized to -1
+	std::string					m_password;
+	int							m_userLimit;
 
 	std::string				m_extractTLD(std::string mask);
 
@@ -137,12 +137,8 @@ public:
     void        			turnOnMode(int modeNum);
     void        			turnOffMode(int modeNum);
 	bool					isInMaskVector(Client &client, std::vector<std::string>& maskVector);
-	bool            		m_isMaskUserMatch(std::string hostname, std::string TLD) const // maybe it should be a friend function
-		{
-		    hostname = hostname.erase(0, hostname.size() - TLD.size());
-		    return (hostname == TLD || TLD.empty());
-		}
-
+	bool            		m_isMaskUserMatch(std::string hostname, std::string TLD);
+	
 	static std::uint16_t	modeBitMasks[NUM_MODES_CHANNEL];
 	static std::string		potentialModes;
 
@@ -151,10 +147,10 @@ public:
         {
             typename T::iterator it = vector.begin();
             typename T::iterator end = vector.end();
-            //std::cout << "printing vector\n";
+            std::cout << "printing vector\n";
             while (it != end)
             {
-                //std::cout << "|" << *it << "|" << std::endl;
+                std::cout << "|" << *it << "|" << std::endl;
                 it++;
             }
         }

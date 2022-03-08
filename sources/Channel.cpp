@@ -148,11 +148,6 @@ bool Channel::isInvited(int clientFd) const
 	return (((std::find(m_invited.begin(), m_invited.end(), clientFd) != m_invited.end()) ? true : false));
 }
 
-// std::string	Channel::m_composeMask(Client & client) const
-// {
-// 	return (client._nickname + "!" + client._username + "@" + client._ip_address);
-// }
-
 std::string	Channel::m_extractTLD(std::string mask)
 {
 	if (mask == "*")
@@ -164,6 +159,12 @@ std::string	Channel::m_extractTLD(std::string mask)
 int Channel::m_getUserLimit(void) const
 {
 	return (m_userLimit);
+}
+
+bool            		Channel::m_isMaskUserMatch(std::string hostname, std::string TLD)
+{
+    hostname = hostname.erase(0, hostname.size() - TLD.size());
+    return (hostname == TLD || TLD.empty());
 }
 
 bool Channel::isInMaskVector(Client &client, std::vector<std::string>& maskVector)
@@ -196,12 +197,10 @@ void	Channel::removeMember(int clientFd)
 {
 	std::vector<int>::iterator it = m_members.begin();
 	std::vector<int>::iterator end = m_members.end();
-	std::cout << "atempting to erase :" << m_name << std::endl;
 	while (it != end)
 	{
 		if (*it == clientFd)
 		{
-			std::cout << "erasing :" << m_name << std::endl;
 			m_members.erase(it);
 			break;
 		}
@@ -281,7 +280,7 @@ void                                Channel::m_addToMaskVector(std::vector<std::
 {
     if (src == "*!*@*" || src == "0" || src == "*")
 		dst.push_back("*");
-    else if (src.substr(0, 6) == "*!*@*." && src.size() > 6) // change to ismask
+    else if (src.substr(0, 6) == "*!*@*." && src.size() > 6)
         dst.push_back(src.erase(0, 5));
 }
 
@@ -332,7 +331,7 @@ int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string
 			}
 			catch (std::exception& e)
 			{
-				//std::cout << "Bad argument: " << e.what() << std::endl;
+				std::cout << "Bad argument: " << e.what() << std::endl;
 				m_userLimit = -1;
 				return (-1);
 			}
@@ -375,7 +374,7 @@ void				Channel::manageSimpleMode(char c, char prefix, std::string& modeChanges)
 		if (!modeNumValue)
 		{
 			if ((modeNum == ChannelModes::s_secret && this->getModeValue(ChannelModes::p_private))
-				|| (modeNum == ChannelModes::p_private && this->getModeValue(ChannelModes::s_secret))) // good example
+				|| (modeNum == ChannelModes::p_private && this->getModeValue(ChannelModes::s_secret)))
 				return ;
 			modeChanges += c;
 			this->turnOnMode(modeNum);

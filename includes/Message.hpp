@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:25 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/05 19:45:29 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/08 15:34:04 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,6 @@ public:
     void    parse(void);
     std::string    m_grabLiteralMsg(char *msg);
     char     *m_trim(char *str);
-    // int     m_trim(char *str, std::string & literalMessage);
     int     m_checkCommand(char *token);
 
 

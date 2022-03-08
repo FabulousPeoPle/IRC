@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerGetters.cpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/10 15:03:24 by azouiten          #+#    #+#             */
-/*   Updated: 2022/01/10 15:03:27 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/08 15:43:58 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,6 @@ int             Server::getSockfd(void) const
 
 std::string          Server::getPort(void)  const
 {
-    // wtf
     return ((this->m_port));
 }
 

@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/07 20:31:21 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/08 15:36:21 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@
 
 // #define BIG_NUMBER 2000000000
 
-////// for ftp nonus //////
+////// for ftp bonus //////
 #include <time.h>
 
 namespace Replies
@@ -211,12 +211,12 @@ typedef struct pollfd           t_pollfd;
 
 std::string strToken(std::string str, std::string delimiterString);
 std::string intToString(int num);
+bool        isAlphaNum(char c);
 
 class Client;
 class Message;
 class Channel;
 class Server;
-// Add this one to client class.
 typedef struct      s_m_socketInfo 
 {
     int family;
@@ -228,7 +228,6 @@ class Server {
     public:
         typedef void (Server::*cmdFun)(Client&);
 
-                                    // constructors are probably going to be useless
                                         Server(void);
                                         Server(std::string port, std::string hostname, std::string serverName, int maxClients);
                                         Server(const Server& serverRef);
@@ -249,20 +248,17 @@ class Server {
 
         std::string                     convertToHostname(t_sockaddr_storage& remoteAddr, int sock_fd);
 
-        //  Might wanna set protection for multiple IP adresses
-
         std::string                     getServName(void) const;
 
         int                             setServerInfo(void);
         void                            setServerHints(int family, int sockType, int flags);
 
-        //  might upgrade it to taking socktype and protocol?
         int                             setSockfd(int family);
 
         int                             setSockfd_in(void);
         int                             setSockfd_in6(void);
 
-        void                            setOperPassword(std::string password); // server password is bo7do
+        void                            setOperPassword(std::string password);
 
         int                             listen(void);
 
@@ -276,11 +272,11 @@ class Server {
         void                            m_managePoll(void);
         int                             m_manageServerEvent(void);
         void                            m_manageClientEvent(int pollIndex);
-        //  Maybe this is usless since we are always going to connect to the same thing
+
         int                             m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, socklen_t addrlen);
         void                            m_poll(void);
         void*                           m_getInAddr(t_sockaddr* addr) const;
-        //void                            m_fillSocketInfo(t_socketInfo& socketInfo, int family, int socktype, int protocol);
+
         void                            m_parse(std::string& str);
         int                             m_manageRecv(std::string message, int clientFd);
         
@@ -302,10 +298,9 @@ class Server {
 
         bool                            m_onlyOps(std::vector<std::string> arguments);
 
-        // void                            m_pongCmd(Client& client);
-        // void                            m_whoCmd(Client& client);
+
         void                            m_p_privMsgCmd_noticeCmd(Client &client, Message msg, std::string target);
-        void                            m_p_namesCmd_listCmd(Client & client,std::string target, std::string cmd); // still not implemented
+        void                            m_p_namesCmd_listCmd(Client & client,std::string target, std::string cmd);
 
         void                            m_pongCmd(Client& client);
         void                            m_joinCmd(Client & client);
@@ -356,7 +351,7 @@ class Server {
         std::string                     m_composeUserModes(Client& client);
         std::string                     m_composeNames(std::string channelName);
         std::string                     m_composeList(std::string channelName);
-        std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);// const?
+        std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);
         std::string                     m_composeWhoIsChannels(Client& client, Client& queryClient, std::string channelName, std::string appliedModes);
 
 
@@ -425,11 +420,11 @@ class Server {
         t_addrinfo*                     m_servinfo;
         t_addrinfo                      m_hints;
         int                             m_authenticatedUserNum;
-        // in case we wanted to do it manually // kinda useless now
+
         t_sockaddr_in                   m_addr_in;
         t_sockaddr_in6                  m_addr_in6;
         int                             m_sockfd;
-        // this might be totally usless
+
         t_socketInfo                    m_socketInfo;
 
         int                             m_poll_count;

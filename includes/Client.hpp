@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:38 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/07 20:16:07 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/08 15:49:20 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,7 +124,7 @@ class Client
         std::vector<std::string>        &getChannels(void);
         std::vector<t_fileData>         &getFiles(void);
         
-        static int                             findMode(char c); // ADD IS AS SERVER OR CLIENT FUNCTION
+        static int                             findMode(char c);
         /////////////////
         //// SETTERS ////
         /////////////////
@@ -151,6 +151,7 @@ class Client
         void		                    turnOffMode(int modeNum, std::string channelName);
         void                            pushChannel(std::string channelName, std::uint8_t modes);
         void                            popChannel(std::string channelName);
+        void                            deleteFiles(void);
         void                            manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, int paramToUseIndex);
 
         Client & operator=(Client const & rhs);

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/14 16:51:35 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/03 13:22:36 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/08 15:55:12 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -307,7 +307,17 @@ int			Client::findChanMode(char mode) const
     }
 }
 
-int     Client::findMode(char c)// ADD IS AS SERVER OR CLIENT FUNCTION
+void	Client::deleteFiles(void)
+{
+	for (int i = 0; i < recievedFiles.size(); ++i)
+	{
+		free(recievedFiles[i].content);
+		recievedFiles[i].content = NULL;
+	}
+	recievedFiles.clear();
+}
+
+int     Client::findMode(char c)
 {
     switch (c)
     {

@@ -21,7 +21,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
         case Replies::RPL_BOUNCE:
             this->m_send(clientFd, ':' + this->m_serverName + " 005 " + m_clients[clientFd].getNickname() + " :Sir t9awed hna 'DS9.GeekShed.net', port '6667'\r\n");
             break;
-        case Replies::RPL_USERHOST : // causes BitchX segmentation fault
+        case Replies::RPL_USERHOST :
             this->m_send(clientFd, ":" + this->m_serverName + " 302 " + message + END_STRING);
             break;
         case Replies::ERR_NICKNAMEINUSE :\
@@ -31,7 +31,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, ":" + this->m_serverName + " 432 " + message + " :Erroneous nickname\r\n");
             break;
         case Replies::ERR_NEEDMOREPARAMS :\
-            this->m_send(clientFd, ':' + this->m_serverName + " 461 " + message + " :Not enough parameters\r\n"); // needs the name of the command
+            this->m_send(clientFd, ':' + this->m_serverName + " 461 " + message + " :Not enough parameters\r\n");
             break;
         case Replies::ERR_ALREADYREGISTRED :\
             this->m_send(clientFd, ':' + this->m_serverName + " 462 " + message + " :Unauthorized command (already registered)\r\n");
@@ -81,14 +81,12 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
         case Replies::RPL_PINGREQUEST:
             this->m_send(clientFd,':' + this->m_serverName + " PONG " + this->m_serverName + " :" + m_clients[clientFd].getNickname() + END_STRING);
             break;
-        // the next too need the channel name (to be concidered when refactoring)
         case Replies::ERR_BANNEDFROMCHAN :\
             this->m_send(clientFd, ":" + this->m_serverName + " 474 " + message + " :Cannot join channel (+b)\r\n");
             break;
         case Replies::ERR_BADCHANNELKEY :\
             this->m_send(clientFd, ":" + this->m_serverName + " 475 " + message + " :Cannot join channel (+k)\r\n");
             break;
-             // should change after refactoring
         case Replies::ERR_NOSUCHCHANNEL :\
             this->m_send(clientFd, ':' + this->m_serverName + " 403 " + message + " :No such channel\r\n");
             break;
@@ -101,7 +99,6 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
         case Replies::ERR_NOSUCHNICK :\
             this->m_send(clientFd, ':' + this->m_serverName + " 401 " + message + " :No such nick/channel\r\n");
             break;
-            // needs to change
         case Replies::ERR_TOOMANYTARGETS :\
             this->m_send(clientFd, ':' + this->m_serverName + " 407 " + m_clients[clientFd].getMessageQueue().front().getArgs().front() + " :too many recipients.\r\n");
             break;

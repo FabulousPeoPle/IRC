@@ -6,14 +6,12 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/05 15:30:49 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/05 19:46:04 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/08 15:45:46 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <string>
 #include <iostream>
-
-// Needs refactoring
 
 std::string strToken(std::string str, std::string delimiterString)
 {    

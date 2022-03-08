@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Message.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: azouiten <azouiten@student.42.fr>          +#+  +:+       +#+        */
+/*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/12/08 14:05:23 by azouiten          #+#    #+#             */
-/*   Updated: 2022/03/05 19:53:30 by azouiten         ###   ########.fr       */
+/*   Updated: 2022/03/08 15:38:18 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,10 +25,10 @@ Message::Message(Message const & src): _literalMsg("")
 
 Message & Message::operator=(Message const & rhs)
 {
-    // discuss norm to remove one of these
     message = rhs.message;
     command = rhs.command;
     arguments = rhs.arguments;
+    _literalMsg = rhs._literalMsg;
     return (*this);
 }
 
@@ -70,7 +70,6 @@ int  Message::m_checkCommand(char *token)
     }
     return (1);
 }
-// also needs a redo
 
 std::string Message::m_grabLiteralMsg(char *msg)
 {
@@ -110,9 +109,6 @@ void    Message::parse(void)
         if (token)
             arguments.push_back(token);
     }
-    //std::cout << "|" << command << "|" << std::endl;
-    printVector(arguments, " arguments ");
-    //std::cout << _literalMsg << std::endl;
     free(msgbuffer);
 }
 
