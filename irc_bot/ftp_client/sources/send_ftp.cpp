@@ -9,7 +9,7 @@
 #include <limits>
 #include <iostream>
 #include <fstream>
-#include "utils.hpp"
+#include "ssplit.hpp"
 
 #define END_STRING "\r\n"
 struct sockaddr_in  serv_addr;
@@ -343,7 +343,7 @@ int startReceiver(std::string host, int port, std::string passwd, std::string fi
 
 int main(int ac, char *av[])
 {
-    if (ac == 5 && std::string(av[5]) == "1")
+    if (ac == 5 && std::string(av[4]) == "1")
     {
         startReceiver(av[1], atoi(av[2]), av[3], av[4]);
         return 0;
