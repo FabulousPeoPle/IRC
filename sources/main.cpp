@@ -21,7 +21,7 @@ int main(int argc, char **argv)
         return (-1);
     }
     
-    Server myServer(argv[1], "", "FabulousPP@1337.ma", 200);
+    Server myServer(argv[1], "", "FabulousPP@1337.ma", 10);
 
     myServer.initializeCmdFuncs();
     myServer.setOperPassword("password");

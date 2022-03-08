@@ -74,12 +74,14 @@ Server::Server(std::string port, std::string hostname, std::string name, int max
 
 Server::Server(const Server& serverRef) : m_maxClients(serverRef.m_maxClients)
 {
+    (void)serverRef;
     *this = serverRef;
 }
 
 Server&         Server::operator=(const Server& serverRef)
 {
     std::cout << "Server not copied, reference returned\n";
+    (void)serverRef;
     return (*this);
 }
 
@@ -120,19 +122,19 @@ int             Server::m_setSocket(t_socketInfo socketInfo, t_sockaddr* addr, s
 
     if ((this->m_sockfd = socket(socketInfo.family, socketInfo.socktype, socketInfo.protocol)) == -1)
     {
-        perror("socket");
+        std::perror("socket");
         return (-1);
     }
     if (setsockopt(this->m_sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)))
     {
-        perror("setsocketopt");
+        std::perror("setsocketopt");
         if (this->m_servinfo)
             freeaddrinfo(this->m_servinfo);
         exit(1);
     }
     if ((bind(this->m_sockfd, addr, addrlen)))
     {
-        perror("bind");
+        std::perror("bind");
         return (-2);
     }
     fcntl(this->m_sockfd, F_SETFL, O_NONBLOCK);
@@ -206,7 +208,7 @@ int             Server::listen(void)
 {
     if (::listen(this->m_sockfd, MAX_CONNECTIONS))
     {
-        perror("listen: ");
+        std::perror("listen: ");
         if (this->m_servinfo)
             freeaddrinfo(this->m_servinfo);
         exit(-1);
@@ -220,7 +222,7 @@ void            Server::m_poll(void)
     this->m_poll_count = poll(this->m_pfds.data(), this->m_pfds.size(), -1);
     if (this->m_poll_count == -1)
     {
-        perror("poll: ");
+        std::perror("poll: ");
         if (this->m_servinfo)
             freeaddrinfo(this->m_servinfo);
         exit(-1);
@@ -258,7 +260,7 @@ int            Server::m_manageServerEvent(void)
 
     if (newFd == -1)
     {
-        perror("accept: ");
+        std::perror("accept: ");
         return (-1);
     }
 
@@ -266,13 +268,13 @@ int            Server::m_manageServerEvent(void)
 
     if (setsockopt(newFd, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes)))
     {
-        perror("setsocketopt");
+        std::perror("setsocketopt");
         if (this->m_servinfo)
             freeaddrinfo(this->m_servinfo);
         exit(1);
     }
 
-    if (this->m_clients.size() < this->m_maxClients)
+    if (static_cast<int>(this->m_clients.size()) < this->m_maxClients)
     {
         fcntl(newFd, F_SETFL, O_NONBLOCK);
         this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
@@ -479,7 +481,7 @@ void            Server::m_listMasks(std::vector<std::string> maskList, char mode
         default:
             return;
     }
-    for (int i = 0; i < maskList.size(); ++i)
+    for (int i = 0; i < static_cast<int>(maskList.size()); ++i)
     {
         std::string mask;
         
@@ -511,7 +513,7 @@ std::string            Server::m_executeModes(std::vector<std::string> arguments
         modeChanges += prefix;
         start = 1;
     }
-    for (int i = start; i < modes.size(); ++i)
+    for (int i = start; i < static_cast<int>(modes.size()); ++i)
     {
         if (m_isAttributeSetterMode(modes[i]))
         {
@@ -554,7 +556,7 @@ std::string            Server::m_executeModes(std::vector<std::string> arguments
 
 bool            Server::m_areModesMasks(std::string modes)
 {
-    for (int i = 0; i < modes.size(); ++i)
+    for (int i = 0; i < static_cast<int>(modes.size()); ++i)
     {
         if (!m_isMaskMode(modes[i]))
             return (false);
@@ -577,7 +579,7 @@ bool            Server::m_isModesSyntaxValid(std::vector<std::string> arguments)
         modes = arguments[1].erase(0, 1);
     else
         modes = arguments[1];
-    for (int i = start; i < modes.size(); ++i)
+    for (int i = start; i < static_cast<int>(modes.size()); ++i)
     {
         if (m_isAttributeSetterMode(modes[i]))
             attributeSetters += 1;
@@ -643,7 +645,7 @@ void            Server::m_channelModeCmd(Client& client, Message& message)
     }
     if (arguments.size() == 1)
     {
-        m_reply(client.getFd(), Replies::RPL_CHANNELMODEIS, m_composeChannelModes(channelName));
+        m_reply(client.getFd(), Replies::RPL_CHANNELMODEIS, channelName + ' ' + m_composeChannelModes(channelName));
         return ;
     }
     if (!m_isClientOper(client, arguments[0]) && !client.getModeValue(UserModes::oper)) 
@@ -757,7 +759,6 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile, std::string c
 {
     std::string     line;
     std::string     motd;
-    char            c;
     int             count;
     int             cursor;
 
@@ -769,7 +770,7 @@ std::string         Server::m_composeMotd(std::ifstream& motdFile, std::string c
     }
     count = 0;
     cursor = 0;
-    while (cursor < motd.size())
+    while (cursor < static_cast<int>(motd.size()))
     {
         if (count == MOTD_LENGTH_LINE + 1) 
         {
@@ -913,7 +914,7 @@ void                Server::m_whoisCmd(Client& client)
     std::vector<std::string> queryClientChannels = queryClient.getChannels();
     std::string appliedModes;
 
-    for (int i = 0; i < queryClientChannels.size(); ++i)
+    for (int i = 0; i < static_cast<int>(queryClientChannels.size()); ++i)
     {
         appliedModes = "";
         if (queryClient.getModeValue(ChannelModes::O_Creator, queryClientChannels[i])
@@ -973,9 +974,9 @@ void                Server::m_topicCmd(Client& client)
             if (client.getModeValue(ChannelModes::o_OperatorPrivilege, channelName)
                     || client.getModeValue(ChannelModes::O_Creator, channelName) || client.getModeValue(UserModes::oper))
             {
-                channel.getTopic() = topicToSet;
-                m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + ":" + topicToSet), channelName);
-                m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + ":" + topicToSet), client.getNickname());
+                channel.getTopic() = topicToSet.erase(0, 1);
+                m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + " :" + topicToSet), channelName);
+                m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + " :" + topicToSet), client.getNickname());
             }
 
             else
@@ -983,9 +984,9 @@ void                Server::m_topicCmd(Client& client)
         }
         else
         {
-            channel.getTopic() = topicToSet;
-            m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + ":" + topicToSet), channelName);
-            m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + ":" + topicToSet), client.getNickname());
+            channel.getTopic() = topicToSet.erase(0, 1);
+            m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + " :" + topicToSet), channelName);
+            m_p_privMsgCmd_noticeCmd(client, Message(" TOPIC " + channelName + " :" + topicToSet), client.getNickname());
         }
     }
     
@@ -1033,7 +1034,7 @@ int                 countChars(std::string str)
 {
     int count = 0;
 
-    for (int i = 0; i < str.size(); ++i)
+    for (int i = 0; i < static_cast<int>(str.size()); ++i)
     {
         if (str[i] == '*')
             ++count;
@@ -1090,7 +1091,7 @@ void                Server::m_manageClientEvent(int pollIndex)
         if (bytesRead == 0)
             std::cout << "Client disconnected.\n";
         else
-            perror("recv: ");
+            std::perror("recv: ");
 
         int    badFd = this->m_pfds[pollIndex].fd;
         m_quitCmd(m_clients[badFd]);
@@ -1285,10 +1286,7 @@ int Server::m_send(int toFd, std::string message)
     {
         bytesSent = send(toFd, message.data() + total, size, 0);
         if (bytesSent == -1)
-        {
-            perror("Send");
             return (-1);
-        }
         total += bytesSent;
         size -= bytesSent;
     }
@@ -1375,7 +1373,7 @@ void    Server::m_isonCmd(Client & client)
 
     std::string isOnServer = "";
 
-    for (int i = 0; i < arguments.size(); ++i)
+    for (int i = 0; i < static_cast<int>(arguments.size()); ++i)
     {
         if (m_isOnServer(arguments[i]))
             isOnServer += arguments[i] + ' ';
@@ -1455,16 +1453,14 @@ void                    Server::m_quitCmd(Client& client)
 {
     if (client.isAuthComplete())
     {
-        std::string messageToSend = "ERROR: Closing Link: " + client.getUsername() + "(" ;
-        if (client.getMessageQueue().size())
-            messageToSend += client.getMessageQueue().front().getLiteralMsg().erase(0, 1);
-        messageToSend +=  ") " + client.getHostname() + " (Quit: "
+        std::string literalMsg = "";
+        if (!client.getMessageQueue().empty() && client.getMessageQueue().front().getLiteralMsg().size())
+            literalMsg = client.getMessageQueue().front().getLiteralMsg().erase(0, 1);
+        std::string messageToSend = "ERROR: Closing Link: " + client.getUsername() + "(" 
+                                    + literalMsg + ") " + client.getHostname() + " (Quit: "
                                         + client.getNickname() + ")" + END_STRING;
         if (this->m_send(client.getFd(), messageToSend) < 0)
-        {
             std::cout << "Error: send\n";
-            exit(1);
-        }
         std::vector<std::string>::iterator it = client.getChannels().begin();
         std::vector<std::string>::iterator end = client.getChannels().end();
         while (it != end)
@@ -1473,6 +1469,8 @@ void                    Server::m_quitCmd(Client& client)
             m_channels[*it].removeMember(client.getFd());
             m_channels[*it].removeOp(client.getFd());
             m_channels[*it].removeInvited(client.getFd());
+            if (!m_channels[*it].getMembers().size())
+                m_channels.erase(*it);
             it++;
         }
         m_p_privMsgCmd_noticeCmd(client, Message(" QUIT :Quit: "  + client.getNickname()), client.getNickname());
@@ -1537,7 +1535,7 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
         m_reply(clientFd, Replies::ERR_ALREADYREGISTRED, JOIN_COMMAND);
     else
     {
-        if (chan.getMembers().size() >= chan.m_getUserLimit() && chan.m_getUserLimit() >= 0)
+        if (static_cast<int>(chan.getMembers().size()) >= chan.m_getUserLimit() && chan.m_getUserLimit() >= 0)
         {
             m_reply(clientFd, Replies::ERR_CHANUSERLIMIT, channelName);
             return;
@@ -1548,7 +1546,7 @@ void                    Server::m_addClientToChan(int clientFd, std::string chan
             m_channels[channelName].removeInvited(clientFd);
         chan.addMember(clientFd);
         m_clients[clientFd].pushChannel(channelName, PEASEANT_MODES);
-        m_reply(clientFd, Replies::RPL_CHANNELMODEIS, m_composeChannelModes(channelName));
+        m_reply(clientFd, Replies::RPL_CHANNELMODEIS, channelName + ' ' +  m_composeChannelModes(channelName));
         m_reply(clientFd, Replies::RPL_TOPIC, m_composeRplTopic(m_channels[channelName]));
         m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message("JOIN :" + channelName), channelName);
         m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message("JOIN :" + channelName), m_clients[clientFd].getNickname());
@@ -1567,7 +1565,7 @@ void                    Server::m_addChannel(int clientFd, std::string channelNa
     m_clients[clientFd].pushChannel(channelName, OWNER_MODES);
     m_clients[clientFd].turnOnMode(ChannelModes::O_Creator, channelName);
     m_clients[clientFd].turnOnMode(ChannelModes::o_OperatorPrivilege, channelName);
-    m_reply(clientFd, Replies::RPL_CHANNELMODEIS, m_composeChannelModes(channelName));
+    m_reply(clientFd, Replies::RPL_CHANNELMODEIS, channelName + ' ' + m_composeChannelModes(channelName));
     m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message("JOIN :" + channelName), m_clients[clientFd].getNickname());
     m_p_privMsgCmd_noticeCmd(m_clients[clientFd], Message(":" + channelName + " supported commands :INVITE, PART, KICK, MODE, NAMES, LIST "),  m_clients[clientFd].getNickname());
     m_p_namesCmd_listCmd(m_clients[clientFd], channelName, NAMES_COMMAND);
@@ -1634,8 +1632,6 @@ void                        Server::m_partCmd(Client &client)
         return ;
     }
     std::vector<std::string> channelNames;
-    std::vector<std::string>::iterator it = msg.getArgs().begin();
-    std::vector<std::string>::iterator end = msg.getArgs().end();
     std::vector<std::string> &args = msg.getArgs();
     if (args.empty())
     {
@@ -1792,7 +1788,6 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
     if (target.at(0) == LOCAL_CHAN || target.at(0) == NETWORKWIDE_CHAN)
     {
         
-        std::map<std::string, Channel>::iterator it_chan = m_channels.find(target);
         Channel & chan = m_channels[target];
         std::vector<int> &members = chan.getMembers();
         std::vector<int>::iterator it = members.begin();
@@ -1806,11 +1801,7 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
         }
     }
     else
-    {
-        std::map<std::string, int>::iterator it_user = m_nicknames.find(target);
-        int clientFd = m_nicknames[target];
         m_send(m_nicknames[target], ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
-    }
 }
 
 void            Server::m_kickCmd(Client &client)
@@ -1890,7 +1881,7 @@ void            Server::m_inviteCmd(Client &client)
     else if (!client.getModeValue(ChannelModes::O_Creator, chanName)  && !client.getModeValue(ChannelModes::o_OperatorPrivilege, chanName)  && !client.getModeValue(UserModes::oper) && m_channels[chanName].getModeValue(ChannelModes::i_inviteOnly))
         m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, "");
     else if (m_channels[chanName].isMember(m_nicknames[target]))
-        m_reply(client.getFd(), Replies::ERR_USERONCHANNEL, "");
+        m_reply(client.getFd(), Replies::ERR_USERONCHANNEL, target + ' ' + chanName);
     else
     {
         m_p_privMsgCmd_noticeCmd(client, Message("INVITE " + client.getNickname() + " :" + chanName), target);
@@ -2056,13 +2047,10 @@ void            Server::m_sendCmd(Client &client)
         m_reply(client.getFd(), Replies::ERR_NEEDMOREPARAMS, SEND_COMMAND);
     }
     else if (m_nicknames.find(msg.getArgs().front()) == m_nicknames.end())
-    {
-        std::cout << "not an existing nickname\n";
         m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, msg.getArgs().front());
-    }
     else if (m_validArgsFtp(msg, fileData))
     {
-        int readBytes = 0;
+        unsigned long readBytes = 0;
         int rec = 0;
         char *buffer = (char*)malloc(sizeof(char) * fileData.length + 1);
         m_reply(client.getFd(), Replies::RPL_READYTORECIEVE, "");
@@ -2075,10 +2063,7 @@ void            Server::m_sendCmd(Client &client)
             else if (std::chrono::steady_clock::now() - start >= std::chrono::seconds(10))
                 return ;
             else if (rec <= 0)
-            {
-                perror("recv: ");
                 continue ;
-            }
             if ((!readBytes && std::chrono::steady_clock::now() - start >= std::chrono::seconds(1)) || int(std::chrono::steady_clock::now() - start >= std::chrono::seconds(10)))
             {
                 m_reply(client.getFd(), Replies::ERR_FTPTIMEOUT, "");
@@ -2087,12 +2072,10 @@ void            Server::m_sendCmd(Client &client)
         }
         FILE *dest = fopen("ftp_text", "wb");
         int fd = fileno(dest);
-        int i = 0;
+        unsigned long i = 0;
 
         write (fd, buffer, fileData.length);
-        fileData.content = (char*)malloc(sizeof(char) * (fileData.length + 2));
-        fileData.content[fileData.length] = '\r';
-        fileData.content[fileData.length + 1] = '\n';
+        fileData.content = (char*)malloc(sizeof(char) * (fileData.length));
         while (i < fileData.length)
         {
             fileData.content[i] = buffer[i];
@@ -2118,21 +2101,16 @@ void            Server::m_fetchCmd(Client &client)
         
         FILE *dest = fopen("ftp_text_fetch", "wb");
         int fd = fileno(dest);
-        int readBytes = 0;
-        char * acknowledgement[3];
-        int rec = 0;
 
         write (fd, fileData.content, fileData.length);
-        std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-        while (!readBytes && std::chrono::steady_clock::now() - start >= std::chrono::seconds(10))
-        {
-            rec = recv(client.getFd(), acknowledgement, 3, 0);
-            readBytes += (rec >= 0) ? rec : 0;
-        }
-        if (std::chrono::steady_clock::now() - start >= std::chrono::seconds(10))
-            exit(1);
+        usleep(100);
         while (sentBytes < fileData.length)
-            sentBytes += send(client.getFd(), fileData.content + sentBytes, fileData.length - sentBytes, 0);
+        {
+            int hold = send(client.getFd(), fileData.content + sentBytes, fileData.length - sentBytes, 0);
+            if (hold == -1)
+                continue;
+            sentBytes += hold;
+        }
         free(fileData.content);
         m_clients[m_nicknames[fileData.reciever]].getFiles().erase(m_clients[m_nicknames[fileData.reciever]].getFiles().begin());
     }

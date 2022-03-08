@@ -57,10 +57,10 @@ public:
         {
             typename T::iterator it = vector.begin();
             typename T::iterator end = vector.end();
-            //std::cout << "printing vector " << name << std::endl;
+            std::cout << "printing vector " << name << std::endl;
             while (it != end)
             {
-                //std::cout << "|" << *it << "|" << std::endl;
+                std::cout << "|" << *it << "|" << std::endl;
                 it++;
             }
         }

@@ -1,7 +1,7 @@
 
 #include "Channel.hpp"
 
-Channel::Channel(void) : m_topic(""), m_userLimit(-1), m_password("") {}
+Channel::Channel(void) : m_topic(""), m_password(""), m_userLimit(-1){}
 Channel::Channel(int mode, int opFd, std::string name, char type, std::string password) : m_name(name), m_mode(mode), m_type(type), m_password(password)
 {
 	modes = 0;

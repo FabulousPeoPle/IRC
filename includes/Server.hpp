@@ -131,7 +131,7 @@ namespace Replies
         ERR_USERONCHANNEL = 443,
         RPL_NAMREPLY = 353,
         RPL_ENDOFNAMES = 366,
-        RPL_LIST = 321,
+        RPL_LIST = 322,
         RPL_LISTEND = 323,
         ERR_NONICKNAMEGIVEN = 431,
         ERR_INVITEONLYCHAN = 473,

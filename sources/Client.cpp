@@ -296,7 +296,7 @@ int			Client::findChanMode(char mode) const
 
 void	Client::deleteFiles(void)
 {
-	for (int i = 0; i < recievedFiles.size(); ++i)
+	for (unsigned long i = 0; i < recievedFiles.size(); ++i)
 	{
 		free(recievedFiles[i].content);
 		recievedFiles[i].content = NULL;

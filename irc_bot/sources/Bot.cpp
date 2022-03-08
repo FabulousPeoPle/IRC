@@ -119,6 +119,7 @@ int Bot::m_qHandler(std::queue<std::string> &msg_q)
     while (msg_q.empty() != true)
     {
         msg = msg_q.front();
+        std::cout << msg << std::endl;
 	 	msg_q.pop();
 		m_cmdHandler(msg);
     }
@@ -127,8 +128,7 @@ int Bot::m_qHandler(std::queue<std::string> &msg_q)
 
 void Bot::m_channelSearch(std::string msg)
 {
-    std::cout << msg << std::endl;
-    for(int i=0; i < this->joinedChannels.size(); i++)
+    for(unsigned long i = 0; i < this->joinedChannels.size(); i++)
         if (msg.find(joinedChannels[i]) !=  std::string::npos)
             m_writeChanneLog(joinedChannels[i], msg);
 }
@@ -147,7 +147,8 @@ void Bot::m_cmdHandler(std::string msg)
 int Bot::m_writeChanneLog(std::string channelName, std::string msgLog)
 {
     std::string logDirName = "./bota_logs";
-    struct stat st = {0};
+    struct stat st;
+    memset(&st, '\0', sizeof(st));
     std::string channelPath = logDirName + "/" + channelName;
     FILE * logFile;
     std::string modMsgLog;
@@ -172,7 +173,7 @@ int Bot::m_invCmdHandler(t_msg &p_msg)
         return -1;
     m_send("JOIN " + s_msg[0]);
     this->joinedChannels.push_back(s_msg[0]);
-    m_privMsg(s_msg[0], "I shall thank you for the invite " + p_msg.nick);
+    m_privMsg(s_msg[0], "Ha wa7ed salaaamo 3alikom " + p_msg.nick);
     return 1;
 }
 
@@ -189,14 +190,14 @@ int Bot::m_pmCmdHandler(t_msg &p_msg)
     else if (s_msg.size() == 2)
     {
         if (s_msg[1] == "time")
-            m_privMsg(p_msg.args, "It's " + CurrentTime());
+            m_privMsg(p_msg.nick, "It's " + CurrentTime());
     }
     else if (s_msg.size() == 3)
     {
         if (s_msg[1] == "whatis")
         {
             wiki_desc(s_msg[2], temp);
-            m_privMsg(p_msg.args, temp);
+            m_privMsg(p_msg.nick, temp);
         }
     }
     return 1;
@@ -245,7 +246,7 @@ int Bot::m_cmdDispatcher(t_msg p_msg)
 
 int Bot::m_privMsg(std::string to, std::string msg)
 {
-    std::string privMsgStr = "PRIVMSG " + to + ":" + msg;
+    std::string privMsgStr = "PRIVMSG " + to + " :" + msg;
     m_channelSearch(privMsgStr);
     m_send(privMsgStr);
     return 0;
