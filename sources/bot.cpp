@@ -42,7 +42,8 @@ int main(int argc, char const *argv[])
     // sleep(2);
     // send(sock , auth1 , strlen(auth1) , 0 );
 
-
+    while (true)
+    ;
     read(sock, buffer, 1024);
     printf("%s\n",buffer );
     // printf("Hello message sent\n");

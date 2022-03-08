@@ -36,7 +36,7 @@ int ssplit(std::string str, std::string delim, std::queue<std::string> &msg)
 
         str.erase(0, pos + delim.length());  /* erase() function store the current positon and move to next token. */
     }
-	if (msg.size() == 0)
+	if (str.size() != 0)
 		msg.push(str);
     // cout << "split remain:  " + str + "||"<< endl;
     return 0;

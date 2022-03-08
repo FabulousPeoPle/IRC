@@ -14,7 +14,7 @@
 #include "Channel.hpp"
 
 Channel::Channel(void) : m_topic(""), m_userLimit(-1), m_password("") {}
-
+// TODO: add a static default no topic
 Channel::Channel(int mode, int opFd, std::string name, char type, std::string password) : m_name(name), m_mode(mode), m_type(type), m_password(password)
 {
 	m_operators.push_back(opFd);
@@ -196,11 +196,12 @@ void	Channel::removeMember(int clientFd)
 {
 	std::vector<int>::iterator it = m_members.begin();
 	std::vector<int>::iterator end = m_members.end();
-	
+	std::cout << "atempting to erase :" << m_name << std::endl;
 	while (it != end)
 	{
 		if (*it == clientFd)
 		{
+			std::cout << "erasing :" << m_name << std::endl;
 			m_members.erase(it);
 			break;
 		}
@@ -327,7 +328,7 @@ int					Channel::manageAttribute(char mode, char prefix, std::vector<std::string
 			}
 			catch (std::exception& e)
 			{
-				std::cout << "Bad argument: " << e.what() << std::endl;
+				//std::cout << "Bad argument: " << e.what() << std::endl;
 				m_userLimit = -1;
 				return (-1);
 			}
