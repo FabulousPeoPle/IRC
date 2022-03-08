@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:41:32 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/08 15:36:21 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/08 15:56:47 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,7 +57,6 @@
 
 #define END_STRING "\r\n"
 
-// #define BIG_NUMBER 2000000000
 
 ////// for ftp bonus //////
 #include <time.h>
