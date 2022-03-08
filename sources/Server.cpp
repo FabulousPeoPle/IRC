@@ -6,7 +6,7 @@
 /*   By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/11 16:40:51 by ohachim           #+#    #+#             */
-/*   Updated: 2022/03/08 15:54:08 by ohachim          ###   ########.fr       */
+/*   Updated: 2022/03/08 15:55:44 by ohachim          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -2075,8 +2075,6 @@ void            Server::m_sendCmd(Client &client)
         int readBytes = 0;
         int rec = 0;
         char *buffer = (char*)malloc(sizeof(char) * fileData.length + 1);
-        // fileData.content = (char*)malloc(sizeof(char) * fileData.length);
-        // bzero(fileData.content, fileData.length);
         m_reply(client.getFd(), Replies::RPL_READYTORECIEVE, "");
         std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
         while (readBytes < fileData.length)
