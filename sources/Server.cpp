@@ -320,7 +320,7 @@ std::string     Server::m_composeChannelModes(std::string channelName)
     }
     if (channelModes.size() == 1)
         channelModes = "";
-    return (channel.getName() + ' ' + channelModes);
+    return (channelModes);
 }
 
 bool            Server::m_isUserSpecificChannelMode(char c) const
@@ -1282,6 +1282,7 @@ int Server::m_send(int toFd, std::string message)
     int size = message.size();
     int total = 0;
 
+    std::printf("the message sent %s===\n", message.c_str());
     while (size)
     {
         bytesSent = send(toFd, message.data() + total, size, 0);
@@ -1806,6 +1807,7 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
 
 void            Server::m_kickCmd(Client &client)
 {
+    std::cout << "we enter the kick dungeon\n";
     Message& msg = client.getMessageQueue().front();
     std::vector<std::string>    chans;
     std::vector<std::string>    nicks;
@@ -1826,25 +1828,28 @@ void            Server::m_kickCmd(Client &client)
         {
             while (it_nick != end_nick)
             {
-                // printVector(m_channels[*it_chan].getMembers(), "members");
-                // printVector(m_channels[*it_chan].getOps(), "opers");
                 m_p_privMsgCmd_noticeCmd(client, Message("KICK " + *it_nick + " " + kickMsg), *it_nick);
                 m_channels[*it_chan].removeMember(m_nicknames[*it_nick]);
                 m_channels[*it_chan].removeOp(m_nicknames[*it_nick]);
                 m_clients[m_nicknames[*it_nick]].popChannel(*it_chan);
+                if (!m_channels[*it_chan].getMembers().size())
+                    m_channels.erase(*it_chan);
                 it_nick++;
             }
         }
         else if (!m_channels[*it_chan].isMember(client.getFd()))
             m_reply(client.getFd(), Replies::ERR_NOTONCHANNEL, "");
-        else if (!m_channels[*it_chan].isOp(client.getFd()) && !client.getModeValue(UserModes::oper))
+        else if (!client.getModeValue(ChannelModes::o_OperatorPrivilege, *it_chan)
+            && !client.getModeValue(ChannelModes::O_Creator, *it_chan) 
+            && !client.getModeValue(UserModes::oper))
             m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, "");
     }
     else
     {
         while (it_chan != end_chan)
         {
-            if (m_channels[*it_chan].isOp(client.getFd()) || client.getModeValue(UserModes::oper))
+            if (client.getModeValue(ChannelModes::o_OperatorPrivilege, *it_chan)
+                || client.getModeValue(ChannelModes::O_Creator, *it_chan) || client.getModeValue(UserModes::oper))
             {
                 m_channels[*it_chan].removeMember(m_nicknames[*it_nick]);
                 m_channels[*it_chan].removeOp(m_nicknames[*it_nick]);
@@ -1855,6 +1860,8 @@ void            Server::m_kickCmd(Client &client)
                 m_reply(client.getFd(), Replies::ERR_NOTONCHANNEL, "");
             else
                 m_reply(client.getFd(), Replies::ERR_CHANOPRIVSNEEDED, "");
+            if (!m_channels[*it_chan].getMembers().size())
+                m_channels.erase(*it_chan);
             it_nick++;
             it_chan++;
         }

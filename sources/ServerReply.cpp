@@ -141,7 +141,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " :You're not channel/server operator\r\n");
             break;
         case Replies::ERR_WRONGCHANMODESYNTAX:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + " :WRONG USAGE\r\n");
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_WRONGCHANMODESYNTAX, this->m_clients[clientFd].getNickname()) + ' ' + message + " :WRONG USAGE\r\n");
             break;
         case Replies::ERR_USERONCHANNEL:
             this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_USERONCHANNEL, this->m_clients[clientFd].getNickname()) + ' ' + message + " :is already on channel\r\n");
@@ -159,7 +159,7 @@ void    Server::m_reply(int clientFd, int replyCode, std::string message)
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_LISTEND, this->m_clients[clientFd].getNickname()) + ' ' + message +" End of /LIST\r\n");
             break;
         case Replies::ERR_USERNOTINCHANNEL:
-            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_CHANOPRIVSNEEDED, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
+            this->m_send(clientFd, m_makeReplyHeader(Replies::ERR_USERNOTINCHANNEL, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
             break;
         case Replies::RPL_UNIQOPIS:
             this->m_send(clientFd, m_makeReplyHeader(Replies::RPL_UNIQOPIS, this->m_clients[clientFd].getNickname()) + ' ' + message + END_STRING);
