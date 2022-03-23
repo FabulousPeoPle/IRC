@@ -141,6 +141,11 @@ namespace Replies
         RPL_ISON = 303,
         /*************************/
 
+        /*********-WHO-***********/
+        RPL_WHOREPLY = 352,
+        RPL_ENDOFWHO = 315,
+        /*************************/
+
         /***** our own replies *****/
         /***** ftp replies *****/
         RPL_FILERECIEVED = 900,
@@ -178,8 +183,9 @@ namespace Replies
 #define INVITE_COMMAND      "INVITE"
 #define SEND_COMMAND        "SEND"
 #define FETCH_COMMAND       "FETCH"
+#define WHO_COMMAND         "WHO"
 
-#define NUM_COMMANDS 25
+#define NUM_COMMANDS 26
 
 #define MOTD_LENGTH_LINE 80
 
@@ -307,7 +313,15 @@ class Server {
         void                            m_operCmd(Client& client);
         void                            m_whoCmd(Client& client);
         void                            m_userModeCmd(Client& client, Message& message);
+        void                            m_whoCmd(Client& client);
         
+
+        std::vector<std::string>        m_getMatchingChannels(Client& client,  const std::string& mask);
+
+        std::vector<std::string>        m_getWhoUsers(Client& client);
+        std::vector<std::string>        m_getWhoUsers(Client& client, std::vector<std::string> channels, bool operatorsOnly);
+        std::vector<std::string>        m_getWhoUsers(Client& client, const std::string& mask, bool operatorsOnly);
+
 
         template <typename T>
         void    printVector(T &vector, std::string name)
@@ -335,6 +349,7 @@ class Server {
         std::string                     m_composeList(std::string channelName);
         std::string                     m_composeUserNotInChannel(std::string channelName, std::string clientNickname);
         std::string                     m_composeWhoIsChannels(Client& client, Client& queryClient, std::string channelName, std::string appliedModes);
+        std::string                     m_composeWhoQuery(std::vector<std::string>& whoUsers);
 
 
         int                             m_manageChannelModes(char mode, char prefix, std::vector<std::string> arguments, std::string& modeChanges); // turn arguments into references?
@@ -349,7 +364,7 @@ class Server {
         bool                            m_isChannelPrefix(char c) const;
         bool                            m_isUser(Client& client) const;
         bool                            m_isMaskUserMatch(std::string nickname, std::string TLD);
-        bool                            m_isMask(std::string str);
+        bool                            m_isHostnameMask(std::string str);
         bool                            m_isUserSpecificChannelMode(char c) const;
         bool                            m_isAttributeSetterMode(char c) const;
         bool                            m_isSimpleChannelMode(char c) const;
@@ -357,6 +372,7 @@ class Server {
         bool                            m_isClientOper(Client& client, std::string channelName) const;
         bool                            m_isWildCardMask(std::string str) const;
         bool                            m_isOnServer(std::string nickname);
+        bool                            m_isMask(std::string& potentialMask);
 
         void                            m_listMasks(std::vector<std::string> maskList, char mode, Client& client, Channel& channel);
 

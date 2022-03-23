@@ -41,6 +41,7 @@ void    Server::initializeCmdFuncs(void)
     this->m_cmdFuncs.insert(std::make_pair(NICK_COMMAND, &Server::m_nickCmd));
     this->m_cmdFuncs.insert(std::make_pair(SEND_COMMAND, &Server::m_sendCmd));
     this->m_cmdFuncs.insert(std::make_pair(FETCH_COMMAND, &Server::m_fetchCmd));
+    // this->m_cmdFuncs.insert(std::make_pair(WHO_COMMAND, &Server::m_whoCmd));
 }
 
 Server::~Server(void)
@@ -110,6 +111,7 @@ int             Server::setServerInfo(void)
     free(hostname);
     return (0);
 }
+
 
 void            Server::setOperPassword(std::string password)
 {
@@ -395,7 +397,7 @@ int            Server::m_manageChannelModes(char mode, char prefix, std::vector<
     return (0);
 }
 
-bool                                Server::m_isMask(std::string mask)
+bool                                Server::m_isHostnameMask(std::string mask)
 {
     return (mask == "*!*@*" || (mask.substr(0, 6) == "*!*@*." && mask.size() > 6));
 }
@@ -738,6 +740,39 @@ void            Server::m_userModeCmd(Client& client, Message& message)
     }
     if (modeChanges.size() > 1)
         m_reply(client.getFd(), Replies::RPL_UMODEIS, modeChanges);
+}
+
+void            Server::m_whoCmd(Client& client)
+{
+    Message& message = client.getMessageQueue().front();
+    std::vector<std::string>& arguments = message.getArgs();
+    std::vector<std::string> whoUsers;
+
+    if (arguments.empty())
+    {
+        whoUsers = m_getWhoUsers(client); // users who don't share channels with client
+    }
+    else
+    {
+        if (m_isMask(arguments[0]))
+        {
+            std::string mask = arguments[0];
+            std::vector<std::string> channels = m_getMatchingChannels(client, mask);
+            bool operatorsOnly = false;
+
+            if (arguments.size() >= 2 && arguments[1] == "o")
+                operatorsOnly = true;
+            if (channels.empty())
+                whoUsers = m_getWhoUsers(client, mask, operatorsOnly);
+            else
+                whoUsers = m_getWhoUsers(client, channels, operatorsOnly);
+        }
+        else if (m_isChannelPrefix(arguments[0].at(0)))
+            whoUsers = m_getWhoChannelUsers(client, arguments[0]);
+        else
+            whoUsers = m_getWhoUser(arguments[0]);
+    }
+    m_reply(client.getFd(), Replies::RPL_WHOREPLY, m_composeWhoQuery(whoUsers));
 }
 
 void            Server::m_modeCmd(Client& client)
@@ -1696,7 +1731,7 @@ void                        Server::m_partZero(Client &client)
 std::vector<int>        Server::m_grabClientsWithMask(std::string mask)
 {
     std::vector<int>    members;
-    if (!m_isMask(mask))
+    if (!m_isHostnameMask(mask))
         return (members);
     std::string TLD = m_getTLD(mask);
     std::map<int, Client>::iterator it = m_clients.begin();
@@ -1729,7 +1764,7 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
     if (target.at(0) == LOCAL_CHAN || target.at(0) == NETWORKWIDE_CHAN)
     {
         std::map<std::string, Channel>::iterator it_chan = m_channels.find(target);
-        if (it_chan == m_channels.end() && !m_isMask(target.erase(0, 1)))
+        if (it_chan == m_channels.end() && !m_isHostnameMask(target.erase(0, 1)))
         {
             if (notifs)
                 m_reply(client.getFd(), Replies::ERR_NOSUCHNICK, target);
@@ -1745,9 +1780,9 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
             isAnonymous = true;
         std::vector<int> mem;
         std::string mask = target;
-        if (m_isMask(mask.erase(0, 1)))
+        if (m_isHostnameMask(mask.erase(0, 1)))
             mem = m_grabClientsWithMask(mask.erase(0, 1));
-        std::vector<int> &members = (m_isMask(mask.erase(0, 1))) ? mem : m_channels[target].getMembers();
+        std::vector<int> &members = (m_isHostnameMask(mask.erase(0, 1))) ? mem : m_channels[target].getMembers();
         std::vector<int>::iterator it = members.begin();
         std::vector<int>::iterator end = members.end();
         while (it != end)
@@ -2129,4 +2164,4 @@ std::string     Server::m_possibleCommands[NUM_COMMANDS] = {"USER", "NICK", "PAS
                                                             "WHOIS", "TOPIC", "JOIN", "PART",
                                                             "KICK", "PRIVMSG", "NOTICE", "OPER",
                                                             "NAMES", "SEND", "FETCH", "INVITE",
-                                                            "LIST"};
+                                                            "LIST", "WHO"};
