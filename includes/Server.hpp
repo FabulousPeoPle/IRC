@@ -317,6 +317,10 @@ class Server {
         
 
         std::vector<std::string>        m_getMatchingChannels(Client& client,  const std::string& mask);
+       
+        std::vector<std::string>        m_getWhoChannelUsers(std::string& channelName);
+        
+        std::string                     m_getWhoUser(std::string& userName);
 
         std::vector<std::string>        m_getWhoUsers(Client& client);
         std::vector<std::string>        m_getWhoUsers(Client& client, std::vector<std::string> channels, bool operatorsOnly);

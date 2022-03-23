@@ -768,11 +768,12 @@ void            Server::m_whoCmd(Client& client)
                 whoUsers = m_getWhoUsers(client, channels, operatorsOnly);
         }
         else if (m_isChannelPrefix(arguments[0].at(0)))
-            whoUsers = m_getWhoChannelUsers(client, arguments[0]);
+            whoUsers = m_getWhoChannelUsers(arguments[0]);
         else
-            whoUsers = m_getWhoUser(arguments[0]);
+            std::string user = m_getWhoUser(arguments[0]);
     }
     m_reply(client.getFd(), Replies::RPL_WHOREPLY, m_composeWhoQuery(whoUsers));
+    m_reply(client.getFd(), Replies::RPL_ENDOFWHO, "");
 }
 
 void            Server::m_modeCmd(Client& client)
