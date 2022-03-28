@@ -742,7 +742,7 @@ void            Server::m_userModeCmd(Client& client, Message& message)
         m_reply(client.getFd(), Replies::RPL_UMODEIS, modeChanges);
 }
 
-void            Server::m_whoCmd(Client& client)
+void            Server::m_whoCmd(Client& client) // TODO: need a mask library
 {
     Message& message = client.getMessageQueue().front();
     std::vector<std::string>& arguments = message.getArgs();
