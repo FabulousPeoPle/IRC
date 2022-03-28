@@ -742,39 +742,39 @@ void            Server::m_userModeCmd(Client& client, Message& message)
         m_reply(client.getFd(), Replies::RPL_UMODEIS, modeChanges);
 }
 
-void            Server::m_whoCmd(Client& client) // TODO: need a mask library
-{
-    Message& message = client.getMessageQueue().front();
-    std::vector<std::string>& arguments = message.getArgs();
-    std::vector<std::string> whoUsers;
+// void            Server::m_whoCmd(Client& client) // TODO: need a mask library
+// {
+//     Message& message = client.getMessageQueue().front();
+//     std::vector<std::string>& arguments = message.getArgs();
+//     std::vector<std::string> whoUsers;
 
-    if (arguments.empty())
-    {
-        whoUsers = m_getWhoUsers(client); // users who don't share channels with client
-    }
-    else
-    {
-        if (m_isMask(arguments[0]))
-        {
-            std::string mask = arguments[0];
-            std::vector<std::string> channels = m_getMatchingChannels(client, mask);
-            bool operatorsOnly = false;
+//     if (arguments.empty())
+//     {
+//         whoUsers = m_getWhoUsers(client); // users who don't share channels with client
+//     }
+//     else
+//     {
+//         if (m_isMask(arguments[0]))
+//         {
+//             std::string mask = arguments[0];
+//             std::vector<std::string> channels = m_getMatchingChannels(client, mask);
+//             bool operatorsOnly = false;
 
-            if (arguments.size() >= 2 && arguments[1] == "o")
-                operatorsOnly = true;
-            if (channels.empty())
-                whoUsers = m_getWhoUsers(client, mask, operatorsOnly);
-            else
-                whoUsers = m_getWhoUsers(client, channels, operatorsOnly);
-        }
-        else if (m_isChannelPrefix(arguments[0].at(0)))
-            whoUsers = m_getWhoChannelUsers(arguments[0]);
-        else
-            std::string user = m_getWhoUser(arguments[0]);
-    }
-    m_reply(client.getFd(), Replies::RPL_WHOREPLY, m_composeWhoQuery(whoUsers));
-    m_reply(client.getFd(), Replies::RPL_ENDOFWHO, "");
-}
+//             if (arguments.size() >= 2 && arguments[1] == "o")
+//                 operatorsOnly = true;
+//             if (channels.empty())
+//                 whoUsers = m_getWhoUsers(client, mask, operatorsOnly);
+//             else
+//                 whoUsers = m_getWhoUsers(client, channels, operatorsOnly);
+//         }
+//         else if (m_isChannelPrefix(arguments[0].at(0)))
+//             whoUsers = m_getWhoChannelUsers(arguments[0]);
+//         else
+//             std::string user = m_getWhoUser(arguments[0]);
+//     }
+//     m_reply(client.getFd(), Replies::RPL_WHOREPLY, m_composeWhoQuery(whoUsers));
+//     m_reply(client.getFd(), Replies::RPL_ENDOFWHO, "");
+// }
 
 void            Server::m_modeCmd(Client& client)
 {

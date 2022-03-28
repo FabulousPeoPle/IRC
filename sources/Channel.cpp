@@ -16,7 +16,7 @@ Channel::Channel(const Channel& channelRef)
 	*this = channelRef;
 }
 
-Channel&	Channel::operator==(const Channel& channelRef)
+Channel&	Channel::operator=(const Channel& channelRef)
 {
 	m_name = channelRef.m_name;
 	m_mode = channelRef.m_mode;

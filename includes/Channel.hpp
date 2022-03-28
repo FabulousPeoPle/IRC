@@ -72,7 +72,7 @@ public:
 						Channel(const Channel& channelRef);
 						~Channel(void);
 
-	Channel&			operator==(const Channel& channelRef);
+	Channel&			operator=(const Channel& channelRef);
 
 	std::vector<std::string>&	getBanMasks(void);
 	std::vector<std::string>&	getExceptionBanMasks(void);

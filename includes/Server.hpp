@@ -311,7 +311,6 @@ class Server {
         void                            m_whoisCmd(Client& client);
         void                            m_topicCmd(Client& client);
         void                            m_operCmd(Client& client);
-        void                            m_whoCmd(Client& client);
         void                            m_userModeCmd(Client& client, Message& message);
         void                            m_whoCmd(Client& client);
         
