@@ -3,6 +3,13 @@
 
 #include <string>
 
+// TODO: utils should have their own hpp
+int         countChars(std::string str, char c);
+
+
+// the mask should be [ *!*@*.smth ], so it should at least have size 7
+#define MIN_FULL_MASK_SIZE 7
+
 class Mask
 {
     public:
@@ -18,9 +25,13 @@ class Mask
 
         const std::string   mask;
 
-        static std::string  hostNameMaskPrefix;
+
+
         bool                isHostNameMask;
         bool                isWildCardMask;
+
+        static std::string  hostNameMaskPrefix;
+        const int           hostNameMaskPrefixSize;
 
         bool                m_isMaskValid(void);
         bool                m_isHostNameMask(void);

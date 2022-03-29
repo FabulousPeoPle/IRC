@@ -6,7 +6,7 @@
 #    By: ohachim <ohachim@student.42.fr>            +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2021/10/05 12:47:22 by ohachim           #+#    #+#              #
-#    Updated: 2022/03/08 18:48:38 by ohachim          ###   ########.fr        #
+#    Updated: 2022/03/29 17:02:21 by ohachim          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -33,7 +33,7 @@ INC_FTP = irc_bot/ftp_client/includes
 HEADER_FTP = $(addprefix $(INC_FTP)/, $(HEADER_NAME_FTP))
 
 SRC_PATH = sources
-SRC_NAME = main.cpp Server.cpp Client.cpp Message.cpp ServerGetters.cpp strToken.cpp Channel.cpp ServerReply.cpp intToString.cpp isAlphaNum.cpp
+SRC_NAME = main.cpp Server.cpp Client.cpp Message.cpp ServerGetters.cpp strToken.cpp Channel.cpp ServerReply.cpp intToString.cpp isAlphaNum.cpp countChars.cpp
 OBJ_PATH = obj
 OBJ_NAME = $(SRC_NAME:.cpp=.o)
 OBJ = $(addprefix $(OBJ_PATH)/, $(OBJ_NAME))

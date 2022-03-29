@@ -55,7 +55,7 @@ std::string	Client::getUsername(void) const
 	return (_username);
 }
 
-std::string	Client::getHostname(void) const
+std::string	Client::getHost(void) const
 {
 	return (hostname);
 }

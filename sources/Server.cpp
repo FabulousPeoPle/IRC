@@ -238,20 +238,20 @@ void*           Server::m_getInAddr(t_sockaddr* addr) const
     return (&(((t_sockaddr_in6*)addr)->sin6_addr));
 }
 
-// std::string            Server::convertToHostname(t_sockaddr_storage& remoteAddr, int sock_fd) // for the project continuation
-// {
-//     char buffer[INET6_ADDRSTRLEN];
-//     int err = getnameinfo((struct sockaddr*)&remoteAddr, sizeof(t_sockaddr_storage), buffer,sizeof(buffer), 0, 0, 0);
-//     if (err)
-//     {
-//         printf("Failed to get hostname!\nExiting...");
-//         if (this->m_servinfo)
-//             freeaddrinfo(this->m_servinfo);
-//         exit(1);
-//     }
-//     std::string s(buffer);
-//     return (s);
-// }
+std::string            Server::convertToHost(t_sockaddr_storage& remoteAddr) // for the project continuation
+{
+    char buffer[INET6_ADDRSTRLEN];
+    int err = getnameinfo((struct sockaddr*)&remoteAddr, sizeof(t_sockaddr_storage), buffer,sizeof(buffer), 0, 0, 0);
+    if (err)
+    {
+        printf("Failed to get hostname!\nExiting...");
+        if (this->m_servinfo)
+            freeaddrinfo(this->m_servinfo);
+        exit(1);
+    }
+    std::string s(buffer);
+    return (s);
+}
 
 int            Server::m_manageServerEvent(void)
 {
@@ -280,7 +280,7 @@ int            Server::m_manageServerEvent(void)
     {
         fcntl(newFd, F_SETFL, O_NONBLOCK);
         this->m_clients[newFd] = Client(newFd, remoteAddr, addrlen);
-        this->m_clients[newFd].setHostname(inet_ntoa(((t_sockaddr_in*)&remoteAddr)->sin_addr));
+        this->m_clients[newFd].setHostname(convertToHost(remoteAddr));
         this->m_pfds.push_back((t_pollfd){newFd, POLLIN, 0});
     }
     else
@@ -884,11 +884,12 @@ std::string                Server::m_composeWhoisQuery(Client& client, Client& q
 
     if (awayMsg.empty())
         awayMsg = "is away";
+    // TODO: NEED TO ADD "*"
     switch (replyCode)
     {
         case Replies::RPL_WHOISUSER:
             return (m_makeReplyHeader(Replies::RPL_WHOISUSER, client.getNickname()) + ' ' + queryClient.getNickname()
-                                        + " ~" + queryClient.getUsername() + ' ' + queryClient.getHostname() + " * " + queryClient.getRealname());
+                                        + " ~" + queryClient.getUsername() + ' ' + queryClient.getHost() + " * " + queryClient.getRealname());
         case Replies::RPL_WHOISSERVER:
             return (m_makeReplyHeader(Replies::RPL_WHOISSERVER, client.getNickname()) + ' ' + queryClient.getNickname()
                                                     + ' ' + m_serverName + " :Morocco 1337 Server, Provided by 1337 students Powered by Itisalat Al Maghreb.");
@@ -1065,22 +1066,9 @@ void                Server::m_operCmd(Client& client)
         m_reply(client.getFd(), Replies::ERR_NOOPERHOST, "");
 }
 
-
-int                 countChars(std::string str)
-{
-    int count = 0;
-
-    for (int i = 0; i < static_cast<int>(str.size()); ++i)
-    {
-        if (str[i] == '*')
-            ++count;
-    }
-    return (count);
-}
-
 bool                Server::m_isWildCardMask(std::string str) const
 {
-    return ((str[0] == '*' || str[str.size() - 1] == '*') && countChars(str) == 1);
+    return ((str[0] == '*' || str[str.size() - 1] == '*') && countChars(str, 'c') == 1);
 }
 
 bool                Server::m_onlyOps(std::vector<std::string> arguments)
@@ -1391,7 +1379,7 @@ void    Server::m_userhostCmd(Client & client)
             m_reply(client.getFd(), Replies::RPL_USERHOST, client.getNickname() + " :"\
             + m_clients[m_nicknames[*it]].getNickname() + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::oper)) ? "*" : "") + "=" \
             + ((m_clients[m_nicknames[*it]].getModeValue(UserModes::away)) ? "+" : "-") + "~" + m_clients[m_nicknames[*it]].getUsername()
-            + "@" + m_clients[m_nicknames[*it]].getHostname());
+            + "@" + m_clients[m_nicknames[*it]].getHost());
         it++;
         count += 1;
     }
@@ -1483,7 +1471,7 @@ void    Server::m_passCmd(Client &client)
 
 std::string             Server::m_constructMask(Client& client)
 {
-    return (':' + client.getNickname() + "!~" + client.getUsername() + '@' + client.getHostname());
+    return (':' + client.getNickname() + "!~" + client.getUsername() + '@' + client.getHost());
 }
 
 void                    Server::m_quitCmd(Client& client) 
@@ -1494,7 +1482,7 @@ void                    Server::m_quitCmd(Client& client)
         if (!client.getMessageQueue().empty() && client.getMessageQueue().front().getLiteralMsg().size())
             literalMsg = client.getMessageQueue().front().getLiteralMsg().erase(0, 1);
         std::string messageToSend = "ERROR: Closing Link: " + client.getUsername() + "(" 
-                                    + literalMsg + ") " + client.getHostname() + " (Quit: "
+                                    + literalMsg + ") " + client.getHost() + " (Quit: "
                                         + client.getNickname() + ")" + END_STRING;
         if (this->m_send(client.getFd(), messageToSend) < 0)
             std::cout << "Error: send\n";
@@ -1739,7 +1727,7 @@ std::vector<int>        Server::m_grabClientsWithMask(std::string mask)
     std::map<int, Client>::iterator end = m_clients.end();
     while (it != end)
     {
-        if (m_isMaskUserMatch(it->second.getHostname(), TLD))
+        if (m_isMaskUserMatch(it->second.getHost(), TLD))
             members.push_back(it->second.getFd());
         it++;
     }
@@ -1794,11 +1782,11 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
                     continue ;
                 }
                 if (m_clients[*it].getModeValue(UserModes::away))
-                    m_send(client.getFd(), ":" + m_clients[*it].getNickname() + "!~" + m_clients[*it].getUsername() + "@" + m_clients[*it].getHostname() + " " + m_clients[*it].getAwayMsg());
+                    m_send(client.getFd(), ":" + m_clients[*it].getNickname() + "!~" + m_clients[*it].getUsername() + "@" + m_clients[*it].getHost() + " " + m_clients[*it].getAwayMsg());
                 if (isAnonymous)
                     m_send(*it, ":anonymous!~anonymous@anonymous " + msg.getMsg());
                 else
-                    m_send(*it, ":" + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
+                    m_send(*it, ":" + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHost() + " " + msg.getMsg());
                 it++;
         }
     }
@@ -1813,8 +1801,8 @@ void                    Server::m_privMsgCmd_noticeCmd(Client &client)
         }
         int clientFd = m_nicknames[target];
         if (m_clients[clientFd].getModeValue(UserModes::away))
-                m_send(client.getFd(), ":" + m_clients[clientFd].getNickname() + "!~" + m_clients[clientFd].getUsername() + "@" + m_clients[clientFd].getHostname() + " " + m_clients[clientFd].getAwayMsg());
-        m_send(m_nicknames[target], ":" + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg());
+                m_send(client.getFd(), ":" + m_clients[clientFd].getNickname() + "!~" + m_clients[clientFd].getUsername() + "@" + m_clients[clientFd].getHost() + " " + m_clients[clientFd].getAwayMsg());
+        m_send(m_nicknames[target], ":" + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHost() + " " + msg.getMsg());
     }
 }
 
@@ -1833,12 +1821,12 @@ void                    Server::m_p_privMsgCmd_noticeCmd(Client &client, Message
         while (it != end)
         {
             if (*it != client.getFd())
-                m_send(*it, ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
+                m_send(*it, ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHost() + " " + msg.getMsg() + END_STRING);
             it++;
         }
     }
     else
-        m_send(m_nicknames[target], ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHostname() + " " + msg.getMsg() + END_STRING);
+        m_send(m_nicknames[target], ':' + client.getNickname() + "!~" + client.getUsername() + "@" + client.getHost() + " " + msg.getMsg() + END_STRING);
 }
 
 void            Server::m_kickCmd(Client &client)

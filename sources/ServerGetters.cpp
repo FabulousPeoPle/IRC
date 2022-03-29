@@ -26,7 +26,7 @@ std::string          Server::getPort(void)  const
     return ((this->m_port));
 }
 
-std::string           Server::getHostname(void) const
+std::string           Server::getHost(void) const
 {
     return (this->m_hostname);
 }

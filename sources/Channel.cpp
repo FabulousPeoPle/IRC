@@ -161,7 +161,7 @@ bool Channel::isInMaskVector(Client &client, std::vector<std::string>& maskVecto
 	std::vector<std::string>::const_iterator end = maskVector.end();
 	while (it != end)
 	{
-		if (m_isMaskUserMatch(client.getHostname(), m_extractTLD(*it)))
+		if (m_isMaskUserMatch(client.getHost(), m_extractTLD(*it)))
 			return (true);
 		it++;
 	}
@@ -174,7 +174,7 @@ bool Channel::isBanned(Client &client)
 	std::vector<std::string>::const_iterator end = m_banMasks.end();
 	while (it != end)
 	{
-		if (m_isMaskUserMatch(client.getHostname(), m_extractTLD(*it)))
+		if (m_isMaskUserMatch(client.getHost(), m_extractTLD(*it)))
 			return (true);
 		it++;
 	}

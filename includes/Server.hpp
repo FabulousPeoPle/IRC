@@ -200,6 +200,7 @@ typedef struct pollfd           t_pollfd;
 std::string strToken(std::string str, std::string delimiterString);
 std::string intToString(int num);
 bool        isAlphaNum(char c);
+int         countChars(std::string str, char c);
 
 class Client;
 class Message;
@@ -226,7 +227,7 @@ class Server {
         Server&                         operator=(const Server& serverRef);
 
         std::string                     getPort(void) const;
-        std::string                     getHostname(void) const;
+        std::string                     getHost(void) const;
         t_addrinfo                      getHints(void) const;
         t_addrinfo                      getServInfo(void) const;
         int                             getSockfd(void) const;
@@ -234,7 +235,7 @@ class Server {
         t_sockaddr_in                   getAddr_in(void) const;
 
 
-        std::string                     convertToHostname(t_sockaddr_storage& remoteAddr, int sock_fd);
+        std::string                     convertToHost(t_sockaddr_storage& remoteAddr);
 
         std::string                     getServName(void) const;
 

@@ -92,7 +92,7 @@ class Client
         t_messageDQeue                  &getMessageQueue(void);
         std::string                     getNickname(void) const;
         std::string                     getUsername(void) const;
-        std::string                     getHostname(void) const;
+        std::string                     getHost(void) const;
         std::string                     getIp(void) const;
         std::string                     getRealname(void) const;
         std::string                     getAwayMsg(void) const;
